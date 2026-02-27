@@ -110,7 +110,7 @@ LokaFlow™ is licensed under the **Business Source License 1.1 (BUSL-1.1)**.
 - **Commercial license required** for organizations with revenue or 3+ employees
 
 See [LICENSE](./LICENSE) for full terms.
-Commercial licensing: [info@learnhubplay.com](mailto:info@learnhubplay.com)
+Commercial licensing: [info@learnhubplay.nl](mailto:info@learnhubplay.nl)
 
 ---
 
@@ -132,4 +132,4 @@ before submitting a pull request.
 *© 2026 LearnHubPlay BV (KvK: 97741825) · Netherlands*
 *LokaFlow™ is a trademark of LearnHubPlay BV*
 *Licensed under BUSL 1.1 · Free for individuals*
-*Commercial licensing: [info@learnhubplay.com](mailto:info@learnhubplay.com)*
+*Commercial licensing: [info@learnhubplay.nl](mailto:info@learnhubplay.nl)*

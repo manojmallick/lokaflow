@@ -79,7 +79,7 @@ Violations may result in removal from the project.
 
 **Do not open a public issue for security vulnerabilities.**
 
-Report security issues privately to: [security@learnhubplay.com](mailto:security@learnhubplay.com)
+Report security issues privately to: [security@learnhubplay.nl](mailto:security@learnhubplay.nl)
 
 We will acknowledge within 48 hours and aim to release a fix within 14 days
 of confirmation.
@@ -90,7 +90,7 @@ of confirmation.
 
 General questions: open a GitHub Discussion
 
-Commercial licensing: [info@learnhubplay.com](mailto:info@learnhubplay.com)
+Commercial licensing: [info@learnhubplay.nl](mailto:info@learnhubplay.nl)
 
 ---
 
