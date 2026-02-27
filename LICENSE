@@ -1,0 +1,65 @@
+Business Source License 1.1
+
+Parameters
+
+Licensor:             LearnHubPlay BV (KvK: 97741825)
+                      Netherlands
+
+Licensed Work:        LokaFlow™ Platform
+                      © 2026 LearnHubPlay BV
+                      The Licensed Work is made available under the terms
+                      of this License.
+
+Additional Use Grant: You may use the Licensed Work for:
+                      - Personal, non-commercial use
+                      - Evaluation and testing for up to 30 days
+                      - Open-source projects (with attribution to
+                        LearnHubPlay BV and a link to lokaflow.com)
+
+                      Commercial use by any organization that generates
+                      revenue or has 3 or more employees requires a
+                      commercial license from LearnHubPlay BV.
+                      Contact: info@learnhubplay.com
+
+Change Date:          January 1, 2030
+
+Change License:       Apache License, Version 2.0
+
+---
+
+Terms
+
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work. The
+Licensor may make an Additional Use Grant, above, permitting limited
+production use.
+
+Effective on the Change Date, or the fourth anniversary of the first publicly
+available distribution of a specific version of the Licensed Work under this
+License, whichever comes first, the Licensor hereby grants you rights under
+the terms of the Change License, and these rights are irrevocable.
+
+Your use of the Licensed Work must comply with your applicable obligations
+under any applicable laws, including without limitation export control laws.
+If you use the Licensed Work in violation of the License, your rights under
+the License will terminate automatically.
+
+Licensor may use "Business Source License" as the header of this document,
+which shall also include the Parameters above.
+
+For more information about the Business Source License, please visit:
+https://mariadb.com/bsl11/
+
+---
+
+Notice
+
+The Business Source License (this document, or the "License") is not an Open
+Source license. However, the Licensed Work will eventually be made available
+under an Open Source License, as stated in this License.
+
+---
+
+LokaFlow™ is a trademark of LearnHubPlay BV, Netherlands.
+Website: https://lokaflow.com
+Commercial licensing: info@learnhubplay.com

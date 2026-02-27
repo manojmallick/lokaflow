@@ -1,0 +1,110 @@
+# LokaFlow™ — .gitignore
+# © 2026 LearnHubPlay BV
+
+# ──────────────────────────────
+# OS
+# ──────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ──────────────────────────────
+# Editor / IDE
+# ──────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# ──────────────────────────────
+# Python
+# ──────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.env
+*.env
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ──────────────────────────────
+# Node / JavaScript / TypeScript
+# ──────────────────────────────
+node_modules/
+.npm
+.yarn/
+yarn-error.log
+package-lock.json
+.next/
+.nuxt/
+dist/
+.cache/
+*.tsbuildinfo
+
+# ──────────────────────────────
+# Rust
+# ──────────────────────────────
+target/
+Cargo.lock
+
+# ──────────────────────────────
+# Secrets & Credentials
+# ──────────────────────────────
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+config/local.*
+
+# ──────────────────────────────
+# Model files (large binaries)
+# ──────────────────────────────
+*.gguf
+*.ggml
+*.bin
+*.safetensors
+models/
+weights/
+
+# ──────────────────────────────
+# Logs & temp files
+# ──────────────────────────────
+*.log
+logs/
+tmp/
+temp/
+.tmp/
+
+# ──────────────────────────────
+# LokaFlow runtime data
+# ──────────────────────────────
+.lokaflow/
+task_graphs/output/
+cache/
