@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/manojmallick/lokaflow/security/advisories/new
+    about: Report a security vulnerability privately via GitHub's advisory system
+  - name: Commercial Licensing
+    url: mailto:info@learnhubplay.nl
+    about: Questions about commercial use of LokaFlow™
+  - name: General Discussion
+    url: https://github.com/manojmallick/lokaflow/discussions
+    about: Ask questions and discuss ideas in GitHub Discussions
