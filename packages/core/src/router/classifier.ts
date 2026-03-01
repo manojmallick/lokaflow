@@ -6,12 +6,12 @@
  *
  * Seven weighted signals:
  *   1. tokenCountScore    — normalised log of token count                weight=0.05
- *   2. questionComplexity — reasoning/comparison question words          weight=0.20
+ *   2. questionComplexity — reasoning/comparison question words          weight=0.25
  *   3. technicalDensity   — code blocks, stack traces, file paths        weight=0.15
  *   4. reasoningKeywords  — analysis/explanation vocabulary              weight=0.15
- *   5. cotIndicators      — chain-of-thought markers                     weight=0.05
- *   6. lengthBonus        — sentence count signal                        weight=0.10
- *   7. codingTaskScore    — imperative coding tasks (create/build + lang) weight=0.30
+ *   5. cotIndicators      — chain-of-thought markers                     weight=0.00
+ *   6. lengthBonus        — sentence count signal                        weight=0.05
+ *   7. complexTaskScore   — coding tasks OR deep analysis/research       weight=0.35
  */
 
 import type { RoutingTier } from "../types.js";
@@ -69,6 +69,17 @@ const REASONING_KEYWORDS = [
   "rationale",
   "reasoning",
   "argument",
+  // Analysis/research vocabulary — enables deep-analysis queries to score high
+  "analyse",
+  "analysis",
+  "compare",
+  "contrast",
+  "trade-off",
+  "tradeoff",
+  "recommend",
+  "approach",
+  "synthesis",
+  "implications",
 ];
 
 const COT_INDICATORS = [
@@ -261,6 +272,27 @@ function scoreCodingTask(text: string): number {
   return 0;
 }
 
+/**
+ * Complex-task detector — covers both imperative coding tasks AND deep
+ * analytical/research tasks, since both warrant specialist or cloud routing.
+ *
+ * Priority: coding signals are checked first. If none fire, the function
+ * falls back to analysis-depth detection: ≥3 COMPLEXITY_WORDS hits indicate
+ * a multi-faceted analytical query (compare / trade-off analysis / research).
+ */
+function scoreComplexTask(text: string): number {
+  // Coding task takes precedence (preserves existing routing behaviour)
+  const codingScore = scoreCodingTask(text);
+  if (codingScore > 0) return codingScore;
+
+  // Deep analysis / research task
+  const complexityHits = countMatches(text, COMPLEXITY_WORDS);
+  if (complexityHits >= 3) {
+    return Math.min(1.0, complexityHits / 5);
+  }
+  return 0;
+}
+
 // ── Classifier ────────────────────────────────────────────────────────────────
 
 export class TaskClassifier {
@@ -305,19 +337,19 @@ export class TaskClassifier {
     // Signal 6 — length bonus (multi-sentence queries are more complex)
     const lengthBonus = clamp(Math.max(0, sentences - 1) / 10);
 
-    // Signal 7 — imperative coding task (language + action + subject)
-    const codingTaskScore = scoreCodingTask(text);
+    // Signal 7 — coding task OR deep analysis/research (whichever applies)
+    const complexTaskScore = scoreComplexTask(text);
 
     // Weighted sum
-    // Total weights = 0.05 + 0.20 + 0.15 + 0.15 + 0.05 + 0.10 + 0.30 = 1.00
+    // Total weights = 0.05 + 0.25 + 0.15 + 0.15 + 0.00 + 0.05 + 0.35 = 1.00
     const score = clamp(
       tokenCountScore * 0.05 +
-        questionComplexity * 0.2 +
+        questionComplexity * 0.25 +
         technicalDensity * 0.15 +
         reasoningKeywords * 0.15 +
-        cotIndicators * 0.05 +
-        lengthBonus * 0.1 +
-        codingTaskScore * 0.3,
+        cotIndicators * 0.0 +
+        lengthBonus * 0.05 +
+        complexTaskScore * 0.35,
     );
 
     return {
@@ -330,7 +362,7 @@ export class TaskClassifier {
         reasoningKeywords,
         cotIndicators,
         lengthBonus,
-        codingTaskScore,
+        complexTaskScore,
       },
     };
   }

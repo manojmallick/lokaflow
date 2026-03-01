@@ -116,6 +116,9 @@ config/local.*
 *.safetensors
 models/
 weights/
+# Un-ignore source-code directories that happen to be named "models"
+!packages/*/src/models/
+!packages/*/src/models/**
 
 # ──────────────────────────────
 # Logs & temp files
@@ -123,6 +126,7 @@ weights/
 *.log
 logs/
 tmp/
+coverage/
 temp/
 .tmp/
 

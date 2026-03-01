@@ -66,7 +66,7 @@ export class MemoryStore {
       );
 
       CREATE INDEX IF NOT EXISTS idx_memory_session
-        ON memory_entries(session_id, created_at DESC);
+        ON memory_entries(session_id, id DESC);
 
       CREATE TABLE IF NOT EXISTS memory_sessions (
         id          TEXT    PRIMARY KEY,
@@ -114,7 +114,7 @@ export class MemoryStore {
         `SELECT id, session_id, role, content, summary, vector, created_at
          FROM memory_entries
          WHERE session_id = ?
-         ORDER BY created_at DESC
+         ORDER BY id DESC
          LIMIT ?`,
       )
       .all(sessionId, limit) as Array<{
