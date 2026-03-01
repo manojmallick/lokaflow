@@ -58,7 +58,7 @@ function App(): JSX.Element {
           </a>
         </nav>
       </aside>
-      <main className="content">
+      <main className={`content${view === "chat" ? " content-chat" : ""}`}>
         {view === "dashboard" && <Dashboard />}
         {view === "chat" && <Chat />}
         {view === "mesh" && <MeshCluster />}
