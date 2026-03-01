@@ -66,11 +66,21 @@ const healthRoute: FastifyPluginAsync<HealthRouteOptions> = async (fastify, opts
         } catch {
           status = "unavailable";
         }
+        let models: string[] | undefined;
+        if (status !== "unavailable") {
+          if (providers.specialist.listModels) {
+            models = await providers.specialist.listModels().catch(() => []);
+          } else {
+            const m = (providers.specialist as any).defaultModel as string | undefined;
+            if (m) models = [m];
+          }
+        }
         checks.push({
           name: providers.specialist.name,
           tier: "specialist",
           status,
           latencyMs: Date.now() - start,
+          ...(models && models.length > 0 ? { models } : {}),
         });
       }
 
@@ -84,11 +94,21 @@ const healthRoute: FastifyPluginAsync<HealthRouteOptions> = async (fastify, opts
         } catch {
           status = "unavailable";
         }
+        let models: string[] | undefined;
+        if (status !== "unavailable") {
+          if (providers.cloud.listModels) {
+            models = await providers.cloud.listModels().catch(() => []);
+          } else {
+            const m = (providers.cloud as any).defaultModel as string | undefined;
+            if (m) models = [m];
+          }
+        }
         checks.push({
           name: providers.cloud.name,
           tier: "cloud",
           status,
           latencyMs: Date.now() - start,
+          ...(models && models.length > 0 ? { models } : {}),
         });
       }
 
