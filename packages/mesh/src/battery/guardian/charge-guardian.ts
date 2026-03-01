@@ -36,7 +36,7 @@ function parseWindow(windowStr: string): { startH: number; startM: number; endH:
 function isInWindow(override: ScheduleOverride): boolean {
     const d = new Date();
     const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-    const currentDay = dayNames[d.getDay()];
+    const currentDay = dayNames[d.getDay()]!;
 
     if (!override.days.includes(currentDay)) return false;
 

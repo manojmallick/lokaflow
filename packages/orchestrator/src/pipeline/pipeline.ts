@@ -4,7 +4,7 @@
 // packages/orchestrator/src/pipeline/pipeline.ts
 // OrchestratorPipeline — The main entry point. Executes the full Plan → Execute → Verify → Assemble DAG.
 
-import type { Message } from "../../../src/types.js";
+import type { Message } from "../types.js";
 import type { OrchestrationResult, TaskGraph, TaskNode, TierLevel } from "../types.js";
 import { TaskDecomposer } from "../decomposer/decomposer.js";
 import { TokenBudgetAllocator } from "../budget/allocator.js";

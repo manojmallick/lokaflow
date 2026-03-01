@@ -35,6 +35,12 @@ export abstract class BaseProvider {
    */
   abstract healthCheck(): Promise<boolean>;
 
+  /**
+   * Optional: list all models available on this provider.
+   * Implemented by local providers (Ollama /api/tags); cloud providers skip it.
+   */
+  listModels?(): Promise<string[]>;
+
   /** Calculate cost in EUR given token counts. */
   protected calcCostEur(inputTokens: number, outputTokens: number): number {
     return (

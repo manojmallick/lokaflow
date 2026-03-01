@@ -13,23 +13,12 @@
 //   GET  /docs                 ← Swagger UI (if enabled)
 
 import Fastify from "fastify";
-import cors from "@fastify/cors";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import fp from "fastify-plugin";
 
 import type { ApiServerOptions } from "./types.js";
-import { Router } from "@lokaflow/core/router/router.js";
-import { DashboardTracker } from "@lokaflow/core/dashboard/tracker.js";
-import {
-    OllamaProvider,
-    ClaudeProvider,
-    GeminiProvider,
-    OpenAIProvider,
-    GroqProvider,
-} from "@lokaflow/core/providers/index.js";
-import { envVar } from "@lokaflow/core/utils/security.js";
-import { VERSION } from "@lokaflow/core/version.js";
+import { Router, DashboardTracker, OllamaProvider, ClaudeProvider, GeminiProvider, OpenAIProvider, GroqProvider, envVar, VERSION, BaseProvider } from "@lokaflow/core";
 
 import authPlugin from "./middleware/auth.js";
 import healthRoute from "./routes/health.js";
@@ -37,28 +26,36 @@ import chatRoute from "./routes/chat.js";
 import routeRoute from "./routes/route.js";
 import costRoute from "./routes/cost.js";
 import modelsRoute from "./routes/models.js";
+import historyRoute from "./routes/history.js";
 
 export async function createServer(opts: ApiServerOptions) {
-    const { config, port = 4141, host = "127.0.0.1", apiKey, swagger: enableSwagger = true } = opts;
+    // Use 0.0.0.0 (all IPv4 interfaces) so browsers can reach the server via both
+    // http://localhost:4141 and http://127.0.0.1:4141. Binding to 127.0.0.1 only
+    // causes failures on macOS where the browser tries IPv6 (::1) first.
+    const { config, port = 4141, host = "0.0.0.0", apiKey, swagger: enableSwagger = true } = opts;
 
+    const isDev = process.env["NODE_ENV"] !== "production";
     const fastify = Fastify({
-        logger: {
-            level: "warn",
-            transport: { target: "pino-pretty", options: { colorize: true } },
-        },
+        logger: isDev
+            ? { level: "warn", transport: { target: "pino-pretty", options: { colorize: true } } }
+            : { level: "warn" },
     });
 
-    // ── CORS (allow any local app to call the proxy) ────────────────────────────
-    await fastify.register(cors, {
-        origin: (origin, cb) => {
-            // Allow localhost origins (any port) and requests with no origin (curl, etc.)
-            if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-                cb(null, true);
-            } else {
-                cb(new Error("CORS: origin not allowed"), false);
-            }
-        },
-        methods: ["GET", "POST", "OPTIONS"],
+    // ── CORS — manual hook at the raw socket level so it works for both normal
+    // Fastify responses AND hijacked SSE streams (plugin onSend never fires for those).
+    fastify.addHook("onRequest", async (request, reply) => {
+        const origin = request.headers["origin"] as string | undefined;
+        if (origin) {
+            reply.raw.setHeader("Access-Control-Allow-Origin",      origin);
+            reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
+            reply.raw.setHeader("Vary",                             "Origin");
+        }
+        if (request.method === "OPTIONS") {
+            reply.raw.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            reply.raw.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            reply.raw.setHeader("Access-Control-Max-Age",       "86400");
+            reply.code(204).send();
+        }
     });
 
     // ── Swagger / OpenAPI docs ──────────────────────────────────────────────────
@@ -93,7 +90,7 @@ export async function createServer(opts: ApiServerOptions) {
     }
 
     // ── Authentication (optional) ────────────────────────────────────────────────
-    await fastify.register(authPlugin, { apiKey });
+    await fastify.register(authPlugin, { ...(apiKey !== undefined ? { apiKey } : {}) });
 
     // ── Build providers ──────────────────────────────────────────────────────────
     const localProviders = config.local.baseUrls.map((url: string) =>
@@ -101,7 +98,7 @@ export async function createServer(opts: ApiServerOptions) {
     );
 
     // Cloud provider: first available API key wins (same logic as chat.ts)
-    let cloudProvider = localProviders[0]!;
+    let cloudProvider: BaseProvider = localProviders[0]!;
     const anthropicKey = envVar("ANTHROPIC_API_KEY");
     const openaiKey = envVar("OPENAI_API_KEY");
     const geminiKey = envVar("GEMINI_API_KEY");
@@ -117,18 +114,38 @@ export async function createServer(opts: ApiServerOptions) {
         cloudProvider = new GroqProvider(groqKey, config.cloud.groqModel);
     }
 
-    // Specialist (Gemini preferred)
-    let specialistProvider = localProviders[0]!;
-    if (config.router.specialistProvider === "gemini" && geminiKey) {
-        specialistProvider = new GeminiProvider(
-            geminiKey,
-            config.router.specialistModel ?? config.cloud.geminiModel,
+    // Specialist provider selection
+    let specialistProvider: BaseProvider = localProviders[0]!;
+    const wantedSpecialist = config.router.specialistProvider;
+    const specialistModel   = config.router.specialistModel;
+
+    if (wantedSpecialist === "gemini") {
+        if (geminiKey) {
+            specialistProvider = new GeminiProvider(
+                geminiKey,
+                specialistModel ?? config.cloud.geminiModel,
+            );
+        } else {
+            console.warn(
+                `[LokaFlow] specialist_provider=gemini but GEMINI_API_KEY is not set. ` +
+                `Falling back to local model for specialist tier. ` +
+                `Set GEMINI_API_KEY or change specialist_provider to 'ollama' in lokaflow.yaml.`,
+            );
+        }
+    } else if (wantedSpecialist === "ollama" && specialistModel) {
+        // Use a dedicated Ollama model (e.g. llama3.3:70b) as the specialist planner.
+        // Uses the primary base URL (first in the list).
+        const primaryUrl = config.local.baseUrls[0] ?? "http://localhost:11434";
+        specialistProvider = new OllamaProvider(
+            primaryUrl,
+            specialistModel,
+            config.local.timeoutSeconds * 1000,
         );
     }
 
     const router = new Router(
         { local: localProviders, cloud: cloudProvider, specialist: specialistProvider },
-        config.router,
+        config,
     );
 
     const tracker = new DashboardTracker();
@@ -139,6 +156,7 @@ export async function createServer(opts: ApiServerOptions) {
     await fastify.register(routeRoute, { router });
     await fastify.register(costRoute, { tracker, config });
     await fastify.register(modelsRoute, { router });
+    await fastify.register(historyRoute);
 
     // Root redirect
     fastify.get("/", async (_req, reply) => {

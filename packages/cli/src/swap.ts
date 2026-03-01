@@ -6,7 +6,8 @@ export const swapCommand = new Command("swap")
     .action(async () => {
         try {
             console.log(chalk.blue("[LokaSwap] Initializing token exchange..."));
-            const { SwapManager } = await import("@lokaflow/swap");
+            const { TradeSettlement } = await import("@lokaflow/swap");
+            console.log(chalk.blue("[LokaSwap] Available:"), typeof TradeSettlement);
         } catch (e) {
             console.error(chalk.red("Failed to load LokaSwap module"), e);
         }

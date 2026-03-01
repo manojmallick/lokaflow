@@ -200,4 +200,17 @@ export class OllamaProvider extends BaseProvider {
       return false;
     }
   }
+
+  override async listModels(): Promise<string[]> {
+    try {
+      const resp = await fetch(`${this.baseUrl}/api/tags`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!resp.ok) return [];
+      const data = await resp.json() as { models?: Array<{ name: string }> };
+      return (data.models ?? []).map(m => m.name).sort();
+    } catch {
+      return [];
+    }
+  }
 }

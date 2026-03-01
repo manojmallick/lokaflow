@@ -9,7 +9,7 @@
 
 import { ProviderUnavailableError } from "../exceptions.js";
 import type { CompletionOptions, LLMResponse, Message } from "../types.js";
-import { requireEnvVar } from "@lokaflow/core/utils/security.js";
+import { requireEnvVar } from "../utils/security.js";
 import { BaseProvider } from "./base.js";
 
 // command-r-plus pricing in EUR (approx)

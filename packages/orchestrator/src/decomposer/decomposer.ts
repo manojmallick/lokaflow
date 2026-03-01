@@ -5,7 +5,7 @@
 // TaskDecomposer — translates a complex user query into a Directed Acyclic Graph (DAG)
 // of subtasks using a Specialist LLM. Replaces V1's flat subtask array.
 
-import type { Message } from "../../../src/types.js";
+import type { Message } from "../types.js";
 import type { TaskGraph, TaskNode } from "../types.js";
 
 // We assume a specialist provider (e.g. Gemini 2.0 Flash) is passed in

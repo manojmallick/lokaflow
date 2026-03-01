@@ -4,7 +4,7 @@
 // packages/api/src/types.ts
 // Shared types for the LokaFlow REST API layer.
 
-import type { LokaFlowConfig, Message, RoutingDecision } from "@lokaflow/core/types.js";
+import type { LokaFlowConfig, Message, RoutingDecision } from "@lokaflow/core";
 
 // ── OpenAI-compatible chat types ────────────────────────────────────────────
 
@@ -37,6 +37,18 @@ export interface OpenAIChatResponse {
         prompt_tokens: number;
         completion_tokens: number;
         total_tokens: number;
+    };
+    /** LokaFlow routing trace — non-standard extension field. */
+    _lokaflow_trace?: {
+        tier: string;
+        model: string;
+        reason: string;
+        complexityScore: number;
+        inputTokens: number;
+        outputTokens: number;
+        costEur: number;
+        latencyMs: number;
+        trace: string[];
     };
 }
 
@@ -100,6 +112,8 @@ export interface ProviderHealth {
     status: "ok" | "degraded" | "unavailable";
     latencyMs?: number;
     model?: string;
+    /** All models installed on this provider node (Ollama only). */
+    models?: string[];
 }
 
 export interface HealthResponse {

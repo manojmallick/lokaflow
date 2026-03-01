@@ -74,6 +74,8 @@ export interface RoutingDecision {
   reason: RoutingReason;
   complexityScore: number;
   response: LLMResponse;
+  /** Full routing pipeline trace — each entry is one step log line. */
+  trace: string[];
 }
 
 /** Full configuration schema — loaded from lokaflow.yaml */
@@ -87,6 +89,10 @@ export interface LokaFlowConfig {
     fallbackToLocal: boolean;
     specialistProvider?: string;
     specialistModel?: string;
+    /** When true, specialist-tier tasks are decomposed by the specialist planner
+     * and executed in parallel by local workers. Default: false (direct execution
+     * on the specialist model avoids slow local Ollama roundtrips). */
+    delegationEnabled?: boolean;
   };
   budget: {
     dailyEur: number;

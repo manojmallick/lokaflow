@@ -51,7 +51,7 @@ export class CooperativeRouter {
         // 3. Find best available node
         const nodes = await this.registry.getAvailableNodes({
             modelRequired: request.model,
-            dataResidencyRegion: request.requiredRegion,  // GDPR-relevant
+            ...(request.requiredRegion !== undefined ? { dataResidencyRegion: request.requiredRegion } : {}),  // GDPR-relevant
             minTokensPerSecond: request.latencyRequirement === 'interactive' ? 5 : 1,
             maxBatteryStressScore: 60,
         });

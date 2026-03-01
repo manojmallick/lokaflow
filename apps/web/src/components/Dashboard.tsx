@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Activity, Zap, Shield, Euro } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Activity, Zap, Shield, Euro, RefreshCw } from 'lucide-react';
 
 interface CostStats {
     today: {
@@ -22,15 +22,72 @@ interface CostStats {
     };
 }
 
+interface HistoryEntry {
+    timestamp: string;
+    tier: string;
+    model: string;
+    reason: string;
+    score: number;
+    costEur: number;
+    latencyMs: number;
+    node?: string;   // provider node, e.g. @192.168.2.65 or gemini
+}
+
+const API_BASE = () => localStorage.getItem('lf_api_url') || 'http://127.0.0.1:4141';
+
+function TierBadge({ tier }: { tier: string }) {
+    return <span className={`badge ${tier}`}>{tier}</span>;
+}
+
+function fmtTime(iso: string) {
+    try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+    catch { return iso; }
+}
+
+function fmtLatency(ms: number) {
+    if (ms >= 60000) return `${(ms / 60000).toFixed(1)}m`;
+    if (ms >= 1000)  return `${(ms / 1000).toFixed(1)}s`;
+    return `${ms}ms`;
+}
+
+function fmtNode(node: string) {
+    // Show IP part cleanly: "@192.168.2.65" → "192.168.2.65"
+    // "@localhost" → "localhost", "gemini" → "gemini"
+    return node.replace(/^@/, '');
+}
+
+function shortModel(m: string) {
+    // planned-by:X,executed-by:Y → show as "Y (delegated)"
+    const exec = m.match(/executed-by:([^,]+)/);
+    const plan = m.match(/planned-by:([^,]+)/);
+    if (exec && plan) return `${exec[1]} ← ${plan[1]}`;
+    return m;
+}
+
 export function Dashboard() {
     const [stats, setStats] = useState<CostStats | null>(null);
+    const [history, setHistory] = useState<HistoryEntry[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+
+    const fetchHistory = useCallback(async () => {
+        setHistoryLoading(true);
+        try {
+            const res = await fetch(`${API_BASE()}/v1/history?limit=15`);
+            if (res.ok) {
+                const data = await res.json();
+                setHistory(data.entries ?? []);
+            }
+        } catch { /* API offline */ }
+        finally { setHistoryLoading(false); }
+    }, []);
 
     useEffect(() => {
-        fetch('http://localhost:4141/v1/cost')
+        fetch(`${API_BASE()}/v1/cost`)
             .then(res => res.json())
             .then(data => setStats(data))
-            .catch(err => console.error("Could not fetch cost stats", err));
-    }, []);
+            .catch(err => console.error('Could not fetch cost stats', err));
+        fetchHistory();
+    }, [fetchHistory]);
 
     return (
         <div className="dashboard">
@@ -80,29 +137,37 @@ export function Dashboard() {
             </div>
 
             <div className="chart-container">
-                <h3>Recent Routing Decisions (Mock Data)</h3>
+                <div className="chart-header">
+                    <h3>Recent Routing Decisions</h3>
+                    <button className="btn-ghost" onClick={fetchHistory} disabled={historyLoading} title="Refresh">
+                        <RefreshCw size={13} className={historyLoading ? 'spin' : ''} />
+                        Refresh
+                    </button>
+                </div>
                 <div className="routing-table">
                     <div className="route-row header">
                         <div>Time</div>
-                        <div>Query Snippet</div>
-                        <div>Complexity</div>
                         <div>Tier</div>
-                        <div>Action</div>
+                        <div>Score</div>
+                        <div>Model</div>
+                        <div>Node / IP</div>
+                        <div>Latency</div>
+                        <div>Cost</div>
                     </div>
-                    <div className="route-row">
-                        <div>10:45 AM</div>
-                        <div>"What is the capital..."</div>
-                        <div><span className="badge local">0.12</span></div>
-                        <div>Local</div>
-                        <div>mistral:7b</div>
-                    </div>
-                    <div className="route-row">
-                        <div>10:40 AM</div>
-                        <div>"Analyze this 400..."</div>
-                        <div><span className="badge cloud">0.86</span></div>
-                        <div>Cloud</div>
-                        <div>gpt-4o</div>
-                    </div>
+                    {history.length === 0 && !historyLoading && (
+                        <div className="route-empty">No routing history yet — start the API and send a chat message.</div>
+                    )}
+                    {history.map((e, i) => (
+                        <div className="route-row" key={i}>
+                            <div className="route-time">{fmtTime(e.timestamp)}</div>
+                            <div><TierBadge tier={e.tier} /></div>
+                            <div className="route-score">{e.score.toFixed(2)}</div>
+                            <div className="route-model" title={e.model}>{shortModel(e.model)}</div>
+                            <div className="route-node" title={e.node}>{e.node ? fmtNode(e.node) : '—'}</div>
+                            <div className="route-latency">{fmtLatency(e.latencyMs)}</div>
+                            <div className="route-cost">{e.costEur > 0 ? `€${e.costEur.toFixed(5)}` : '—'}</div>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>

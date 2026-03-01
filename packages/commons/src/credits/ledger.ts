@@ -64,7 +64,7 @@ export class CreditLedger {
     }
 
     // Append-only — NEVER UPDATE or DELETE transactions
-    async record(tx: Omit<CreditTransaction, 'id' | 'balance'>): Promise<CreditTransaction> {
+    async record(tx: Omit<CreditTransaction, 'id' | 'balance' | 'timestamp'>): Promise<CreditTransaction> {
         const transactionId = randomUUID();
         const ts = new Date().toISOString();
 

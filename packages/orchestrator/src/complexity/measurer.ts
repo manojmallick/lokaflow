@@ -5,7 +5,7 @@
 // ComplexityMeasurer — Replaces the basic V1 classifier.
 // Scores tasks across 6 dimensions to select the optimal tier.
 
-import type { Message } from "../../../src/types.js";
+import type { Message } from "../types.js";
 import type { ComplexityProfile, TierLevel } from "../types.js";
 
 export interface HeuristicWeight {

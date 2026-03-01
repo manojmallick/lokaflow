@@ -5,8 +5,8 @@
 // GET /v1/cost — routing cost summary and savings dashboard data.
 
 import type { FastifyPluginAsync } from "fastify";
-import type { DashboardTracker } from "../@lokaflow/core/dashboard/tracker.js";
-import type { LokaFlowConfig } from "../@lokaflow/core/types.js";
+import type { DashboardTracker } from "@lokaflow/core";
+import type { LokaFlowConfig } from "@lokaflow/core";
 import type { CostSummary } from "../types.js";
 
 interface CostRouteOptions {
@@ -31,33 +31,40 @@ const costRoute: FastifyPluginAsync<CostRouteOptions> = async (fastify, opts) =>
             },
         },
         async (_request, reply): Promise<CostSummary> => {
-            const summary = opts.tracker.summary();
-            const dailyLimit = opts.config.budget?.dailyLimitEur ?? 2.0;
-            const monthlyLimit = opts.config.budget?.monthlyLimitEur ?? 20.0;
+            const todayReports = opts.tracker.getDailyReport(1);
+            const todayReport = todayReports[0] ?? { date: "", queries: 0, costEur: 0, savedEur: 0, models: [] };
+            const monthReports = opts.tracker.getDailyReport(30);
+            const monthTotalEur = monthReports.reduce((sum, r) => sum + r.costEur, 0);
+            const monthTotalQueries = monthReports.reduce((sum, r) => sum + r.queries, 0);
+            const monthSavingsEur = monthReports.reduce((sum, r) => sum + r.savedEur, 0);
+            const totals = opts.tracker.getTotals();
+            const dailyLimit = opts.config.budget.dailyEur;
+            const monthlyLimit = opts.config.budget.monthlyEur;
+            const localPercent = totals.totalQueries > 0
+                ? Math.round((totals.localQueries / totals.totalQueries) * 100)
+                : 0;
 
             return reply.send({
                 today: {
-                    totalEur: summary.today.totalEur,
-                    queryCount: summary.today.queryCount,
-                    localQueries: summary.today.localQueries,
-                    cloudQueries: summary.today.cloudQueries,
+                    totalEur: todayReport.costEur,
+                    queryCount: todayReport.queries,
+                    localQueries: totals.localQueries,
+                    cloudQueries: totals.totalQueries - totals.localQueries,
                 },
                 month: {
-                    totalEur: summary.month.totalEur,
-                    queryCount: summary.month.queryCount,
-                    savingsVsNaiveEur: summary.month.savingsVsNaiveEur,
-                    localPercent: summary.month.queryCount > 0
-                        ? Math.round((summary.month.localQueries / summary.month.queryCount) * 100)
-                        : 0,
+                    totalEur: monthTotalEur,
+                    queryCount: monthTotalQueries,
+                    savingsVsNaiveEur: monthSavingsEur,
+                    localPercent,
                 },
                 limits: {
                     dailyLimitEur: dailyLimit,
                     monthlyLimitEur: monthlyLimit,
                     dailyUsedPercent: dailyLimit > 0
-                        ? Math.round((summary.today.totalEur / dailyLimit) * 100)
+                        ? Math.round((todayReport.costEur / dailyLimit) * 100)
                         : 0,
                     monthlyUsedPercent: monthlyLimit > 0
-                        ? Math.round((summary.month.totalEur / monthlyLimit) * 100)
+                        ? Math.round((monthTotalEur / monthlyLimit) * 100)
                         : 0,
                 },
             } satisfies CostSummary);

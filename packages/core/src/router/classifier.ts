@@ -4,13 +4,14 @@
 /**
  * TaskClassifier — scores query complexity from 0.0 (trivial) to 1.0 (research-level).
  *
- * Six weighted signals:
- *   1. tokenCountScore    — normalised log of token count           weight=0.05
- *   2. questionComplexity — reasoning/comparison question words     weight=0.40
- *   3. technicalDensity   — code blocks, stack traces, file paths   weight=0.20
- *   4. reasoningKeywords  — analysis/explanation vocabulary         weight=0.25
- *   5. cotIndicators      — chain-of-thought markers                weight=0.05
- *   6. lengthBonus        — sentence count signal                   weight=0.05
+ * Seven weighted signals:
+ *   1. tokenCountScore    — normalised log of token count                weight=0.05
+ *   2. questionComplexity — reasoning/comparison question words          weight=0.20
+ *   3. technicalDensity   — code blocks, stack traces, file paths        weight=0.15
+ *   4. reasoningKeywords  — analysis/explanation vocabulary              weight=0.15
+ *   5. cotIndicators      — chain-of-thought markers                     weight=0.05
+ *   6. lengthBonus        — sentence count signal                        weight=0.10
+ *   7. codingTaskScore    — imperative coding tasks (create/build + lang) weight=0.30
  */
 
 import type { RoutingTier } from "../types.js";
@@ -96,6 +97,34 @@ const CODE_PATTERNS = [
   /TypeError|ReferenceError|SyntaxError/g,
 ];
 
+// ── Coding-task signals ───────────────────────────────────────────────────────
+
+/** Programming / scripting language names. */
+const CODING_LANGUAGES = [
+  "java", "python", "typescript", "javascript", "kotlin", "swift",
+  "rust", "golang", "go ", "c++", "c#", "csharp", "ruby", "php",
+  "scala", "dart", "bash", "shell", "sql", "r ", "matlab",
+  "react", "vue", "angular", "nextjs", "next.js", "spring", "django",
+  "fastapi", "express", "node", "nodejs",
+];
+
+/** Imperative creation/modification verbs. */
+const CODING_ACTIONS = [
+  "create", "build", "implement", "write", "develop", "generate",
+  "code", "program", "make", "construct", "design", "refactor",
+  "fix", "debug", "add", "update", "migrate", "deploy", "set up",
+  "integrate", "connect", "parse", "convert", "transform",
+];
+
+/** Coding artefact nouns. */
+const CODING_SUBJECTS = [
+  "program", "application", "app", "function", "method", "class",
+  "api", "endpoint", "service", "microservice", "component", "module",
+  "script", "cli", "tool", "library", "package", "plugin", "bot",
+  "algorithm", "data structure", "query", "schema", "model",
+  "pipeline", "workflow", "server", "client", "interface",
+];
+
 // ── Scoring helpers ───────────────────────────────────────────────────────────
 
 function countMatches(text: string, terms: string[]): number {
@@ -121,6 +150,44 @@ function countSentences(text: string): number {
 
 function clamp(value: number, min = 0, max = 1): number {
   return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Coding-task detector.
+ *
+ * Uses word-boundary matching for short terms (≤4 chars) to avoid false
+ * substring matches (e.g. "api" inside "capitals").
+ *
+ * Scoring:
+ *   - language + action + subject → 1.0  (e.g. "create java program")
+ *   - language + (action OR subject) → 0.90  (e.g. "java api endpoint")
+ *   - action + subject (no language) → 1.0  (e.g. "build a rest api")
+ *   - action only → 0.30  (e.g. "create a list" — no coding subject)
+ *   - subject only → 0.20 (e.g. "api response")
+ */
+function hasWordMatch(lower: string, terms: string[]): boolean {
+  return terms.some(term => {
+    const t = term.trimEnd(); // strip intentional trailing spaces like "go "
+    if (t.length <= 4) {
+      const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`(?:^|[^a-z])${escaped}(?:[^a-z]|$)`).test(lower);
+    }
+    return lower.includes(term);
+  });
+}
+
+function scoreCodingTask(text: string): number {
+  const lower = text.toLowerCase();
+  const hasLang    = hasWordMatch(lower, CODING_LANGUAGES);
+  const hasAction  = hasWordMatch(lower, CODING_ACTIONS);
+  const hasSubject = hasWordMatch(lower, CODING_SUBJECTS);
+
+  if (hasLang && hasAction && hasSubject) return 1.0;
+  if (hasLang && (hasAction || hasSubject))  return 1.0;
+  if (hasAction && hasSubject)               return 1.0;
+  if (hasAction)                             return 0.30;
+  if (hasSubject)                            return 0.20;
+  return 0;
 }
 
 // ── Classifier ────────────────────────────────────────────────────────────────
@@ -167,14 +234,19 @@ export class TaskClassifier {
     // Signal 6 — length bonus (multi-sentence queries are more complex)
     const lengthBonus = clamp(Math.max(0, sentences - 1) / 10);
 
+    // Signal 7 — imperative coding task (language + action + subject)
+    const codingTaskScore = scoreCodingTask(text);
+
     // Weighted sum
+    // Total weights = 0.05 + 0.20 + 0.15 + 0.15 + 0.05 + 0.10 + 0.30 = 1.00
     const score = clamp(
-      tokenCountScore * 0.15 +
-      questionComplexity * 0.25 +
-      technicalDensity * 0.2 +
-      reasoningKeywords * 0.2 +
-      cotIndicators * 0.1 +
-      lengthBonus * 0.1,
+      tokenCountScore  * 0.05 +
+      questionComplexity * 0.20 +
+      technicalDensity * 0.15 +
+      reasoningKeywords * 0.15 +
+      cotIndicators    * 0.05 +
+      lengthBonus      * 0.10 +
+      codingTaskScore  * 0.30,
     );
 
     return {
@@ -187,6 +259,7 @@ export class TaskClassifier {
         reasoningKeywords,
         cotIndicators,
         lengthBonus,
+        codingTaskScore,
       },
     };
   }

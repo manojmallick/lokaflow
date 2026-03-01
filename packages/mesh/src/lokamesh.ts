@@ -11,7 +11,7 @@
 //   await mesh.stop()
 
 import { readFileSync } from "fs";
-import { parse as parseYaml } from "js-yaml";
+import { load as parseYaml } from "js-yaml";
 import EventEmitter from "events";
 import { lokaMeshConfigSchema } from "./types/config.js";
 import { NodeRegistry } from "./discovery/registry.js";
@@ -27,6 +27,20 @@ import type { SchedulerResult } from "./scheduler/scheduler.js";
 interface LokaMeshOptions {
     configPath?: string;
     config?: LokaMeshConfig;
+}
+
+/** Convert snake_case keys to camelCase recursively (for YAML → Zod parsing). */
+function snakeToCamel(s: string): string {
+    return s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+}
+function deepCamelCase(obj: unknown): unknown {
+    if (Array.isArray(obj)) return obj.map(deepCamelCase);
+    if (obj !== null && typeof obj === "object") {
+        return Object.fromEntries(
+            Object.entries(obj as Record<string, unknown>).map(([k, v]) => [snakeToCamel(k), deepCamelCase(v)]),
+        );
+    }
+    return obj;
 }
 
 /** Result from mesh.nodes() — includes live state */
@@ -53,7 +67,7 @@ export class LokaMesh extends EventEmitter {
         } else if (opts.configPath) {
             const raw = readFileSync(opts.configPath, "utf-8");
             const parsed = parseYaml(raw) as unknown;
-            this.config = lokaMeshConfigSchema.parse(parsed);
+            this.config = lokaMeshConfigSchema.parse(deepCamelCase(parsed));
         } else {
             throw new Error("LokaMesh: provide either configPath or config");
         }
@@ -181,7 +195,7 @@ export class LokaMesh extends EventEmitter {
                     storageHub: nodeConf.storageHub,
                 },
                 lastSeen: new Date(0),
-                macAddress: nodeConf.macAddress,
+                ...(nodeConf.macAddress !== undefined ? { macAddress: nodeConf.macAddress } : {}),
                 tokensPerSec: nodeConf.gpuAcceleration ? 30 : 6,
                 queueDepth: 0,
                 thermalCelsius: 0,

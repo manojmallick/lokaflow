@@ -30,7 +30,7 @@ export class ChatgptParser implements ExportParser {
     parse(rawJson: string): ExportData {
         const data = JSON.parse(rawJson) as ChatgptConversation[];
 
-        if (!Array.isArray(data) || (data.length > 0 && typeof data[0].mapping !== "object")) {
+        if (!Array.isArray(data) || (data.length > 0 && typeof data[0]!.mapping !== "object")) {
             throw new Error("Invalid ChatGPT export format. Expected an array of conversations with a 'mapping' dictionary.");
         }
 

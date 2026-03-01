@@ -7,8 +7,9 @@ export const serveCommand = new Command("serve")
     .action(async (options) => {
         try {
             console.log(chalk.green(`[LokaFlow API] Booting on port ${options.port}...`));
-            const { startServer } = await import("@lokaflow/api/src/server.js");
-            await startServer(parseInt(options.port));
+            const { startServer } = await import("@lokaflow/api");
+            const { loadConfig } = await import("@lokaflow/core");
+            await startServer({ config: loadConfig(), port: parseInt(options.port) });
         } catch (e) {
             console.error(chalk.red("Failed to start the REST API"), e);
         }

@@ -25,7 +25,7 @@ export class ClaudeParser implements ExportParser {
     parse(rawJson: string): ExportData {
         const data = JSON.parse(rawJson) as ClaudeConversation[];
 
-        if (!Array.isArray(data) || (data.length > 0 && typeof data[0].chat_messages !== "object")) {
+        if (!Array.isArray(data) || (data.length > 0 && typeof data[0]!.chat_messages !== "object")) {
             throw new Error("Invalid Claude export format. Expected an array of conversations with a 'chat_messages' array.");
         }
 

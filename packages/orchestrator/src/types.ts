@@ -4,7 +4,12 @@
 // packages/orchestrator/src/types.ts
 // Core types for LokaOrchestrator — the V2 DAG-based complex task engine.
 
-import type { Message } from "../../src/types.js";
+// Local re-definition of the core Message type to avoid cross-package source imports.
+export type MessageRole = "user" | "assistant" | "system";
+export interface Message {
+    role: MessageRole;
+    content: string;
+}
 
 export type TierLevel =
     | "local_nano"     // 1–3B (TinyLlama)

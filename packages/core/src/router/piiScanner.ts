@@ -94,7 +94,7 @@ let nlpModule: {
 async function loadNlp(): Promise<typeof nlpModule> {
   if (nlpModule !== null) return nlpModule;
   try {
-    nlpModule = (await import("compromise")) as typeof nlpModule;
+    nlpModule = (await import("compromise")) as unknown as typeof nlpModule;
     return nlpModule;
   } catch {
     return null;

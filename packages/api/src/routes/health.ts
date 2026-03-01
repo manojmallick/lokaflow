@@ -5,9 +5,9 @@
 // GET /v1/health — provider status check
 
 import type { FastifyPluginAsync } from "fastify";
-import type { Router } from "../@lokaflow/core/router/router.js";
+import type { Router } from "@lokaflow/core";
 import type { HealthResponse, ProviderHealth } from "../types.js";
-import { VERSION } from "../@lokaflow/core/version.js";
+import { VERSION } from "@lokaflow/core";
 
 // uptime start
 const startedAt = Date.now();
@@ -27,7 +27,7 @@ const healthRoute: FastifyPluginAsync<HealthRouteOptions> = async (fastify, opts
             },
         },
         async (_request, reply): Promise<HealthResponse> => {
-            const providers = opts.router.providers;
+            const providers = opts.router.getProviders();
             const checks: ProviderHealth[] = [];
 
             // Check local providers
@@ -40,12 +40,19 @@ const healthRoute: FastifyPluginAsync<HealthRouteOptions> = async (fastify, opts
                 } catch {
                     status = "unavailable";
                 }
+                const latencyMs = Date.now() - start;
+                // Fetch installed models from Ollama (non-blocking, best-effort)
+                let models: string[] | undefined;
+                if (status !== "unavailable" && local.listModels) {
+                    models = await local.listModels().catch(() => []);
+                }
                 checks.push({
                     name: local.name,
                     tier: "local",
                     status,
-                    latencyMs: Date.now() - start,
-                    model: (local as any).model ?? undefined,
+                    latencyMs,
+                    ...((local as any).model != null ? { model: (local as any).model } : {}),
+                    ...(models && models.length > 0 ? { models } : {}),
                 });
             }
 

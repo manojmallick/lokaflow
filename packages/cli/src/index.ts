@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Load .env from the current working directory before anything else runs.
+// This makes GEMINI_API_KEY, ANTHROPIC_API_KEY, etc. available to all providers.
+import "dotenv/config";
+
 import { Command } from "commander";
 import chalk from "chalk";
 

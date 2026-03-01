@@ -12,7 +12,7 @@ import OpenAI from "openai";
 
 import { ProviderUnavailableError } from "../exceptions.js";
 import type { CompletionOptions, LLMResponse, Message } from "../types.js";
-import { requireEnvVar } from "@lokaflow/core/utils/security.js";
+import { requireEnvVar } from "../utils/security.js";
 import { BaseProvider } from "./base.js";
 
 // meta-llama/Llama-3.3-70B-Instruct-Turbo pricing in EUR (approx)

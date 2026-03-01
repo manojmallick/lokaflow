@@ -6,8 +6,8 @@
 // Returns the full routing decision with trace, complexity score, and cost estimate.
 
 import type { FastifyPluginAsync } from "fastify";
-import type { Router } from "../@lokaflow/core/router/router.js";
-import type { Message } from "../@lokaflow/core/types.js";
+import type { Router } from "@lokaflow/core";
+import type { Message } from "@lokaflow/core";
 import type { RouteRequest, RouteResponse } from "../types.js";
 
 interface RouteRouteOptions {
@@ -57,17 +57,16 @@ const routeRoute: FastifyPluginAsync<RouteRouteOptions> = async (fastify, opts) 
                 (acc, m) => acc + Math.ceil(m.content.length / 4),
                 0,
             );
-            const costEstimateEur =
-                (inputTokenEstimate / 1000) * decision.provider.costPer1kInputTokens;
+            const costEstimateEur = decision.response.costEur;
 
             return reply.send({
                 decision,
                 complexityScore: decision.complexityScore ?? 0,
                 tier: decision.tier,
-                model: decision.provider.name,
+                model: decision.model,
                 reason: decision.reason,
                 costEstimateEur: parseFloat(costEstimateEur.toFixed(6)),
-                trace: decision.trace ?? [],
+                trace: [],
             } satisfies RouteResponse);
         },
     );

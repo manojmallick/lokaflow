@@ -56,6 +56,6 @@ export class NodeSelector {
             return scoreB - scoreA;
         });
 
-        return sorted[0]; // Assume nodes.length > 0
+        return sorted[0]!; // Assume nodes.length > 0
     }
 }

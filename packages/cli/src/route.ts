@@ -12,7 +12,7 @@ export const routeCommand = new Command("route")
             } else {
                 console.log(chalk.blue("[LokaRoute] Starting standalone proxy layer..."));
             }
-            const { RouteProxy } = await import("@lokaflow/route");
+            const { ProxyServer } = await import("@lokaflow/route");
         } catch (e) {
             console.error(chalk.red("Failed to load LokaRoute"), e);
         }

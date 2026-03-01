@@ -5,8 +5,8 @@
 import Fastify, { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import chalk from "chalk";
 // Import dynamically or ignore the missing declarations if the root isn't compiled yet
-import type { Router } from "../../../src/router/router.js";
-import { loadConfig } from "../../../src/config/config.js";
+import type { Router } from "@lokaflow/core";
+import { loadConfig } from "@lokaflow/core";
 
 // We import the existing root logic to avoid EPERM file locking issues
 export class ProxyServer {
@@ -41,7 +41,10 @@ export class ProxyServer {
                 }
 
                 // Use the core LokaFlow router pipeline to process the request
-                const response = await this.router.route(lastMessage.content);
+                const response = await this.router.route([{
+                    role: (lastMessage.role ?? "user") as "user" | "assistant" | "system",
+                    content: lastMessage.content,
+                }]);
 
                 // Map the LokaFlow unified response back to the OpenAI format the client expects
                 // (For the MVP proxy, we return a standard non-streaming response)
@@ -49,30 +52,30 @@ export class ProxyServer {
                     id: `chatcmpl-${Date.now()}`,
                     object: "chat.completion",
                     created: Math.floor(Date.now() / 1000),
-                    model: response.metadata?.modelUsed || "routed-model",
+                    model: response.model,
                     choices: [
                         {
                             index: 0,
                             message: {
                                 role: "assistant",
-                                content: response.content,
+                                content: response.response.content,
                             },
                             logprobs: null,
                             finish_reason: "stop",
                         },
                     ],
                     usage: {
-                        prompt_tokens: response.metadata?.tokensEstimate || 0,
-                        completion_tokens: 0, // Mocked for now
-                        total_tokens: response.metadata?.tokensEstimate || 0,
+                        prompt_tokens: response.response.inputTokens,
+                        completion_tokens: response.response.outputTokens,
+                        total_tokens: response.response.inputTokens + response.response.outputTokens,
                     },
                 };
 
                 // Inject routing metadata headers so the client knows what happened (if they check)
-                reply.header("X-LokaRoute-Tier", response.metadata?.tier || "unknown");
-                reply.header("X-LokaRoute-Model", response.metadata?.modelUsed || "unknown");
-                reply.header("X-LokaRoute-Cost", response.metadata?.costUsd?.toFixed(4) ?? "0.0000");
-                reply.header("X-LokaRoute-Latency", response.metadata?.latencyMs?.toString() ?? "0");
+                reply.header("X-LokaRoute-Tier", response.tier);
+                reply.header("X-LokaRoute-Model", response.model);
+                reply.header("X-LokaRoute-Cost", response.response.costEur.toFixed(4));
+                reply.header("X-LokaRoute-Latency", response.response.latencyMs.toString());
 
                 return reply.send(format);
             } catch (err: any) {
@@ -86,9 +89,26 @@ export class ProxyServer {
     async start(): Promise<void> {
         try {
             const config = loadConfig();
-            // Dynamically import to bypass TS issues if the root isn't built
-            const { Router } = await import("../../../src/router/router.js");
-            this.router = new Router(config);
+            // Dynamically import providers and Router from core to support lazy loading
+            const {
+                Router,
+                OllamaProvider,
+                ClaudeProvider,
+                OpenAIProvider,
+            } = await import("@lokaflow/core");
+
+            const baseUrl = config.local.baseUrls[0] ?? "http://localhost:11434";
+            const localProvider = new OllamaProvider(baseUrl, config.local.defaultModel);
+
+            // Try Claude first, then fall back to OpenAI, else throw
+            let cloudProvider;
+            try {
+                cloudProvider = new ClaudeProvider(undefined, config.cloud.claudeModel);
+            } catch {
+                cloudProvider = new OpenAIProvider(undefined, config.cloud.openaiModel);
+            }
+
+            this.router = new Router({ local: [localProvider], cloud: cloudProvider }, config);
 
             await this.app.listen({ port: this.port, host: "127.0.0.1" }); // Always localhost only for privacy
             console.log(chalk.green(`\n🚀 LokaRoute Proxy listening on http://127.0.0.1:${this.port}`));

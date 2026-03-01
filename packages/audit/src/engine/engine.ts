@@ -9,7 +9,7 @@
 import type { AuditReport, ExportData } from "../types.js";
 
 // We dynamically import Orchestrator's ComplexityMeasurer to reuse its 6-dimensional scoring
-type ComplexityMeasurerType = import("../../../orchestrator/src/complexity/measurer.js").ComplexityMeasurer;
+type ComplexityMeasurerType = import("@lokaflow/orchestrator").ComplexityMeasurer;
 
 export class AuditEngine {
     private measurer: ComplexityMeasurerType | null = null;
@@ -17,7 +17,7 @@ export class AuditEngine {
     async analyze(data: ExportData, subscriptionEur: number = 22.99 /* ~ $20 + VAT */): Promise<AuditReport> {
         if (!this.measurer) {
             try {
-                const mod = await import("../../../orchestrator/src/complexity/measurer.js");
+                const mod = await import("@lokaflow/orchestrator");
                 this.measurer = new mod.ComplexityMeasurer();
             } catch (err) {
                 throw new Error("LokaOrchestrator package is required for AuditEngine. Is it built?");
@@ -51,6 +51,7 @@ export class AuditEngine {
             // Group messages by turn (User -> Assistant)
             for (let i = 0; i < conv.messages.length; i++) {
                 const msg = conv.messages[i];
+                if (!msg) continue;  // guard for noUncheckedIndexedAccess
                 if (msg.role !== "user") continue;
 
                 totalMessages++;

@@ -5,7 +5,7 @@
 // GET /v1/models — list available models in OpenAI-compatible format.
 
 import type { FastifyPluginAsync } from "fastify";
-import type { Router } from "../@lokaflow/core/router/router.js";
+import type { Router } from "@lokaflow/core";
 
 interface ModelsRouteOptions {
     router: Router;
@@ -38,7 +38,7 @@ const modelsRoute: FastifyPluginAsync<ModelsRouteOptions> = async (fastify, opts
             },
         },
         async (_request, reply): Promise<ModelsListResponse> => {
-            const providers = opts.router.providers;
+            const providers = opts.router.getProviders();
             const created = Math.floor(Date.now() / 1000);
             const models: OpenAIModel[] = [];
 

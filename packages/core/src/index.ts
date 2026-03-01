@@ -28,3 +28,5 @@ export { ClaudeProvider } from "./providers/claude.js";
 export { OpenAIProvider } from "./providers/openai.js";
 export { GeminiProvider } from "./providers/gemini.js";
 export { GroqProvider } from "./providers/groq.js";
+export { CostTracker, CostTracker as DashboardTracker } from "./dashboard/tracker.js";
+export { envVar, requireEnvVar, maskKey } from "./utils/security.js";

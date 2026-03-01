@@ -8,7 +8,7 @@
  * Returns [] gracefully if key is absent or the request fails.
  */
 
-import { envVar } from "../@lokaflow/core/utils/security.js";
+import { envVar } from "../../utils/security.js";
 import type { SearchResult } from "../../types.js";
 
 interface BraveWebResult {

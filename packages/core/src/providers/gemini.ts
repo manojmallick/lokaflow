@@ -15,7 +15,7 @@ import {
 
 import { ProviderUnavailableError } from "../exceptions.js";
 import type { CompletionOptions, LLMResponse, Message } from "../types.js";
-import { requireEnvVar } from "@lokaflow/core/utils/security.js";
+import { requireEnvVar } from "../utils/security.js";
 import { BaseProvider } from "./base.js";
 
 // gemini-2.0-flash pricing in EUR (approx)
@@ -33,12 +33,18 @@ function buildContents(messages: Message[]): { system: string | undefined; conte
   const system =
     systemMessages.length > 0 ? systemMessages.map((m) => m.content).join("\n") : undefined;
 
-  const contents: Content[] = messages
+  let contents: Content[] = messages
     .filter((m) => m.role !== "system")
     .map((m) => ({
       role: toGeminiRole(m.role),
       parts: [{ text: m.content }],
     }));
+
+  // Gemini requires conversations to start with a user turn.
+  // Strip leading model turns (e.g. injected welcome/greeting assistant messages).
+  while (contents.length > 0 && contents[0]!.role === "model") {
+    contents = contents.slice(1);
+  }
 
   return { system, contents };
 }
@@ -69,16 +75,29 @@ export class GeminiProvider extends BaseProvider {
     try {
       const model = this.genAI.getGenerativeModel({
         model: modelName,
-        systemInstruction: system,
+        ...(system ? { systemInstruction: system } : {}),
         generationConfig: {
           temperature: options.temperature ?? 0.7,
-          maxOutputTokens: options.maxTokens ?? 2048,
+          maxOutputTokens: options.maxTokens ?? 8192,  // 8192 allows full coding/analysis responses
         },
       });
 
       const result = await model.generateContent({ contents });
       const response = result.response;
-      const content = response.text();
+
+      // Read text directly from candidates to avoid response.text() silently
+      // returning "" when candidates exist but have an unexpected finish reason.
+      const candidate = response.candidates?.[0];
+      let content: string;
+      if (candidate?.content?.parts) {
+        content = candidate.content.parts
+          .map((p: { text?: string }) => p.text ?? "")
+          .join("");
+      } else {
+        // Fallback to SDK helper (may throw on bad finish reason)
+        content = response.text();
+      }
+
       const usage = response.usageMetadata;
       const inputTokens = usage?.promptTokenCount ?? 0;
       const outputTokens = usage?.candidatesTokenCount ?? 0;
@@ -104,10 +123,10 @@ export class GeminiProvider extends BaseProvider {
     try {
       const model = this.genAI.getGenerativeModel({
         model: modelName,
-        systemInstruction: system,
+        ...(system ? { systemInstruction: system } : {}),
         generationConfig: {
           temperature: options.temperature ?? 0.7,
-          maxOutputTokens: options.maxTokens ?? 2048,
+          maxOutputTokens: options.maxTokens ?? 8192,  // 8192 allows full responses
         },
       });
 

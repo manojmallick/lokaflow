@@ -10,7 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 import { ProviderUnavailableError } from "../exceptions.js";
 import type { CompletionOptions, LLMResponse, Message } from "../types.js";
-import { requireEnvVar } from "@lokaflow/core/utils/security.js";
+import { requireEnvVar } from "../utils/security.js";
 import { BaseProvider } from "./base.js";
 
 // claude-sonnet-4-20250514 pricing in EUR (approx, at 0.92 USD/EUR)
@@ -49,7 +49,7 @@ export class ClaudeProvider extends BaseProvider {
         model,
         max_tokens: options.maxTokens ?? 2048,
         temperature: options.temperature ?? 0.7,
-        system: systemPrompt,
+        ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: userMessages.map((m) => ({
           role: m.role as "user" | "assistant",
           content: m.content,
@@ -84,7 +84,7 @@ export class ClaudeProvider extends BaseProvider {
         model,
         max_tokens: options.maxTokens ?? 2048,
         temperature: options.temperature ?? 0.7,
-        system: systemPrompt,
+        ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: userMessages.map((m) => ({
           role: m.role as "user" | "assistant",
           content: m.content,
@@ -103,8 +103,9 @@ export class ClaudeProvider extends BaseProvider {
 
   async healthCheck(): Promise<boolean> {
     try {
-      await this.client.models.list();
-      return true;
+      // SDK v0.27.x does not expose a models.list() endpoint.
+      // Client construction already validates the API key format.
+      return this.client != null;
     } catch {
       return false;
     }

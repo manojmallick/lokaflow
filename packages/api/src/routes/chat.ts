@@ -7,8 +7,8 @@
 
 import type { FastifyPluginAsync } from "fastify";
 import { randomUUID } from "crypto";
-import type { Router } from "../@lokaflow/core/router/router.js";
-import type { Message } from "../@lokaflow/core/types.js";
+import type { Router } from "@lokaflow/core";
+import type { Message } from "@lokaflow/core";
 import type { OpenAIChatRequest, OpenAIChatResponse, OpenAIChatChunk } from "../types.js";
 
 interface ChatRouteOptions {
@@ -60,16 +60,28 @@ const chatRoute: FastifyPluginAsync<ChatRouteOptions> = async (fastify, opts) =>
 
             if (stream) {
                 // ── Streaming response (SSE) ──────────────────────────────────────
-                reply.raw.setHeader("Content-Type", "text/event-stream");
-                reply.raw.setHeader("Cache-Control", "no-cache");
-                reply.raw.setHeader("Connection", "keep-alive");
+                // Set ALL response headers via setHeader() — this stores them in
+                // Node's kOutHeaders map. The first reply.raw.write() call flushes
+                // them to the network atomically. Do NOT use writeHead() — it
+                // replaces previously stored headers set by the onRequest CORS hook.
+                // reply.hijack() tells Fastify not to call reply.send() after the
+                // handler returns, avoiding a double-send error.
+                const origin = (request.headers["origin"] as string) ?? "*";
+                reply.raw.setHeader("Access-Control-Allow-Origin",      origin);
+                reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
+                reply.raw.setHeader("Vary",                             "Origin");
+                reply.raw.setHeader("Content-Type",      "text/event-stream");
+                reply.raw.setHeader("Cache-Control",     "no-cache");
+                reply.raw.setHeader("Connection",        "keep-alive");
                 reply.raw.setHeader("X-Accel-Buffering", "no");
 
                 const decision = await opts.router.route(internalMessages);
-                const provider = decision.provider;
-                const modelName = provider.name;
+                const modelName = decision.model;
 
-                // Send role chunk first
+                // Hijack AFTER the async work so Fastify won't try to manage the reply
+                reply.hijack();
+
+                // Send role chunk first — this also flushes all the headers above
                 const roleChunk: OpenAIChatChunk = {
                     id: requestId,
                     object: "chat.completion.chunk",
@@ -79,54 +91,77 @@ const chatRoute: FastifyPluginAsync<ChatRouteOptions> = async (fastify, opts) =>
                 };
                 reply.raw.write(`data: ${JSON.stringify(roleChunk)}\n\n`);
 
-                try {
-                    for await (const token of provider.stream(internalMessages)) {
-                        if (reply.raw.destroyed) break;
-                        const chunk: OpenAIChatChunk = {
-                            id: requestId,
-                            object: "chat.completion.chunk",
-                            created,
-                            model: modelName,
-                            choices: [{ index: 0, delta: { content: token }, finish_reason: null }],
-                        };
-                        reply.raw.write(`data: ${JSON.stringify(chunk)}\n\n`);
-                    }
-                } finally {
-                    // Stop chunk + done sentinel
-                    const stopChunk: OpenAIChatChunk = {
-                        id: requestId,
-                        object: "chat.completion.chunk",
-                        created,
-                        model: modelName,
-                        choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
-                    };
-                    reply.raw.write(`data: ${JSON.stringify(stopChunk)}\n\n`);
-                    reply.raw.write("data: [DONE]\n\n");
-                    reply.raw.end();
-                }
+                // MVP: Router.route() executes completely; send response as a single content chunk
+                const contentChunk: OpenAIChatChunk = {
+                    id: requestId,
+                    object: "chat.completion.chunk",
+                    created,
+                    model: modelName,
+                    choices: [{ index: 0, delta: { content: decision.response.content }, finish_reason: null }],
+                };
+                reply.raw.write(`data: ${JSON.stringify(contentChunk)}\n\n`);
+
+                // Stop chunk
+                const stopChunk: OpenAIChatChunk = {
+                    id: requestId,
+                    object: "chat.completion.chunk",
+                    created,
+                    model: modelName,
+                    choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+                };
+                reply.raw.write(`data: ${JSON.stringify(stopChunk)}\n\n`);
+
+                // LokaFlow trace event — carries the full routing trace + decision metadata
+                const traceEvent = {
+                    _lokaflow_trace: {
+                        tier:           decision.tier,
+                        model:          decision.model,
+                        reason:         decision.reason,
+                        complexityScore: decision.complexityScore,
+                        inputTokens:    decision.response.inputTokens,
+                        outputTokens:   decision.response.outputTokens,
+                        costEur:        decision.response.costEur,
+                        latencyMs:      decision.response.latencyMs,
+                        trace:          decision.trace,
+                    },
+                };
+                reply.raw.write(`data: ${JSON.stringify(traceEvent)}\n\n`);
+
+                reply.raw.write("data: [DONE]\n\n");
+                reply.raw.end();
                 return;
             }
 
             // ── Non-streaming response ────────────────────────────────────────────
             const decision = await opts.router.route(internalMessages);
-            const response = await decision.provider.complete(internalMessages);
 
             return reply.send({
                 id: requestId,
                 object: "chat.completion",
                 created,
-                model: decision.provider.name,
+                model: decision.model,
                 choices: [
                     {
                         index: 0,
-                        message: { role: "assistant", content: response.content },
+                        message: { role: "assistant", content: decision.response.content },
                         finish_reason: "stop",
                     },
                 ],
                 usage: {
-                    prompt_tokens: response.inputTokens,
-                    completion_tokens: response.outputTokens,
-                    total_tokens: response.inputTokens + response.outputTokens,
+                    prompt_tokens: decision.response.inputTokens,
+                    completion_tokens: decision.response.outputTokens,
+                    total_tokens: decision.response.inputTokens + decision.response.outputTokens,
+                },
+                _lokaflow_trace: {
+                    tier:            decision.tier,
+                    model:           decision.model,
+                    reason:          decision.reason,
+                    complexityScore: decision.complexityScore,
+                    inputTokens:     decision.response.inputTokens,
+                    outputTokens:    decision.response.outputTokens,
+                    costEur:         decision.response.costEur,
+                    latencyMs:       decision.response.latencyMs,
+                    trace:           decision.trace,
                 },
             } satisfies OpenAIChatResponse);
         },

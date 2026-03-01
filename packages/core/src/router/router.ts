@@ -79,6 +79,11 @@ export class Router {
     }
   }
 
+  /** Expose providers so API layers (health check, model listing) can inspect them. */
+  getProviders(): RouterProviders {
+    return this.providers;
+  }
+
   /**
    * Route a conversation and return the full RoutingDecision with response.
    */
@@ -242,7 +247,7 @@ export class Router {
     let actualTier = tier;
 
     try {
-      if (tier === "specialist") {
+      if (tier === "specialist" && this.config.router.delegationEnabled === true) {
         trace.push(`[DELEGATION] Invoking specialist '${provider.name}' to generate ExecutionPlan...`);
         // 1. Ask Specialist to build a plan
         const planMessages: Message[] = [
@@ -257,9 +262,16 @@ export class Router {
         let plan: import("../types.js").ExecutionPlan | null = null;
 
         try {
-          // Clean up potential markdown formatting before parsing
-          const cleanedJson = planResponse.content.replace(/^```[a-z]*\n/, "").replace(/\n```$/, "").trim();
-          plan = JSON.parse(cleanedJson);
+          // Strip markdown code fences in any position (```json...``` or ```...```)
+          // then extract the first valid JSON object from the response.
+          let cleaned = planResponse.content
+            .replace(/```[a-z]*\n?/g, "")   // remove opening fences
+            .replace(/```/g, "")            // remove closing fences
+            .trim();
+          // Extract first { ... } block in case model adds extra prose
+          const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+          if (jsonMatch) cleaned = jsonMatch[0]!;
+          plan = JSON.parse(cleaned);
         } catch (e) {
           trace.push(`[DELEGATION] Failed to parse JSON plan from specialist. Falling back to standard execution. Output: ${planResponse.content.slice(0, 50)}...`);
         }
@@ -393,7 +405,7 @@ export class Router {
 
     appendLog(trace.join("\n") + "\n");
 
-    return { tier: actualTier, model: response.model, reason, complexityScore: score, response };
+    return { tier: actualTier, model: response.model, reason, complexityScore: score, response, trace };
   }
 
   private async executeRecursiveSubtask(
@@ -408,8 +420,12 @@ export class Router {
     const { score, tier } = this.classifier.classify(subtask);
     const start = Date.now();
 
-    // 1. If simple, or if we hit max recursion depth, execute!
-    if (tier === "local" || currentDepth >= maxDepth) {
+    // 1. Execute directly if:
+    //    a) task is local-tier (simple), OR
+    //    b) task is specialist-tier (medium complexity) — local coder handles this fine, OR
+    //    c) we've hit the recursion depth cap
+    // Only recurse into the planner for genuinely cloud-tier (very complex) subtasks.
+    if (tier !== "cloud" || currentDepth >= maxDepth) {
       let worker: BaseProvider;
 
       // If we hit max depth and it's STILL complex, run on Specialist to avoid gibberish output
@@ -464,7 +480,13 @@ export class Router {
     let nestedPlan: import("../types.js").ExecutionPlan | null = null;
 
     try {
-      const cleanedJson = planResponse.content.replace(/^```[a-z]*\n/, "").replace(/\n```$/, "").trim();
+      // Robust fence stripping + first-JSON-object extraction (same as top-level plan parser)
+      let cleanedJson = planResponse.content
+        .replace(/```[a-z]*\n?/g, "")
+        .replace(/```/g, "")
+        .trim();
+      const jsonBlock = cleanedJson.match(/\{[\s\S]*\}/);
+      if (jsonBlock) cleanedJson = jsonBlock[0]!;
       nestedPlan = JSON.parse(cleanedJson);
     } catch {
       trace.push(`  [Depth ${currentDepth}] Failed to parse nested JSON plan. Forcing execution...`);

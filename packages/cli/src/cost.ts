@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import { DashboardTracker } from "@lokaflow/core/dashboard/tracker.js";
+import { DashboardTracker } from "@lokaflow/core";
 
 export const costCommand = new Command("cost")
     .description("View LokaFlow routing cost metrics")

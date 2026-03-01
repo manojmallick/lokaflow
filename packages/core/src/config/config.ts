@@ -14,8 +14,8 @@ import { join } from "path";
 import yaml from "js-yaml";
 import { z } from "zod";
 
-import { ConfigurationError } from "./exceptions.js";
-import type { LokaFlowConfig } from "./types.js";
+import { ConfigurationError } from "../exceptions.js";
+import type { LokaFlowConfig } from "../types.js";
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -28,6 +28,10 @@ const RouterSchema = z.object({
   fallbackToLocal: z.boolean().default(true),
   specialistProvider: z.string().optional(),
   specialistModel: z.string().optional(),
+  // When true, specialist-tier queries are planned by the specialist model then
+  // executed in parallel across local workers. Disabled by default because local
+  // Ollama models are slow; specialist queries simply run directly on Gemini/etc.
+  delegationEnabled: z.boolean().default(false),
 });
 
 const BudgetSchema = z.object({
