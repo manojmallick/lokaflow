@@ -1675,6 +1675,33 @@ select.settings-input { cursor: pointer; }
 .tpl-form-textarea { min-height: 120px; resize: vertical; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
 .tpl-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 
+/* ───────── Scrollbars ───────── */
+/* WebKit / Blink (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
 /* ───────── Print / PDF ───────── */
 @media print {
   .chat-session-sidebar,
