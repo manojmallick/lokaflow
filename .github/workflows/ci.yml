@@ -65,6 +65,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build workspace packages
+        # TypeScript resolves @lokaflow/* via the compiled dist/ output. Build
+        # all backend packages (topological order handled by pnpm -r) so that
+        # declaration files exist before tsc --noEmit runs on consumers.
+        run: |
+          pnpm --filter @lokaflow/core \
+               --filter @lokaflow/commons \
+               --filter @lokaflow/swap \
+               --filter @lokaflow/mesh \
+               --filter @lokaflow/route \
+               --filter @lokaflow/orchestrator \
+               --filter @lokaflow/audit \
+               --filter @lokaflow/api \
+               -r run build
+
       - name: Run tsc
         run: pnpm run typecheck
 
