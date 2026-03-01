@@ -4,7 +4,10 @@
 
 export { ChargeGuardian } from "./guardian/charge-guardian.js";
 export { ThermalGuard, getThermalZone } from "./guardian/thermal-guard.js";
-export { applyBatteryConstraints, selectForWearLevelling } from "./balancer/battery-workload-balancer.js";
+export {
+  applyBatteryConstraints,
+  selectForWearLevelling,
+} from "./balancer/battery-workload-balancer.js";
 export { ClusterBatteryStore, HealthRecord } from "./store/cluster-battery-store.js";
 export { HealthTracker, DegradationRate } from "./tracker/health-tracker.js";
 export { BatteryReport } from "./report/battery-report.js";

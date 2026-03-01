@@ -18,7 +18,10 @@ export type { SchedulerResult } from "./scheduler/scheduler.js";
 // Battery Intelligence™
 export { ChargeGuardian } from "./battery/guardian/charge-guardian.js";
 export { ThermalGuard, getThermalZone } from "./battery/guardian/thermal-guard.js";
-export { applyBatteryConstraints, selectForWearLevelling } from "./battery/balancer/battery-workload-balancer.js";
+export {
+  applyBatteryConstraints,
+  selectForWearLevelling,
+} from "./battery/balancer/battery-workload-balancer.js";
 export { ClusterBatteryStore } from "./battery/store/cluster-battery-store.js";
 export type { HealthRecord } from "./battery/store/cluster-battery-store.js";
 export { HealthTracker } from "./battery/tracker/health-tracker.js";

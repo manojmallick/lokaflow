@@ -10,29 +10,32 @@ import { homedir } from "os";
 import { join } from "path";
 
 export class InsufficientCreditsError extends Error {
-    constructor(public balance: number, public required: number) {
-        super(`[LokaCommons] Insufficient credits. Balance: ${balance}, Required: ${required}`);
-    }
+  constructor(
+    public balance: number,
+    public required: number,
+  ) {
+    super(`[LokaCommons] Insufficient credits. Balance: ${balance}, Required: ${required}`);
+  }
 }
 
 export class CreditLedger {
-    private db: Database.Database;
+  private db: Database.Database;
 
-    constructor(dbPath?: string) {
-        if (!dbPath) {
-            const configDir = join(homedir(), ".lokaflow");
-            if (!existsSync(configDir)) {
-                mkdirSync(configDir, { recursive: true });
-            }
-            dbPath = join(configDir, "commons.db");
-        }
-
-        this.db = new Database(dbPath);
-        this.initSchema();
+  constructor(dbPath?: string) {
+    if (!dbPath) {
+      const configDir = join(homedir(), ".lokaflow");
+      if (!existsSync(configDir)) {
+        mkdirSync(configDir, { recursive: true });
+      }
+      dbPath = join(configDir, "commons.db");
     }
 
-    private initSchema() {
-        this.db.exec(`
+    this.db = new Database(dbPath);
+    this.initSchema();
+  }
+
+  private initSchema() {
+    this.db.exec(`
       CREATE TABLE IF NOT EXISTS credit_transactions (
         id TEXT PRIMARY KEY,
         timestamp TEXT NOT NULL,
@@ -56,101 +59,139 @@ export class CreditLedger {
         balance INTEGER NOT NULL DEFAULT 0
       );
     `);
+  }
+
+  async getBalance(memberId: string): Promise<number> {
+    const row = this.db
+      .prepare(`SELECT balance FROM member_balances WHERE member_id = ?`)
+      .get(memberId) as any;
+    return row ? row.balance : 0;
+  }
+
+  // Append-only — NEVER UPDATE or DELETE transactions
+  async record(
+    tx: Omit<CreditTransaction, "id" | "balance" | "timestamp">,
+  ): Promise<CreditTransaction> {
+    const transactionId = randomUUID();
+    const ts = new Date().toISOString();
+
+    // Check negatives before committing
+    if (tx.amount < 0 && tx.type === "spend") {
+      const currentBalance = await this.getBalance(tx.memberId);
+      if (currentBalance + tx.amount < 0) {
+        throw new InsufficientCreditsError(currentBalance, Math.abs(tx.amount));
+      }
     }
 
-    async getBalance(memberId: string): Promise<number> {
-        const row = this.db.prepare(`SELECT balance FROM member_balances WHERE member_id = ?`).get(memberId) as any;
-        return row ? row.balance : 0;
-    }
-
-    // Append-only — NEVER UPDATE or DELETE transactions
-    async record(tx: Omit<CreditTransaction, 'id' | 'balance' | 'timestamp'>): Promise<CreditTransaction> {
-        const transactionId = randomUUID();
-        const ts = new Date().toISOString();
-
-        // Check negatives before committing
-        if (tx.amount < 0 && tx.type === 'spend') {
-            const currentBalance = await this.getBalance(tx.memberId);
-            if (currentBalance + tx.amount < 0) {
-                throw new InsufficientCreditsError(currentBalance, Math.abs(tx.amount));
-            }
-        }
-
-        const resultTx: CreditTransaction = await new Promise((resolve, reject) => {
-            try {
-                this.db.transaction(() => {
-                    // 1. Update current balance fast-view
-                    this.db.prepare(`
+    const resultTx: CreditTransaction = await new Promise((resolve, reject) => {
+      try {
+        this.db.transaction(() => {
+          // 1. Update current balance fast-view
+          this.db
+            .prepare(
+              `
                   INSERT INTO member_balances (member_id, balance) VALUES (?, ?)
                   ON CONFLICT(member_id) DO UPDATE SET balance = balance + ?
-                `).run(tx.memberId, tx.amount, tx.amount);
+                `,
+            )
+            .run(tx.memberId, tx.amount, tx.amount);
 
-                    // 2. Fetch resulting balance inside lock
-                    const newBalance = (this.db.prepare(`SELECT balance FROM member_balances WHERE member_id = ?`).get(tx.memberId) as any).balance;
+          // 2. Fetch resulting balance inside lock
+          const newBalance = (
+            this.db
+              .prepare(`SELECT balance FROM member_balances WHERE member_id = ?`)
+              .get(tx.memberId) as any
+          ).balance;
 
-                    // 3. Append to immutable ledger
-                    this.db.prepare(`
+          // 3. Append to immutable ledger
+          this.db
+            .prepare(
+              `
                   INSERT INTO credit_transactions 
                   (id, timestamp, member_id, type, amount, token_count, task_id, node_id, balance, memo)
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `).run(
-                        transactionId, ts, tx.memberId, tx.type, tx.amount,
-                        tx.tokenCount, tx.taskId, tx.nodeId, newBalance, tx.memo
-                    );
+                `,
+            )
+            .run(
+              transactionId,
+              ts,
+              tx.memberId,
+              tx.type,
+              tx.amount,
+              tx.tokenCount,
+              tx.taskId,
+              tx.nodeId,
+              newBalance,
+              tx.memo,
+            );
 
-                    resolve({
-                        ...tx,
-                        id: transactionId,
-                        timestamp: ts,
-                        balance: newBalance
-                    });
-                })();
-            } catch (e) { reject(e); }
-        });
-
-        return resultTx;
-    }
-
-    async getHistory(memberId: string, limit: number = 50): Promise<CreditTransaction[]> {
-        return this.db.prepare(`
-        SELECT * FROM credit_transactions WHERE member_id = ? ORDER BY timestamp DESC LIMIT ?
-     `).all(memberId, limit).map((r: any) => ({
-            id: r.id,
-            timestamp: r.timestamp,
-            memberId: r.member_id,
-            type: r.type,
-            amount: r.amount,
-            tokenCount: r.token_count,
-            taskId: r.task_id,
-            nodeId: r.node_id,
-            balance: r.balance,
-            memo: r.memo
-        }));
-    }
-
-    async transfer(fromMemberId: string, toMemberId: string, amount: number, memo: string): Promise<void> {
-        // Must be atomic
-        this.db.transaction(() => {
-            this.record({ memberId: fromMemberId, type: 'spend', amount: -amount, memo });
-            this.record({ memberId: toMemberId, type: 'earn', amount: amount, memo });
+          resolve({
+            ...tx,
+            id: transactionId,
+            timestamp: ts,
+            balance: newBalance,
+          });
         })();
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    return resultTx;
+  }
+
+  async getHistory(memberId: string, limit: number = 50): Promise<CreditTransaction[]> {
+    return this.db
+      .prepare(
+        `
+        SELECT * FROM credit_transactions WHERE member_id = ? ORDER BY timestamp DESC LIMIT ?
+     `,
+      )
+      .all(memberId, limit)
+      .map((r: any) => ({
+        id: r.id,
+        timestamp: r.timestamp,
+        memberId: r.member_id,
+        type: r.type,
+        amount: r.amount,
+        tokenCount: r.token_count,
+        taskId: r.task_id,
+        nodeId: r.node_id,
+        balance: r.balance,
+        memo: r.memo,
+      }));
+  }
+
+  async transfer(
+    fromMemberId: string,
+    toMemberId: string,
+    amount: number,
+    memo: string,
+  ): Promise<void> {
+    // Must be atomic
+    this.db.transaction(() => {
+      this.record({ memberId: fromMemberId, type: "spend", amount: -amount, memo });
+      this.record({ memberId: toMemberId, type: "earn", amount: amount, memo });
+    })();
+  }
+
+  async audit(): Promise<LedgerAuditResult> {
+    // 1. Check for negative balances
+    const negatives = this.db
+      .prepare(`SELECT member_id, balance FROM member_balances WHERE balance < 0`)
+      .all() as any[];
+
+    const issues: string[] = [];
+    for (const neg of negatives) {
+      issues.push(`Member ${neg.member_id} has forbidden negative balance: ${neg.balance}.`);
     }
 
-    async audit(): Promise<LedgerAuditResult> {
-        // 1. Check for negative balances
-        const negatives = this.db.prepare(`SELECT member_id, balance FROM member_balances WHERE balance < 0`).all() as any[];
+    // 2. We could replay ledger calculations to verify `member_balances` table here as well
 
-        const issues: string[] = [];
-        for (const neg of negatives) {
-            issues.push(`Member ${neg.member_id} has forbidden negative balance: ${neg.balance}.`);
-        }
-
-        // 2. We could replay ledger calculations to verify `member_balances` table here as well
-
-        return {
-            passed: negatives.length === 0,
-            negativBalanceCount: negatives.length,
-            issues
-        };
-    }
+    return {
+      passed: negatives.length === 0,
+      negativBalanceCount: negatives.length,
+      issues,
+    };
+  }
 }

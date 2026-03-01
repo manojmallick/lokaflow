@@ -7,47 +7,47 @@
 export type ProviderType = "chatgpt" | "claude";
 
 export interface ChatMessage {
-    role: "user" | "assistant" | "system" | "tool";
-    content: string;
-    timestampMs: number;
+  role: "user" | "assistant" | "system" | "tool";
+  content: string;
+  timestampMs: number;
 }
 
 export interface ConversationInfo {
-    id: string;
-    title: string;
-    createTimeMs: number;
-    updateTimeMs: number;
-    messages: ChatMessage[];
+  id: string;
+  title: string;
+  createTimeMs: number;
+  updateTimeMs: number;
+  messages: ChatMessage[];
 }
 
 export interface ExportData {
-    provider: ProviderType;
-    exportDateMs: number;
-    conversations: ConversationInfo[];
+  provider: ProviderType;
+  exportDateMs: number;
+  conversations: ConversationInfo[];
 }
 
 export interface AuditReport {
-    provider: ProviderType;
-    periodDays: number;
-    totalConversations: number;
-    totalUserMessages: number;
-    totalTokensEstimated: number;
+  provider: ProviderType;
+  periodDays: number;
+  totalConversations: number;
+  totalUserMessages: number;
+  totalTokensEstimated: number;
 
-    // Categorization
-    complexQueriesCount: number;
-    simpleQueriesCount: number;
+  // Categorization
+  complexQueriesCount: number;
+  simpleQueriesCount: number;
 
-    // Financial analysis
-    currentMonthlySubscriptionEur: number;
-    lokaflowEquivalentCostEur: number;
-    monthlySavingsEur: number;
+  // Financial analysis
+  currentMonthlySubscriptionEur: number;
+  lokaflowEquivalentCostEur: number;
+  monthlySavingsEur: number;
 
-    // Recommendation
-    canCancel: boolean;
-    reasoning: string;
+  // Recommendation
+  canCancel: boolean;
+  reasoning: string;
 }
 
 // Simple internal interface for parsers
 export interface ExportParser {
-    parse(rawJson: string): ExportData;
+  parse(rawJson: string): ExportData;
 }

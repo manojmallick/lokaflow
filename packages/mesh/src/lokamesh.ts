@@ -25,183 +25,191 @@ import type { LokaMeshConfig } from "./types/config.js";
 import type { SchedulerResult } from "./scheduler/scheduler.js";
 
 interface LokaMeshOptions {
-    configPath?: string;
-    config?: LokaMeshConfig;
+  configPath?: string;
+  config?: LokaMeshConfig;
 }
 
 /** Convert snake_case keys to camelCase recursively (for YAML → Zod parsing). */
 function snakeToCamel(s: string): string {
-    return s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+  return s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 }
 function deepCamelCase(obj: unknown): unknown {
-    if (Array.isArray(obj)) return obj.map(deepCamelCase);
-    if (obj !== null && typeof obj === "object") {
-        return Object.fromEntries(
-            Object.entries(obj as Record<string, unknown>).map(([k, v]) => [snakeToCamel(k), deepCamelCase(v)]),
-        );
-    }
-    return obj;
+  if (Array.isArray(obj)) return obj.map(deepCamelCase);
+  if (obj !== null && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [
+        snakeToCamel(k),
+        deepCamelCase(v),
+      ]),
+    );
+  }
+  return obj;
 }
 
 /** Result from mesh.nodes() — includes live state */
 export interface MeshStatus {
-    nodes: MeshNode[];
-    onlineCount: number;
-    sleepingCount: number;
-    unreachableCount: number;
+  nodes: MeshNode[];
+  onlineCount: number;
+  sleepingCount: number;
+  unreachableCount: number;
 }
 
 export class LokaMesh extends EventEmitter {
-    private readonly registry = new NodeRegistry();
-    private scheduler: MeshScheduler;
-    private discovery: MdnsDiscovery | null = null;
-    private healthChecker: NodeHealthChecker;
-    private greenReport: GreenReport;
-    private readonly config: LokaMeshConfig;
-    private running = false;
+  private readonly registry = new NodeRegistry();
+  private scheduler: MeshScheduler;
+  private discovery: MdnsDiscovery | null = null;
+  private healthChecker: NodeHealthChecker;
+  private greenReport: GreenReport;
+  private readonly config: LokaMeshConfig;
+  private running = false;
 
-    constructor(opts: LokaMeshOptions = {}) {
-        super();
-        if (opts.config) {
-            this.config = opts.config;
-        } else if (opts.configPath) {
-            const raw = readFileSync(opts.configPath, "utf-8");
-            const parsed = parseYaml(raw) as unknown;
-            this.config = lokaMeshConfigSchema.parse(deepCamelCase(parsed));
-        } else {
-            throw new Error("LokaMesh: provide either configPath or config");
-        }
-
-        this.scheduler = new MeshScheduler(this.registry);
-        this.healthChecker = new NodeHealthChecker(
-            this.registry,
-            this.config.healthCheckIntervalMs,
-        );
-
-        const carbonClient = new ElectricityMapsClient(
-            this.config.green.carbonApiKey,
-            this.config.green.zone,
-        );
-        this.greenReport = new GreenReport(carbonClient);
-
-        // Seed registry from config (static nodes — mDNS will update IPs dynamically)
-        this._seedFromConfig();
+  constructor(opts: LokaMeshOptions = {}) {
+    super();
+    if (opts.config) {
+      this.config = opts.config;
+    } else if (opts.configPath) {
+      const raw = readFileSync(opts.configPath, "utf-8");
+      const parsed = parseYaml(raw) as unknown;
+      this.config = lokaMeshConfigSchema.parse(deepCamelCase(parsed));
+    } else {
+      throw new Error("LokaMesh: provide either configPath or config");
     }
 
-    /** Start discovery, health checks, and sleep state machines. */
-    async start(): Promise<void> {
-        if (this.running) return;
-        this.running = true;
+    this.scheduler = new MeshScheduler(this.registry);
+    this.healthChecker = new NodeHealthChecker(this.registry, this.config.healthCheckIntervalMs);
 
-        // Find this node's config entry (by hostname or role=orchestrator)
-        const selfNode = this.config.nodes.find((n) => n.role === "orchestrator");
-        if (selfNode) {
-            this.discovery = new MdnsDiscovery(this.registry, {
-                nodeId: selfNode.id,
-                nodeName: selfNode.name,
-                nodeRole: selfNode.role,
-                port: selfNode.port,
-                models: selfNode.models,
-                ramGb: selfNode.ramGb,
-                gpuAcceleration: selfNode.gpuAcceleration,
-                inferenceWatts: selfNode.inferenceWatts,
-                discoveryIntervalMs: this.config.discoveryIntervalMs,
-            });
+    const carbonClient = new ElectricityMapsClient(
+      this.config.green.carbonApiKey,
+      this.config.green.zone,
+    );
+    this.greenReport = new GreenReport(carbonClient);
 
-            this.discovery.on("discovered", (node: MeshNode) => {
-                this.emit("discovered", node);
-            });
-            this.discovery.on("warn", (msg: string) => {
-                this.emit("warn", msg);
-            });
+    // Seed registry from config (static nodes — mDNS will update IPs dynamically)
+    this._seedFromConfig();
+  }
 
-            await this.discovery.start();
-        }
+  /** Start discovery, health checks, and sleep state machines. */
+  async start(): Promise<void> {
+    if (this.running) return;
+    this.running = true;
 
-        // Initial health check + start periodic checks
-        await this.healthChecker.checkAll();
-        this.healthChecker.start();
+    // Find this node's config entry (by hostname or role=orchestrator)
+    const selfNode = this.config.nodes.find((n) => n.role === "orchestrator");
+    if (selfNode) {
+      this.discovery = new MdnsDiscovery(this.registry, {
+        nodeId: selfNode.id,
+        nodeName: selfNode.name,
+        nodeRole: selfNode.role,
+        port: selfNode.port,
+        models: selfNode.models,
+        ramGb: selfNode.ramGb,
+        gpuAcceleration: selfNode.gpuAcceleration,
+        inferenceWatts: selfNode.inferenceWatts,
+        discoveryIntervalMs: this.config.discoveryIntervalMs,
+      });
+
+      this.discovery.on("discovered", (node: MeshNode) => {
+        this.emit("discovered", node);
+      });
+      this.discovery.on("warn", (msg: string) => {
+        this.emit("warn", msg);
+      });
+
+      await this.discovery.start();
     }
 
-    /** Graceful shutdown — stops discovery, health checks, and timers. */
-    async stop(): Promise<void> {
-        this.running = false;
-        this.healthChecker.stop();
-        if (this.discovery) await this.discovery.stop();
-    }
+    // Initial health check + start periodic checks
+    await this.healthChecker.checkAll();
+    this.healthChecker.start();
+  }
 
-    /**
-     * Select the best available node for a task.
-     * Returns null if no suitable node is available right now.
-     */
-    selectNode(task: Pick<MeshTask, "modelRequired" | "priority" | "estimatedTokens">): SchedulerResult | null {
-        const fullTask: MeshTask = {
-            id: crypto.randomUUID(),
-            timeoutMs: this.config.taskTimeoutMs,
-            messages: [],
-            ...task,
-        };
-        return this.scheduler.selectNode(fullTask);
-    }
+  /** Graceful shutdown — stops discovery, health checks, and timers. */
+  async stop(): Promise<void> {
+    this.running = false;
+    this.healthChecker.stop();
+    if (this.discovery) await this.discovery.stop();
+  }
 
-    /** Send Wake-on-LAN to a sleeping node by node ID. */
-    async wake(nodeId: string): Promise<boolean> {
-        const node = this.registry.get(nodeId);
-        if (!node) return false;
-        if (!node.macAddress) return false;
+  /**
+   * Select the best available node for a task.
+   * Returns null if no suitable node is available right now.
+   */
+  selectNode(
+    task: Pick<MeshTask, "modelRequired" | "priority" | "estimatedTokens">,
+  ): SchedulerResult | null {
+    const fullTask: MeshTask = {
+      id: crypto.randomUUID(),
+      timeoutMs: this.config.taskTimeoutMs,
+      messages: [],
+      ...task,
+    };
+    return this.scheduler.selectNode(fullTask);
+  }
 
-        await sendWol(node.macAddress);
-        this.registry.setState(nodeId, "waking");
-        this.emit("waking", nodeId);
-        return true;
-    }
+  /** Send Wake-on-LAN to a sleeping node by node ID. */
+  async wake(nodeId: string): Promise<boolean> {
+    const node = this.registry.get(nodeId);
+    if (!node) return false;
+    if (!node.macAddress) return false;
 
-    /** Current status of all nodes. */
-    nodes(): MeshStatus {
-        const all = this.registry.all();
-        return {
-            nodes: all,
-            onlineCount: all.filter((n) => n.state === "online" || n.state === "busy").length,
-            sleepingCount: all.filter((n) => n.state === "light_sleep" || n.state === "deep_sleep" || n.state === "waking").length,
-            unreachableCount: all.filter((n) => n.state === "unreachable").length,
-        };
-    }
+    await sendWol(node.macAddress);
+    this.registry.setState(nodeId, "waking");
+    this.emit("waking", nodeId);
+    return true;
+  }
 
-    /** Get a green CO₂ savings report. */
-    async greenSavings(localWatts: number, inferenceSeconds: number, cloudTokensReplaced: number) {
-        return this.greenReport.calculate(localWatts, inferenceSeconds, cloudTokensReplaced);
-    }
+  /** Current status of all nodes. */
+  nodes(): MeshStatus {
+    const all = this.registry.all();
+    return {
+      nodes: all,
+      onlineCount: all.filter((n) => n.state === "online" || n.state === "busy").length,
+      sleepingCount: all.filter(
+        (n) => n.state === "light_sleep" || n.state === "deep_sleep" || n.state === "waking",
+      ).length,
+      unreachableCount: all.filter((n) => n.state === "unreachable").length,
+    };
+  }
 
-    /** Format a green report as a terminal string. */
-    async formatGreenReport(localWatts: number, inferenceSeconds: number, cloudTokens: number): Promise<string> {
-        const metrics = await this.greenReport.calculate(localWatts, inferenceSeconds, cloudTokens);
-        return this.greenReport.formatReport(metrics);
-    }
+  /** Get a green CO₂ savings report. */
+  async greenSavings(localWatts: number, inferenceSeconds: number, cloudTokensReplaced: number) {
+    return this.greenReport.calculate(localWatts, inferenceSeconds, cloudTokensReplaced);
+  }
 
-    private _seedFromConfig(): void {
-        for (const nodeConf of this.config.nodes) {
-            const node: MeshNode = {
-                id: nodeConf.id,
-                name: nodeConf.name,
-                role: nodeConf.role,
-                state: "unreachable", // health check will update
-                ip: nodeConf.ip === "auto" ? "" : nodeConf.ip,
-                port: nodeConf.port,
-                capabilities: {
-                    models: nodeConf.models,
-                    ramGb: nodeConf.ramGb,
-                    gpuAcceleration: nodeConf.gpuAcceleration,
-                    inferenceWatts: nodeConf.inferenceWatts,
-                    storageHub: nodeConf.storageHub,
-                },
-                lastSeen: new Date(0),
-                ...(nodeConf.macAddress !== undefined ? { macAddress: nodeConf.macAddress } : {}),
-                tokensPerSec: nodeConf.gpuAcceleration ? 30 : 6,
-                queueDepth: 0,
-                thermalCelsius: 0,
-                batteryStressScore: 0,
-            };
-            this.registry.upsert(node);
-        }
+  /** Format a green report as a terminal string. */
+  async formatGreenReport(
+    localWatts: number,
+    inferenceSeconds: number,
+    cloudTokens: number,
+  ): Promise<string> {
+    const metrics = await this.greenReport.calculate(localWatts, inferenceSeconds, cloudTokens);
+    return this.greenReport.formatReport(metrics);
+  }
+
+  private _seedFromConfig(): void {
+    for (const nodeConf of this.config.nodes) {
+      const node: MeshNode = {
+        id: nodeConf.id,
+        name: nodeConf.name,
+        role: nodeConf.role,
+        state: "unreachable", // health check will update
+        ip: nodeConf.ip === "auto" ? "" : nodeConf.ip,
+        port: nodeConf.port,
+        capabilities: {
+          models: nodeConf.models,
+          ramGb: nodeConf.ramGb,
+          gpuAcceleration: nodeConf.gpuAcceleration,
+          inferenceWatts: nodeConf.inferenceWatts,
+          storageHub: nodeConf.storageHub,
+        },
+        lastSeen: new Date(0),
+        ...(nodeConf.macAddress !== undefined ? { macAddress: nodeConf.macAddress } : {}),
+        tokensPerSec: nodeConf.gpuAcceleration ? 30 : 6,
+        queueDepth: 0,
+        thermalCelsius: 0,
+        batteryStressScore: 0,
+      };
+      this.registry.upsert(node);
     }
+  }
 }

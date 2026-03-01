@@ -101,28 +101,99 @@ const CODE_PATTERNS = [
 
 /** Programming / scripting language names. */
 const CODING_LANGUAGES = [
-  "java", "python", "typescript", "javascript", "kotlin", "swift",
-  "rust", "golang", "go ", "c++", "c#", "csharp", "ruby", "php",
-  "scala", "dart", "bash", "shell", "sql", "r ", "matlab",
-  "react", "vue", "angular", "nextjs", "next.js", "spring", "django",
-  "fastapi", "express", "node", "nodejs",
+  "java",
+  "python",
+  "typescript",
+  "javascript",
+  "kotlin",
+  "swift",
+  "rust",
+  "golang",
+  "go ",
+  "c++",
+  "c#",
+  "csharp",
+  "ruby",
+  "php",
+  "scala",
+  "dart",
+  "bash",
+  "shell",
+  "sql",
+  "r ",
+  "matlab",
+  "react",
+  "vue",
+  "angular",
+  "nextjs",
+  "next.js",
+  "spring",
+  "django",
+  "fastapi",
+  "express",
+  "node",
+  "nodejs",
 ];
 
 /** Imperative creation/modification verbs. */
 const CODING_ACTIONS = [
-  "create", "build", "implement", "write", "develop", "generate",
-  "code", "program", "make", "construct", "design", "refactor",
-  "fix", "debug", "add", "update", "migrate", "deploy", "set up",
-  "integrate", "connect", "parse", "convert", "transform",
+  "create",
+  "build",
+  "implement",
+  "write",
+  "develop",
+  "generate",
+  "code",
+  "program",
+  "make",
+  "construct",
+  "design",
+  "refactor",
+  "fix",
+  "debug",
+  "add",
+  "update",
+  "migrate",
+  "deploy",
+  "set up",
+  "integrate",
+  "connect",
+  "parse",
+  "convert",
+  "transform",
 ];
 
 /** Coding artefact nouns. */
 const CODING_SUBJECTS = [
-  "program", "application", "app", "function", "method", "class",
-  "api", "endpoint", "service", "microservice", "component", "module",
-  "script", "cli", "tool", "library", "package", "plugin", "bot",
-  "algorithm", "data structure", "query", "schema", "model",
-  "pipeline", "workflow", "server", "client", "interface",
+  "program",
+  "application",
+  "app",
+  "function",
+  "method",
+  "class",
+  "api",
+  "endpoint",
+  "service",
+  "microservice",
+  "component",
+  "module",
+  "script",
+  "cli",
+  "tool",
+  "library",
+  "package",
+  "plugin",
+  "bot",
+  "algorithm",
+  "data structure",
+  "query",
+  "schema",
+  "model",
+  "pipeline",
+  "workflow",
+  "server",
+  "client",
+  "interface",
 ];
 
 // ── Scoring helpers ───────────────────────────────────────────────────────────
@@ -166,7 +237,7 @@ function clamp(value: number, min = 0, max = 1): number {
  *   - subject only → 0.20 (e.g. "api response")
  */
 function hasWordMatch(lower: string, terms: string[]): boolean {
-  return terms.some(term => {
+  return terms.some((term) => {
     const t = term.trimEnd(); // strip intentional trailing spaces like "go "
     if (t.length <= 4) {
       const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -178,15 +249,15 @@ function hasWordMatch(lower: string, terms: string[]): boolean {
 
 function scoreCodingTask(text: string): number {
   const lower = text.toLowerCase();
-  const hasLang    = hasWordMatch(lower, CODING_LANGUAGES);
-  const hasAction  = hasWordMatch(lower, CODING_ACTIONS);
+  const hasLang = hasWordMatch(lower, CODING_LANGUAGES);
+  const hasAction = hasWordMatch(lower, CODING_ACTIONS);
   const hasSubject = hasWordMatch(lower, CODING_SUBJECTS);
 
   if (hasLang && hasAction && hasSubject) return 1.0;
-  if (hasLang && (hasAction || hasSubject))  return 1.0;
-  if (hasAction && hasSubject)               return 1.0;
-  if (hasAction)                             return 0.30;
-  if (hasSubject)                            return 0.20;
+  if (hasLang && (hasAction || hasSubject)) return 1.0;
+  if (hasAction && hasSubject) return 1.0;
+  if (hasAction) return 0.3;
+  if (hasSubject) return 0.2;
   return 0;
 }
 
@@ -240,13 +311,13 @@ export class TaskClassifier {
     // Weighted sum
     // Total weights = 0.05 + 0.20 + 0.15 + 0.15 + 0.05 + 0.10 + 0.30 = 1.00
     const score = clamp(
-      tokenCountScore  * 0.05 +
-      questionComplexity * 0.20 +
-      technicalDensity * 0.15 +
-      reasoningKeywords * 0.15 +
-      cotIndicators    * 0.05 +
-      lengthBonus      * 0.10 +
-      codingTaskScore  * 0.30,
+      tokenCountScore * 0.05 +
+        questionComplexity * 0.2 +
+        technicalDensity * 0.15 +
+        reasoningKeywords * 0.15 +
+        cotIndicators * 0.05 +
+        lengthBonus * 0.1 +
+        codingTaskScore * 0.3,
     );
 
     return {
@@ -266,7 +337,10 @@ export class TaskClassifier {
 }
 
 /** Map a complexity score to a routing tier. */
-export function scoreTier(score: number, config?: import("../types.js").LokaFlowConfig): RoutingTier {
+export function scoreTier(
+  score: number,
+  config?: import("../types.js").LokaFlowConfig,
+): RoutingTier {
   const localThresh = config?.router?.complexityLocalThreshold ?? 0.35;
   const cloudThresh = config?.router?.complexityCloudThreshold ?? 0.65;
 

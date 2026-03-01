@@ -23,30 +23,30 @@ const DATA_DIR = join(homedir(), ".lokaflow");
 const DB_PATH = join(DATA_DIR, "memory.db");
 
 export interface UserProfile {
-    id: string;
-    preferredLanguage?: string;
-    preferredModel?: string;
-    timezone?: string;
-    customInstructions?: string;
-    topics: string[];
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  preferredLanguage?: string;
+  preferredModel?: string;
+  timezone?: string;
+  customInstructions?: string;
+  topics: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export class ProfileStore {
-    private readonly db: InstanceType<typeof Database>;
+  private readonly db: InstanceType<typeof Database>;
 
-    constructor(dbPath: string = DB_PATH) {
-        if (!existsSync(DATA_DIR)) {
-            mkdirSync(DATA_DIR, { recursive: true });
-        }
-        this.db = new Database(dbPath);
-        this.db.pragma("journal_mode = WAL");
-        this.createSchema();
+  constructor(dbPath: string = DB_PATH) {
+    if (!existsSync(DATA_DIR)) {
+      mkdirSync(DATA_DIR, { recursive: true });
     }
+    this.db = new Database(dbPath);
+    this.db.pragma("journal_mode = WAL");
+    this.createSchema();
+  }
 
-    private createSchema(): void {
-        this.db.exec(`
+  private createSchema(): void {
+    this.db.exec(`
       CREATE TABLE IF NOT EXISTS user_profiles (
         id                   TEXT PRIMARY KEY,
         preferred_language   TEXT,
@@ -58,72 +58,75 @@ export class ProfileStore {
         updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
-    }
+  }
 
-    /** Load a profile by ID. Returns a default profile if not found. */
-    load(id: string = "default"): UserProfile {
-        const row = this.db
-            .prepare(
-                `SELECT id, preferred_language, preferred_model, timezone,
+  /** Load a profile by ID. Returns a default profile if not found. */
+  load(id: string = "default"): UserProfile {
+    const row = this.db
+      .prepare(
+        `SELECT id, preferred_language, preferred_model, timezone,
                 custom_instructions, topics, created_at, updated_at
          FROM user_profiles WHERE id = ?`,
-            )
-            .get(id) as
-            | {
-                id: string;
-                preferred_language: string | null;
-                preferred_model: string | null;
-                timezone: string | null;
-                custom_instructions: string | null;
-                topics: string;
-                created_at: string;
-                updated_at: string;
-            }
-            | undefined;
-
-        if (!row) {
-            return {
-                id,
-                topics: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            };
+      )
+      .get(id) as
+      | {
+          id: string;
+          preferred_language: string | null;
+          preferred_model: string | null;
+          timezone: string | null;
+          custom_instructions: string | null;
+          topics: string;
+          created_at: string;
+          updated_at: string;
         }
+      | undefined;
 
-        return {
-            id: row.id,
-            ...(row.preferred_language !== null ? { preferredLanguage: row.preferred_language } : {}),
-            ...(row.preferred_model !== null ? { preferredModel: row.preferred_model } : {}),
-            ...(row.timezone !== null ? { timezone: row.timezone } : {}),
-            ...(row.custom_instructions !== null ? { customInstructions: row.custom_instructions } : {}),
-            topics: JSON.parse(row.topics) as string[],
-            createdAt: row.created_at,
-            updatedAt: row.updated_at,
-        };
+    if (!row) {
+      return {
+        id,
+        topics: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
     }
 
-    /** Upsert a profile with partial fields. */
-    save(id: string = "default", partial: Partial<Omit<UserProfile, "id" | "createdAt" | "updatedAt">>): UserProfile {
-        const existing = this.load(id);
-        const merged = {
-            ...(partial.preferredLanguage !== undefined || existing.preferredLanguage !== undefined
-                ? { preferredLanguage: partial.preferredLanguage ?? existing.preferredLanguage }
-                : {}),
-            ...(partial.preferredModel !== undefined || existing.preferredModel !== undefined
-                ? { preferredModel: partial.preferredModel ?? existing.preferredModel }
-                : {}),
-            ...(partial.timezone !== undefined || existing.timezone !== undefined
-                ? { timezone: partial.timezone ?? existing.timezone }
-                : {}),
-            ...(partial.customInstructions !== undefined || existing.customInstructions !== undefined
-                ? { customInstructions: partial.customInstructions ?? existing.customInstructions }
-                : {}),
-            topics: partial.topics ?? existing.topics,
-        };
+    return {
+      id: row.id,
+      ...(row.preferred_language !== null ? { preferredLanguage: row.preferred_language } : {}),
+      ...(row.preferred_model !== null ? { preferredModel: row.preferred_model } : {}),
+      ...(row.timezone !== null ? { timezone: row.timezone } : {}),
+      ...(row.custom_instructions !== null ? { customInstructions: row.custom_instructions } : {}),
+      topics: JSON.parse(row.topics) as string[],
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
 
-        this.db
-            .prepare(
-                `INSERT INTO user_profiles
+  /** Upsert a profile with partial fields. */
+  save(
+    id: string = "default",
+    partial: Partial<Omit<UserProfile, "id" | "createdAt" | "updatedAt">>,
+  ): UserProfile {
+    const existing = this.load(id);
+    const merged = {
+      ...(partial.preferredLanguage !== undefined || existing.preferredLanguage !== undefined
+        ? { preferredLanguage: partial.preferredLanguage ?? existing.preferredLanguage }
+        : {}),
+      ...(partial.preferredModel !== undefined || existing.preferredModel !== undefined
+        ? { preferredModel: partial.preferredModel ?? existing.preferredModel }
+        : {}),
+      ...(partial.timezone !== undefined || existing.timezone !== undefined
+        ? { timezone: partial.timezone ?? existing.timezone }
+        : {}),
+      ...(partial.customInstructions !== undefined || existing.customInstructions !== undefined
+        ? { customInstructions: partial.customInstructions ?? existing.customInstructions }
+        : {}),
+      topics: partial.topics ?? existing.topics,
+    };
+
+    this.db
+      .prepare(
+        `INSERT INTO user_profiles
            (id, preferred_language, preferred_model, timezone, custom_instructions, topics, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(id) DO UPDATE SET
@@ -133,32 +136,32 @@ export class ProfileStore {
            custom_instructions = excluded.custom_instructions,
            topics              = excluded.topics,
            updated_at          = datetime('now')`,
-            )
-            .run(
-                id,
-                merged.preferredLanguage ?? null,
-                merged.preferredModel ?? null,
-                merged.timezone ?? null,
-                merged.customInstructions ?? null,
-                JSON.stringify(merged.topics),
-            );
+      )
+      .run(
+        id,
+        merged.preferredLanguage ?? null,
+        merged.preferredModel ?? null,
+        merged.timezone ?? null,
+        merged.customInstructions ?? null,
+        JSON.stringify(merged.topics),
+      );
 
-        return this.load(id);
-    }
+    return this.load(id);
+  }
 
-    /** Add a topic of interest to the profile (deduplicates). */
-    addTopic(id: string = "default", topic: string): void {
-        const profile = this.load(id);
-        const topics = [...new Set([...profile.topics, topic.trim().toLowerCase()])];
-        this.save(id, { topics });
-    }
+  /** Add a topic of interest to the profile (deduplicates). */
+  addTopic(id: string = "default", topic: string): void {
+    const profile = this.load(id);
+    const topics = [...new Set([...profile.topics, topic.trim().toLowerCase()])];
+    this.save(id, { topics });
+  }
 
-    /** Remove all data for a user. */
-    delete(id: string): void {
-        this.db.prepare("DELETE FROM user_profiles WHERE id = ?").run(id);
-    }
+  /** Remove all data for a user. */
+  delete(id: string): void {
+    this.db.prepare("DELETE FROM user_profiles WHERE id = ?").run(id);
+  }
 
-    close(): void {
-        this.db.close();
-    }
+  close(): void {
+    this.db.close();
+  }
 }

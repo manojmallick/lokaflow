@@ -40,20 +40,22 @@ const BudgetSchema = z.object({
   warnAtPercent: z.number().min(0).max(100).default(80),
 });
 
-const LocalSchema = z.object({
-  provider: z.literal("ollama").default("ollama"),
-  baseUrl: z.string().url().optional(), // For backwards compat before transform
-  baseUrls: z.union([z.string().url(), z.array(z.string().url())]).optional(),
-  defaultModel: z.string().default("mistral:7b"),
-  timeoutSeconds: z.number().positive().default(60),
-}).transform(data => {
-  // Normalize baseUrl/baseUrls into strictly the `baseUrls` array
-  const urls = data.baseUrls ?? data.baseUrl ?? "http://localhost:11434";
-  return {
-    ...data,
-    baseUrls: Array.isArray(urls) ? urls : [urls],
-  };
-});
+const LocalSchema = z
+  .object({
+    provider: z.literal("ollama").default("ollama"),
+    baseUrl: z.string().url().optional(), // For backwards compat before transform
+    baseUrls: z.union([z.string().url(), z.array(z.string().url())]).optional(),
+    defaultModel: z.string().default("mistral:7b"),
+    timeoutSeconds: z.number().positive().default(60),
+  })
+  .transform((data) => {
+    // Normalize baseUrl/baseUrls into strictly the `baseUrls` array
+    const urls = data.baseUrls ?? data.baseUrl ?? "http://localhost:11434";
+    return {
+      ...data,
+      baseUrls: Array.isArray(urls) ? urls : [urls],
+    };
+  });
 
 const CloudSchema = z.object({
   primary: z.string().default("claude"),

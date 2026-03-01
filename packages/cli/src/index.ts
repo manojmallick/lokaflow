@@ -22,9 +22,9 @@ import { supportersCommand } from "./supporters.js";
 const program = new Command();
 
 program
-    .name("lokaflow")
-    .description("AI for everyone. Waste for no one. LokaFlow CLI Orchestrator")
-    .version("1.0.0");
+  .name("lokaflow")
+  .description("AI for everyone. Waste for no one. LokaFlow CLI Orchestrator")
+  .version("1.0.0");
 
 program.addCommand(serveCommand);
 program.addCommand(chatCommand);
@@ -39,6 +39,6 @@ program.addCommand(commonsCommand);
 program.addCommand(supportersCommand);
 
 program.parseAsync(process.argv).catch((err) => {
-    console.error(chalk.red(`\nFatal error: ${err.message}`));
-    process.exit(1);
+  console.error(chalk.red(`\nFatal error: ${err.message}`));
+  process.exit(1);
 });

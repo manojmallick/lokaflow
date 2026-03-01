@@ -10,7 +10,7 @@ export default [
     ignores: ["dist/**", "node_modules/**", "coverage/**", "*.js"],
   },
   {
-    files: ["src/**/*.ts"],
+    files: ["src/**/*.ts", "packages/*/src/**/*.ts", "apps/*/src/**/*.{ts,tsx}"],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -23,16 +23,16 @@ export default [
     },
     rules: {
       ...tsPlugin.configs["recommended"].rules,
-      // Enforce explicit return types on public functions
+      // Enforce explicit return types on public functions (warn to allow gradual adoption)
       "@typescript-eslint/explicit-function-return-type": [
-        "error",
+        "warn",
         { allowExpressions: true, allowTypedFunctionExpressions: true },
       ],
       // Prevent accidental any
       "@typescript-eslint/no-explicit-any": "warn",
       // Unused vars must be prefixed with _
       "@typescript-eslint/no-unused-vars": [
-        "error",
+        "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       // No floating promises
@@ -45,7 +45,7 @@ export default [
   },
   {
     // Relax rules for test files
-    files: ["tests/**/*.ts"],
+    files: ["tests/**/*.ts", "packages/*/tests/**/*.ts", "apps/*/tests/**/*.ts"],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

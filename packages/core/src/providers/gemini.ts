@@ -78,7 +78,7 @@ export class GeminiProvider extends BaseProvider {
         ...(system ? { systemInstruction: system } : {}),
         generationConfig: {
           temperature: options.temperature ?? 0.7,
-          maxOutputTokens: options.maxTokens ?? 8192,  // 8192 allows full coding/analysis responses
+          maxOutputTokens: options.maxTokens ?? 8192, // 8192 allows full coding/analysis responses
         },
       });
 
@@ -90,9 +90,7 @@ export class GeminiProvider extends BaseProvider {
       const candidate = response.candidates?.[0];
       let content: string;
       if (candidate?.content?.parts) {
-        content = candidate.content.parts
-          .map((p: { text?: string }) => p.text ?? "")
-          .join("");
+        content = candidate.content.parts.map((p: { text?: string }) => p.text ?? "").join("");
       } else {
         // Fallback to SDK helper (may throw on bad finish reason)
         content = response.text();
@@ -126,7 +124,7 @@ export class GeminiProvider extends BaseProvider {
         ...(system ? { systemInstruction: system } : {}),
         generationConfig: {
           temperature: options.temperature ?? 0.7,
-          maxOutputTokens: options.maxTokens ?? 8192,  // 8192 allows full responses
+          maxOutputTokens: options.maxTokens ?? 8192, // 8192 allows full responses
         },
       });
 

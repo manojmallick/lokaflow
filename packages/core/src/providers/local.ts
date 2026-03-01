@@ -207,8 +207,8 @@ export class OllamaProvider extends BaseProvider {
         signal: AbortSignal.timeout(5000),
       });
       if (!resp.ok) return [];
-      const data = await resp.json() as { models?: Array<{ name: string }> };
-      return (data.models ?? []).map(m => m.name).sort();
+      const data = (await resp.json()) as { models?: Array<{ name: string }> };
+      return (data.models ?? []).map((m) => m.name).sort();
     } catch {
       return [];
     }

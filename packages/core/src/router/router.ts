@@ -94,7 +94,8 @@ export class Router {
     trace.push(`[${timestamp}] ─── NEW ROUTING REQUEST ───`);
 
     trace.push(
-      `config: local=[${this.providers.local.map((p) => p.name).join(",")}], specialist=${this.providers.specialist?.name ?? "none"
+      `config: local=[${this.providers.local.map((p) => p.name).join(",")}], specialist=${
+        this.providers.specialist?.name ?? "none"
       }, cloud=${this.providers.cloud.name}`,
     );
 
@@ -102,11 +103,9 @@ export class Router {
     let messages: Message[] = _messages;
     if (this.memoryManager && this.config.memory.enabled) {
       try {
-        const recalled = await this.memoryManager.recall(
-          text,
-          this.config.memory.sessionId,
-          { topK: this.config.memory.topK },
-        );
+        const recalled = await this.memoryManager.recall(text, this.config.memory.sessionId, {
+          topK: this.config.memory.topK,
+        });
         if (recalled.length > 0) {
           messages = [...recalled, ..._messages];
           trace.push(`step 0: memory recalled (${recalled.length} context message(s))`);
@@ -125,7 +124,15 @@ export class Router {
       const pii = await this.piiScanner.scan(text);
       if (pii.containsPii) {
         trace.push(`step 1: PII detected, forcing local`);
-        return this.execute(messages, "local", "pii_detected", 0.0, this.providers.local[0]!, options, trace);
+        return this.execute(
+          messages,
+          "local",
+          "pii_detected",
+          0.0,
+          this.providers.local[0]!,
+          options,
+          trace,
+        );
       }
       trace.push(`step 1: PII scan clean`);
     } else {
@@ -138,7 +145,15 @@ export class Router {
       trace.push(
         `step 2: max tokens exceeded (${estimatedTokens} > ${this.config.router.maxLocalTokens}), forcing local context mode`,
       );
-      return this.execute(messages, "local", "token_limit", 0.0, this.providers.local[0]!, options, trace);
+      return this.execute(
+        messages,
+        "local",
+        "token_limit",
+        0.0,
+        this.providers.local[0]!,
+        options,
+        trace,
+      );
     }
     trace.push(`step 2: token estimate (${estimatedTokens}) within bounds`);
 
@@ -150,10 +165,7 @@ export class Router {
         const results = await this.searchEngine.search(text);
         if (results.length > 0) {
           const context = SearchEngine.formatAsContext(results);
-          augmentedMessages = [
-            { role: "system", content: context },
-            ...messages,
-          ];
+          augmentedMessages = [{ role: "system", content: context }, ...messages];
           searchAugmented = true;
           trace.push(
             `step 2b: search augmented (${results.length} results from: ${this.searchEngine.activeSources.join(", ")})`,
@@ -187,7 +199,7 @@ export class Router {
     ) {
       trace.push(
         `step 4: NOTE: cloud provider '${this.providers.cloud.name}' has no API key → ` +
-        `routing to specialist '${provider.name}' instead`,
+          `routing to specialist '${provider.name}' instead`,
       );
     }
 
@@ -208,7 +220,9 @@ export class Router {
         trace.push(`step 4(b): budget check passed (est. cost €${estimatedCost.toFixed(5)})`);
       } catch (err) {
         if (err instanceof BudgetExceededError) {
-          trace.push(`step 4(b): BUDGET EXCEEDED! FallbackToLocal=${this.config.router.fallbackToLocal}`);
+          trace.push(
+            `step 4(b): BUDGET EXCEEDED! FallbackToLocal=${this.config.router.fallbackToLocal}`,
+          );
           if (this.config.router.fallbackToLocal) {
             return this.execute(
               augmentedMessages,
@@ -248,13 +262,16 @@ export class Router {
 
     try {
       if (tier === "specialist" && this.config.router.delegationEnabled === true) {
-        trace.push(`[DELEGATION] Invoking specialist '${provider.name}' to generate ExecutionPlan...`);
+        trace.push(
+          `[DELEGATION] Invoking specialist '${provider.name}' to generate ExecutionPlan...`,
+        );
         // 1. Ask Specialist to build a plan
         const planMessages: Message[] = [
           ...messages,
           {
             role: "system",
-            content: "You are a technical planner. Do not write the code or solve the problem directly. Break the user's request down into 1-4 clear, strictly defined, and easy-to-implement sub-tasks. Output ONLY valid JSON matching this schema: { \"subtasks\": [\"task 1\", \"task 2\"] } without markdown blocks or other text.",
+            content:
+              'You are a technical planner. Do not write the code or solve the problem directly. Break the user\'s request down into 1-4 clear, strictly defined, and easy-to-implement sub-tasks. Output ONLY valid JSON matching this schema: { "subtasks": ["task 1", "task 2"] } without markdown blocks or other text.',
           },
         ];
 
@@ -265,19 +282,23 @@ export class Router {
           // Strip markdown code fences in any position (```json...``` or ```...```)
           // then extract the first valid JSON object from the response.
           let cleaned = planResponse.content
-            .replace(/```[a-z]*\n?/g, "")   // remove opening fences
-            .replace(/```/g, "")            // remove closing fences
+            .replace(/```[a-z]*\n?/g, "") // remove opening fences
+            .replace(/```/g, "") // remove closing fences
             .trim();
           // Extract first { ... } block in case model adds extra prose
           const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
           if (jsonMatch) cleaned = jsonMatch[0]!;
           plan = JSON.parse(cleaned);
         } catch (e) {
-          trace.push(`[DELEGATION] Failed to parse JSON plan from specialist. Falling back to standard execution. Output: ${planResponse.content.slice(0, 50)}...`);
+          trace.push(
+            `[DELEGATION] Failed to parse JSON plan from specialist. Falling back to standard execution. Output: ${planResponse.content.slice(0, 50)}...`,
+          );
         }
 
         if (plan && Array.isArray(plan.subtasks) && plan.subtasks.length > 0) {
-          trace.push(`[DELEGATION] Specialist generated ${plan.subtasks.length} sub-tasks. Delegating to local worker...`);
+          trace.push(
+            `[DELEGATION] Specialist generated ${plan.subtasks.length} sub-tasks. Delegating to local worker...`,
+          );
 
           let aggregatedContent = `## Execution Plan\n`;
           plan.subtasks.forEach((task, i) => {
@@ -290,14 +311,18 @@ export class Router {
           let maxLatency = planResponse.latencyMs;
 
           // 2. Execute each sub-task concurrently across the local/specialist execution trees
-          trace.push(`  → Distributing ${plan.subtasks.length} sub-tasks recursively (maxDepth=2)...`);
+          trace.push(
+            `  → Distributing ${plan.subtasks.length} sub-tasks recursively (maxDepth=2)...`,
+          );
 
           if (options.onStream) {
-            options.onStream(`> ⚡ *Distributing ${plan.subtasks.length} sub-tasks across worker tree...*\n\n`);
+            options.onStream(
+              `> ⚡ *Distributing ${plan.subtasks.length} sub-tasks across worker tree...*\n\n`,
+            );
           }
 
           const taskPromises = plan.subtasks.map(async (subtask, i) =>
-            this.executeRecursiveSubtask(subtask, messages, options, trace, 0, 2, i)
+            this.executeRecursiveSubtask(subtask, messages, options, trace, 0, 2, i),
           );
 
           // Wait for all subtasks (and potential nested trees) to finish
@@ -327,7 +352,8 @@ export class Router {
           });
 
           // Calculate hypothentical cost if we had used the Specialist for the local work
-          const hypotheticalCloudCost = (totalLocalInputTokens / 1000) * provider.costPer1kInputTokens +
+          const hypotheticalCloudCost =
+            (totalLocalInputTokens / 1000) * provider.costPer1kInputTokens +
             (totalLocalOutputTokens / 1000) * provider.costPer1kOutputTokens;
 
           const localModelsStr = Array.from(usedLocalModels).join(", ");
@@ -405,7 +431,14 @@ export class Router {
 
     appendLog(trace.join("\n") + "\n");
 
-    return { tier: actualTier, model: response.model, reason, complexityScore: score, response, trace };
+    return {
+      tier: actualTier,
+      model: response.model,
+      reason,
+      complexityScore: score,
+      response,
+      trace,
+    };
   }
 
   private async executeRecursiveSubtask(
@@ -415,8 +448,14 @@ export class Router {
     trace: string[],
     currentDepth: number,
     maxDepth: number,
-    index: number
-  ): Promise<{ stepResponse: LLMResponse, index: number, workerName: string, latencyMs: number, depth: number }> {
+    index: number,
+  ): Promise<{
+    stepResponse: LLMResponse;
+    index: number;
+    workerName: string;
+    latencyMs: number;
+    depth: number;
+  }> {
     const { score, tier } = this.classifier.classify(subtask);
     const start = Date.now();
 
@@ -431,15 +470,22 @@ export class Router {
       // If we hit max depth and it's STILL complex, run on Specialist to avoid gibberish output
       if (tier !== "local" && currentDepth >= maxDepth && this.providers.specialist) {
         worker = this.providers.specialist;
-        trace.push(`  [Depth ${currentDepth}] Subtask ${index} is STILL complex (score=${score.toFixed(2)}). Forcing Specialist execution.`);
+        trace.push(
+          `  [Depth ${currentDepth}] Subtask ${index} is STILL complex (score=${score.toFixed(2)}). Forcing Specialist execution.`,
+        );
       } else {
         worker = this.providers.local[index % this.providers.local.length]!;
-        trace.push(`  [Depth ${currentDepth}] Subtask ${index} routing to Local (score=${score.toFixed(2)}).`);
+        trace.push(
+          `  [Depth ${currentDepth}] Subtask ${index} routing to Local (score=${score.toFixed(2)}).`,
+        );
       }
 
       const workerContext: Message[] = [
         ...history,
-        { role: "user", content: `Please execute this specific sub-task based on the earlier context: ${subtask}` }
+        {
+          role: "user",
+          content: `Please execute this specific sub-task based on the earlier context: ${subtask}`,
+        },
       ];
 
       let stepResponse!: LLMResponse;
@@ -448,35 +494,56 @@ export class Router {
 
       while (retries <= maxRetries) {
         try {
-          stepResponse = await worker.complete(workerContext, Object.assign({}, options, { onStream: undefined }));
+          stepResponse = await worker.complete(
+            workerContext,
+            Object.assign({}, options, { onStream: undefined }),
+          );
           break;
         } catch (error) {
           if (retries === maxRetries) {
-            trace.push(`      [Depth ${currentDepth}] Subtask ${index} final failure on ${worker.name}: ${String(error)}.`);
+            trace.push(
+              `      [Depth ${currentDepth}] Subtask ${index} final failure on ${worker.name}: ${String(error)}.`,
+            );
             throw error;
           }
           retries++;
-          trace.push(`      [Depth ${currentDepth}] Subtask ${index} failed on ${worker.name} (${String(error)}). Retrying (${retries}/${maxRetries})...`);
-          await new Promise(r => setTimeout(r, 1000));
+          trace.push(
+            `      [Depth ${currentDepth}] Subtask ${index} failed on ${worker.name} (${String(error)}). Retrying (${retries}/${maxRetries})...`,
+          );
+          await new Promise((r) => setTimeout(r, 1000));
         }
       }
 
       const latencyMs = Date.now() - start;
-      trace.push(`      ↪ [Depth ${currentDepth}] Subtask ${index} completed by ${worker.name} [model=${stepResponse.model}] in ${(latencyMs / 1000).toFixed(1)}s (In: ${stepResponse.inputTokens}, Out: ${stepResponse.outputTokens}).`);
+      trace.push(
+        `      ↪ [Depth ${currentDepth}] Subtask ${index} completed by ${worker.name} [model=${stepResponse.model}] in ${(latencyMs / 1000).toFixed(1)}s (In: ${stepResponse.inputTokens}, Out: ${stepResponse.outputTokens}).`,
+      );
       return { stepResponse, index, workerName: worker.name, latencyMs, depth: currentDepth };
     }
 
     // 2. If it is complex, recursively ask Specialist to break it down further!
-    trace.push(`  [Depth ${currentDepth}] Subtask ${index} is too complex (score=${score.toFixed(2)}). Asking Planner to decompose...`);
+    trace.push(
+      `  [Depth ${currentDepth}] Subtask ${index} is too complex (score=${score.toFixed(2)}). Asking Planner to decompose...`,
+    );
     const planner = this.providers.specialist ?? this.providers.local[0]!;
 
     const planContext: Message[] = [
       ...history,
-      { role: "user", content: `The following sub-task is too complex to execute directly. Break it down into 1-3 smaller, strictly defined, and extremely easy-to-implement JSON sub-tasks.\n\nSub-task: ${subtask}` },
-      { role: "system", content: "Output ONLY valid JSON matching schema: { \"subtasks\": [\"task 1\", \"task 2\"] } without markdown blocks." }
+      {
+        role: "user",
+        content: `The following sub-task is too complex to execute directly. Break it down into 1-3 smaller, strictly defined, and extremely easy-to-implement JSON sub-tasks.\n\nSub-task: ${subtask}`,
+      },
+      {
+        role: "system",
+        content:
+          'Output ONLY valid JSON matching schema: { "subtasks": ["task 1", "task 2"] } without markdown blocks.',
+      },
     ];
 
-    const planResponse = await planner.complete(planContext, Object.assign({}, options, { onStream: undefined }));
+    const planResponse = await planner.complete(
+      planContext,
+      Object.assign({}, options, { onStream: undefined }),
+    );
     let nestedPlan: import("../types.js").ExecutionPlan | null = null;
 
     try {
@@ -489,13 +556,23 @@ export class Router {
       if (jsonBlock) cleanedJson = jsonBlock[0]!;
       nestedPlan = JSON.parse(cleanedJson);
     } catch {
-      trace.push(`  [Depth ${currentDepth}] Failed to parse nested JSON plan. Forcing execution...`);
+      trace.push(
+        `  [Depth ${currentDepth}] Failed to parse nested JSON plan. Forcing execution...`,
+      );
     }
 
     // 3. If nested breakdown succeeds, execute the nested tasks!
     if (nestedPlan && Array.isArray(nestedPlan.subtasks) && nestedPlan.subtasks.length > 0) {
       const nestedPromises = nestedPlan.subtasks.map((nestedSubtask, i) =>
-        this.executeRecursiveSubtask(nestedSubtask, history, options, trace, currentDepth + 1, maxDepth, i)
+        this.executeRecursiveSubtask(
+          nestedSubtask,
+          history,
+          options,
+          trace,
+          currentDepth + 1,
+          maxDepth,
+          i,
+        ),
       );
       const nestedResults = await Promise.all(nestedPromises);
 
@@ -505,7 +582,7 @@ export class Router {
       let totalOutput = planResponse.outputTokens;
       let maxLatency = planResponse.latencyMs;
 
-      nestedResults.forEach(res => {
+      nestedResults.forEach((res) => {
         aggregatedContent += res.stepResponse.content + "\n\n";
         totalInput += res.stepResponse.inputTokens;
         totalOutput += res.stepResponse.outputTokens;
@@ -518,22 +595,40 @@ export class Router {
         inputTokens: totalInput,
         outputTokens: totalOutput,
         costEur: planResponse.costEur,
-        latencyMs: maxLatency
+        latencyMs: maxLatency,
       };
 
-      return { stepResponse, index, workerName: "Recursive-Tree", latencyMs: maxLatency, depth: currentDepth + 1 };
+      return {
+        stepResponse,
+        index,
+        workerName: "Recursive-Tree",
+        latencyMs: maxLatency,
+        depth: currentDepth + 1,
+      };
     }
 
     // 4. Fallback: If breakdown failed or returned 0 tasks, execute on Specialist
-    const fallbackContext: Message[] = [...history, { role: "user", content: `Please execute this specific sub-task based on the earlier context: ${subtask}` }];
-    const stepResponse = await planner.complete(fallbackContext, Object.assign({}, options, { onStream: undefined }));
+    const fallbackContext: Message[] = [
+      ...history,
+      {
+        role: "user",
+        content: `Please execute this specific sub-task based on the earlier context: ${subtask}`,
+      },
+    ];
+    const stepResponse = await planner.complete(
+      fallbackContext,
+      Object.assign({}, options, { onStream: undefined }),
+    );
     const latencyMs = Date.now() - start;
-    trace.push(`      ↪ [Depth ${currentDepth}] Subtask ${index} executed via Fallback by ${planner.name} [model=${stepResponse.model}] in ${(latencyMs / 1000).toFixed(1)}s (In: ${stepResponse.inputTokens}, Out: ${stepResponse.outputTokens}).`);
+    trace.push(
+      `      ↪ [Depth ${currentDepth}] Subtask ${index} executed via Fallback by ${planner.name} [model=${stepResponse.model}] in ${(latencyMs / 1000).toFixed(1)}s (In: ${stepResponse.inputTokens}, Out: ${stepResponse.outputTokens}).`,
+    );
     return { stepResponse, index, workerName: planner.name, latencyMs, depth: currentDepth };
   }
 
   private selectProvider(tier: RoutingTier): BaseProvider {
-    const randomLocal = this.providers.local[Math.floor(Math.random() * this.providers.local.length)]!;
+    const randomLocal =
+      this.providers.local[Math.floor(Math.random() * this.providers.local.length)]!;
     switch (tier) {
       case "local":
         return randomLocal;
