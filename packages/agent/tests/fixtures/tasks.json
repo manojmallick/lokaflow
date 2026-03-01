@@ -1,0 +1,42 @@
+{
+  "complexTasks": [
+    {
+      "id": "dora-analysis",
+      "query": "Analyse our DORA Article 11 compliance gap and produce a prioritised remediation table with effort estimates.",
+      "expectedTier": "cloud",
+      "minComplexity": 0.55
+    },
+    {
+      "id": "code-review",
+      "query": "Review this TypeScript module for security vulnerabilities, performance issues, and code quality. Provide specific line-level recommendations.",
+      "expectedTier": "specialist",
+      "minComplexity": 0.5
+    },
+    {
+      "id": "architecture-compare",
+      "query": "Compare microservices vs monolith architecture for a fintech startup processing 10M daily transactions. Include trade-offs, migration paths, and cost implications.",
+      "expectedTier": "cloud",
+      "minComplexity": 0.6
+    }
+  ],
+  "trivialTasks": [
+    {
+      "id": "arithmetic",
+      "query": "What is 15% of 340?",
+      "expectedTier": "local",
+      "maxComplexity": 0.35
+    },
+    {
+      "id": "git-commit",
+      "query": "Write a git commit message for adding a login button.",
+      "expectedTier": "local",
+      "maxComplexity": 0.35
+    },
+    {
+      "id": "factual",
+      "query": "What is the capital of the Netherlands?",
+      "expectedTier": "local",
+      "maxComplexity": 0.35
+    }
+  ]
+}

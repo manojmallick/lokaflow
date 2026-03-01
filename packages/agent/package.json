@@ -1,0 +1,33 @@
+{
+  "name": "@lokaflow/agent",
+  "version": "0.1.0",
+  "description": "LokaAgent™ — 8-stage orchestration pipeline. One prompt in, right answer out.",
+  "type": "module",
+  "license": "BUSL-1.1",
+  "author": "LearnHubPlay BV <info@learnhubplay.nl>",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

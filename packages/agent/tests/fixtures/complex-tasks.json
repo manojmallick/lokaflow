@@ -1,0 +1,43 @@
+[
+  {
+    "query": "What is 15% of 340?",
+    "expectedTier": "trivial",
+    "maxComplexity": 0.4
+  },
+  {
+    "query": "Write a git commit message for: added null check in UserService.ts",
+    "expectedTier": "simple",
+    "maxComplexity": 0.4
+  },
+  {
+    "query": "Explain this TypeScript error: Type 'string | undefined' is not assignable to type 'string'.",
+    "expectedTier": "moderate",
+    "minComplexity": 0.25,
+    "maxComplexity": 0.65
+  },
+  {
+    "query": "Analyse this Python stack trace and suggest a fix: AttributeError: 'NoneType' object has no attribute 'split'",
+    "expectedTier": "moderate",
+    "minComplexity": 0.3
+  },
+  {
+    "query": "Analyse our DORA compliance gaps and compare three remediation strategies with trade-offs.",
+    "expectedTier": "complex",
+    "minComplexity": 0.55
+  },
+  {
+    "query": "Review this architecture diagram for security vulnerabilities and suggest improvements following NIST CSF.",
+    "expectedTier": "complex",
+    "minComplexity": 0.55
+  },
+  {
+    "query": "What is the capital of the Netherlands?",
+    "expectedTier": "trivial",
+    "maxComplexity": 0.35
+  },
+  {
+    "query": "Compare five different approaches to distributed tracing in microservices and evaluate their trade-offs in a high-throughput financial system.",
+    "expectedTier": "complex",
+    "minComplexity": 0.6
+  }
+]
