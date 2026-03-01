@@ -10,6 +10,7 @@
 import {
   GoogleGenerativeAI,
   type Content,
+  type GenerateContentCandidate,
   type GenerateContentStreamResult,
 } from "@google/generative-ai";
 
@@ -87,7 +88,7 @@ export class GeminiProvider extends BaseProvider {
 
       // Read text directly from candidates to avoid response.text() silently
       // returning "" when candidates exist but have an unexpected finish reason.
-      const candidate = response.candidates?.[0];
+      const candidate: GenerateContentCandidate | undefined = response.candidates?.[0];
       let content: string;
       if (candidate?.content?.parts) {
         content = candidate.content.parts.map((p: { text?: string }) => p.text ?? "").join("");
@@ -99,6 +100,22 @@ export class GeminiProvider extends BaseProvider {
       const usage = response.usageMetadata;
       const inputTokens = usage?.promptTokenCount ?? 0;
       const outputTokens = usage?.candidatesTokenCount ?? 0;
+
+      // SDK ≤0.17 silently returns "" instead of throwing when a candidate is blocked
+      // (finishReason = SAFETY, RECITATION, etc.). Detect this and throw so the router's
+      // fallback_to_local path triggers instead of returning a blank response to the user.
+      if (!content) {
+        const finishReason = candidate?.finishReason ?? "empty_response";
+        const candidateCount = response.candidates?.length ?? 0;
+        const safetyInfo =
+          candidate?.safetyRatings && candidate.safetyRatings.length > 0
+            ? ` safetyRatings=[${candidate.safetyRatings.map((r) => `${r.category}:${r.probability}`).join(", ")}]`
+            : "";
+        throw new ProviderUnavailableError(
+          "gemini",
+          `Response returned no content (finishReason=${finishReason}, candidates=${candidateCount}${safetyInfo}). Check Gemini safety settings or API quota.`,
+        );
+      }
 
       return {
         content,
