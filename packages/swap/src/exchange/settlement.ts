@@ -38,7 +38,7 @@ export class CreditsLedger {
   }
 
   // Returns true if deducted successfully, throws if insufficient balance
-  async deduct(memberId: string, asset: ExchangeAsset): Promise<void> {
+  deduct(memberId: string, asset: ExchangeAsset): void {
     const assetType = asset.type;
     const providerHash =
       asset.type === "api-credits"
@@ -66,7 +66,7 @@ export class CreditsLedger {
     }
   }
 
-  async credit(memberId: string, asset: ExchangeAsset): Promise<void> {
+  credit(memberId: string, asset: ExchangeAsset): void {
     const assetType = asset.type;
     const providerHash =
       asset.type === "api-credits"
@@ -87,8 +87,8 @@ export class CreditsLedger {
       .run(memberId, assetType, providerHash, amount, amount);
   }
 
-  async recordTrade(offerId: string, requestId: string): Promise<TradeRecord> {
-    const id = randomUUID();
+  recordTrade(offerId: string, requestId: string, tradeId?: string): TradeRecord {
+    const id = tradeId ?? randomUUID();
     const settledAt = new Date().toISOString();
 
     this.db
@@ -133,8 +133,8 @@ export class TradeSettlement {
   }
 
   // Expose seed function for testing
-  async seedBalance(memberId: string, asset: ExchangeAsset): Promise<void> {
-    await this.ledger.credit(memberId, asset);
+  seedBalance(memberId: string, asset: ExchangeAsset): void {
+    this.ledger.credit(memberId, asset);
   }
 
   async settle(
@@ -176,7 +176,7 @@ export class TradeSettlement {
       this.ledger.credit(request.memberId, request.asking);
 
       // 5. Record trade
-      const record = this.ledger.recordTrade(offer.id, request.id);
+      const record = this.ledger.recordTrade(offer.id, request.id, idempotencyKey);
 
       // 6. Update listing statuses
       this.ledger.markSettled(offer.id);
@@ -186,7 +186,7 @@ export class TradeSettlement {
     });
 
     try {
-      return await transaction();
+      return transaction();
     } catch (e: any) {
       console.error(chalk.red(`[TradeSettlement] Settlement failed & rolled back: ${e.message}`));
       throw e;

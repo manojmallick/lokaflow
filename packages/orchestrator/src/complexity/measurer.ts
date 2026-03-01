@@ -113,6 +113,8 @@ export class ComplexityMeasurer {
   private _mapToTier(score: number, dim: ComplexityProfile["dimensions"]): TierLevel {
     // If precision or math is very high, push to higher tiers even if overall is low
     if (dim.math > 0.8 || dim.precision > 0.9) return "cloud_standard";
+    // Coding tasks need a capable model — never route to nano even if the message is short
+    if (dim.coding > 0.4 && score < 0.2) return "local_standard";
 
     if (score < 0.2) return "local_nano";
     if (score < 0.45) return "local_standard";
