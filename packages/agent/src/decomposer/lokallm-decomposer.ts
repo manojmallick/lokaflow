@@ -18,7 +18,6 @@ export class LokaLLMDecomposer {
     );
   }
 
-   
   async decompose(
     _task: string,
     _intent: IntentProfile,
