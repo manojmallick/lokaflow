@@ -1331,7 +1331,9 @@ export function Chat(): JSX.Element {
   // ── Input / attachments ───────────────────────────────────────────────────
   const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<AttachedFile[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
+  const isLoading = loadingSessionId !== null;
+  const isActiveSessionLoading = loadingSessionId === activeId;
   const [streamingContent, setStreaming] = useState("");
   const [queue, setQueue] = useState<string[]>([]);
   const [queueFull, setQueueFull] = useState(false);
@@ -1427,7 +1429,7 @@ export function Chat(): JSX.Element {
   const processMessage = useCallback(
     async (userMsg: string, userAttachments: AttachedFile[] = []) => {
       isLoadingRef.current = true;
-      setIsLoading(true);
+      setLoadingSessionId(activeIdRef.current);
       setStreaming("");
 
       // Build content with attachments appended as text
@@ -1558,7 +1560,7 @@ export function Chat(): JSX.Element {
         messagesRef.current = [...messagesRef.current, errMsg];
       } finally {
         isLoadingRef.current = false;
-        setIsLoading(false);
+        setLoadingSessionId(null);
 
         const nextQueue = [...queueRef.current];
         const nextMsg = nextQueue.shift();
@@ -1722,7 +1724,7 @@ export function Chat(): JSX.Element {
             </div>
           ))}
 
-          {isLoading && (
+          {isActiveSessionLoading && (
             <div className="message-wrapper assistant">
               <div className="avatar">
                 <Bot size={20} />
