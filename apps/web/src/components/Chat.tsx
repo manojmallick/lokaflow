@@ -508,7 +508,15 @@ export function Chat(): JSX.Element {
       return next;
     });
 
-    const historyForApi = messagesRef.current.map((m) => ({ role: m.role, content: m.content }));
+    // Strip local-only UI messages (errors / empty responses) before sending to the API
+    const historyForApi = messagesRef.current
+      .filter((m) => {
+        if (m.role !== "assistant") return true;
+        if (m.content.startsWith("**Error:**")) return false;
+        if (m.content === "(empty response)") return false;
+        return true;
+      })
+      .map((m) => ({ role: m.role, content: m.content }));
 
     try {
       const res = await fetch(`${API_BASE()}/v1/chat/completions`, {
