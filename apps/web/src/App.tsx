@@ -8,7 +8,7 @@ import { Settings as SettingsView } from "./components/Settings";
 
 type View = "dashboard" | "chat" | "mesh" | "settings";
 
-function App() {
+function App(): JSX.Element {
   const [view, setView] = useState<View>("dashboard");
 
   return (

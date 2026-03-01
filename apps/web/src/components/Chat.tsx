@@ -50,7 +50,7 @@ interface Message {
 
 // ─── CopyButton ──────────────────────────────────────────────────────────────
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text }: { text: string }): JSX.Element {
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -70,7 +70,7 @@ function CopyButton({ text }: { text: string }) {
 
 // ─── MessageContent ───────────────────────────────────────────────────────────
 
-function MessageContent({ content }: { content: string }) {
+function MessageContent({ content }: { content: string }): JSX.Element {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -211,7 +211,7 @@ const STEP_ICONS: Record<TraceStepKind, React.ReactNode> = {
 
 // ─── TracePanel ───────────────────────────────────────────────────────────────
 
-function TracePanel({ trace }: { trace: LokaFlowTrace }) {
+function TracePanel({ trace }: { trace: LokaFlowTrace }): JSX.Element {
   const [open, setOpen] = useState(false);
   const steps = trace.trace.map(classifyLine).filter((s) => s.kind !== "header");
 
@@ -233,7 +233,7 @@ function TracePanel({ trace }: { trace: LokaFlowTrace }) {
   const nodeAddrRaw = step5?.match(/dispatching request to\s+(\S+)/i)?.[1] ?? "";
   const nodeAddr = nodeAddrRaw.replace(/^ollama\[/, "").replace(/\]$/, "");
 
-  function fmtMs(ms: number) {
+  function fmtMs(ms: number): string {
     if (ms >= 60000) return `${(ms / 60000).toFixed(1)}m`;
     if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
     return `${ms}ms`;
@@ -379,7 +379,7 @@ function TracePanel({ trace }: { trace: LokaFlowTrace }) {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function shortModel(m: string) {
+function shortModel(m: string): string {
   const exec = m.match(/executed-by:([^,]+)/);
   const plan = m.match(/planned-by:([^,]+)/);
   if (exec && plan) return `${exec[1]} ← ${plan[1]}`;
@@ -387,13 +387,19 @@ function shortModel(m: string) {
 }
 
 // Use 127.0.0.1 explicitly to avoid macOS IPv6-first resolution of 'localhost'
-const API_BASE = () => localStorage.getItem("lf_api_url") || "http://127.0.0.1:4141";
+const API_BASE = (): string => localStorage.getItem("lf_api_url") || "http://127.0.0.1:4141";
 const STORAGE_KEY = "lf_chat_history";
 const MAX_QUEUE = 5;
 
 // ─── QueueBar ────────────────────────────────────────────────────────────────
 
-function QueueBar({ queue, onClear }: { queue: string[]; onClear: () => void }) {
+function QueueBar({
+  queue,
+  onClear,
+}: {
+  queue: string[];
+  onClear: () => void;
+}): JSX.Element | null {
   if (queue.length === 0) return null;
   return (
     <div className="queue-bar">
@@ -442,7 +448,7 @@ function loadHistory(): Message[] {
   return [WELCOME];
 }
 
-export function Chat() {
+export function Chat(): JSX.Element {
   const [messages, setMessages] = useState<Message[]>(loadHistory);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -616,7 +622,7 @@ export function Chat() {
     [input, processMessage],
   );
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
