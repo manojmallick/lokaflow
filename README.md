@@ -79,16 +79,30 @@ AI subscriptions with $3–10/month of targeted cloud API usage:
 
 ## Status
 
-> **Pre-release — building in public.**
+> **MVP — core pipeline working. Building in public.**
 
-- [ ] Core routing engine
-- [ ] Ollama integration
-- [ ] Claude / OpenAI API adapters
-- [ ] Task graph executor
-- [ ] CLI interface
-- [ ] IDE plugin (VS Code)
-- [ ] Web UI dashboard
-- [ ] Commercial licensing portal
+### Packages
+
+| Package | Name | Status |
+|---|---|---|
+| `@lokaflow/core` | Router, providers (11), PII scanner, classifier, budget, search, memory | ✅ Working |
+| `@lokaflow/cli` | `lokaflow chat`, `lokaflow cost`, `--supporters` | ✅ Working |
+| `@lokaflow/api` | REST API + OpenAI-compatible proxy on `:4141` | ✅ Working |
+| `@lokaflow/route` | Intelligent LLM proxy router + savings tracker | ✅ Working |
+| `@lokaflow/agent` | 8-stage DAG orchestration pipeline (decompose → execute → assemble) | ✅ Working |
+| `@lokaflow/orchestrator` | Task DAG decomposition + complexity measurement + budget allocation | ✅ Working |
+| `@lokaflow/mesh` | mDNS cluster discovery, WoL, battery-aware scheduling, carbon tracking | ✅ Working |
+| `@lokaflow/audit` | ChatGPT / Claude GDPR export subscription analyser | ✅ Working |
+| `@lokaflow/commons` | Cooperative compute P2P exchange, credits ledger | ✅ Working |
+| `@lokaflow/swap` | Token exchange + group purchasing marketplace | ✅ Working |
+| `lokaflow-vscode` | VS Code extension (local-first AI routing) | 🔧 Scaffold |
+| `apps/web` | Web UI dashboard + chat interface | 🔧 In progress |
+| `apps/mobile` | LokaMobile — React Native + llama.cpp | 🔧 Scaffold |
+| `@lokaflow/lokallm` | Fine-tuned Phi-3 Mini (Python, complexity scorer + decomposer) | 🔧 In progress |
+
+### Test Coverage
+
+115 passing unit tests across 9 packages (no network required), plus live integration tests auto-skipped when Ollama is absent.
 
 Follow development: [lokaflow.com](https://lokaflow.com) · [@lokaflow](https://github.com/lokaflow)
 
@@ -96,7 +110,32 @@ Follow development: [lokaflow.com](https://lokaflow.com) · [@lokaflow](https://
 
 ## Getting Started
 
-Documentation and installation instructions will be published at launch.
+```bash
+# Prerequisites: Node.js 22+, pnpm 9+, Ollama
+git clone https://github.com/lokaflow/lokaflow.git
+cd lokaflow
+pnpm install
+pnpm build
+
+# Pull a local model
+ollama pull qwen2.5-coder:7b
+
+# Copy and edit config
+cp config/lokaflow.example.yaml lokaflow.yaml
+
+# Run
+npx tsx packages/cli/src/index.ts chat
+```
+
+Set cloud API keys when needed:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+export GEMINI_API_KEY=AIza...
+export OPENAI_API_KEY=sk-...
+```
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for full system design and configuration reference.
 
 Join the waitlist at [lokaflow.com](https://lokaflow.com) to be notified.
 

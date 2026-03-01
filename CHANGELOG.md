@@ -9,7 +9,70 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added
+### Added — v2 monorepo packages (2026-03-01)
+
+- `packages/agent/` — `@lokaflow/agent` v0.1.0: LokaAgent™ 8-stage orchestration pipeline
+  - `dag/`: cycle-detector, topological-sort (11 unit tests)
+  - `decomposer/`: decomposition-gate (complexity-gated), interim-decomposer, lokallm-decomposer
+  - `pipeline/`: assembler, complexity-scorer, context-packer, execution-engine, model-matcher, prompt-guard, quality-gate, task-splitter
+  - `registry/`: model-registry, interim-models, warm-tracker
+  - `utils/`: ollama health helpers, token counting
+  - 65 unit tests + 5 skipped integration tests; pre-push CI green
+
+- `packages/orchestrator/` — `@lokaflow/orchestrator` v0.1.0: LokaOrchestrator™ task DAG engine
+  - `complexity/`: ComplexityMeasurer with 6 dimension scorers
+  - `decomposer/`: TaskDecomposer, TaskGraph DAG
+  - `pipeline/`: Plan→Execute→Verify→Assemble stages
+  - `models/`: ModelCapabilityRegistry
+  - `budget/`: TokenBudgetAllocator
+  - 8 unit tests
+
+- `packages/mesh/` — `@lokaflow/mesh` v0.1.0: LokaMesh™ distributed compute layer
+  - `discovery/`: MdnsDiscovery (_lokaflow._tcp.local), NodeRegistry
+  - `scheduler/`: MeshScheduler (score = tokensPerSec×0.40 + alwaysOnBonus - batteryStress×0.20)
+  - `executor/`: RemoteExecutor, health checks
+  - `power/`: WolSender (magic packet), SleepStateMachine (ONLINE→LIGHT_SLEEP→DEEP_SLEEP)
+  - `battery/`: ClusterBatteryStore, ChargeGuardian, ThermalGuard, BatteryWorkloadBalancer, HealthTracker, BatteryReport
+  - `green/`: carbon.ts (electricity maps integration)
+  - 24 unit tests
+
+- `packages/audit/` — `@lokaflow/audit` v0.1.0: LokaAudit™ subscription analyser
+  - Parsers: ChatGPTExportParser, ClaudeExportParser
+  - AuditEngine: utilisation rate, overpay calculation, local-eligible classification
+  - 3 unit tests
+
+- `packages/commons/` — `@lokaflow/commons` v1.0.0: LokaCommons™ cooperative compute
+  - `credits/`: credits ledger with transaction history
+  - `routing/`: CooperativeRouter (peer discovery + task distribution)
+  - `registry/`: node registry
+  - 7 unit tests
+
+- `packages/swap/` — `@lokaflow/swap` v1.0.0: LokaSwap™ token exchange
+  - `exchange/`: listing, TradeSettlement (idempotent, rollback on failure)
+  - `pools/`: token pools
+  - `purchasing/`: DemandAggregator (group purchasing)
+  - `conversion/`: token converter
+  - 6 unit tests
+
+- `packages/route/` — `@lokaflow/route` v0.1.0: LokaRoute™ intelligent LLM proxy
+  - `proxy/server.ts`: OpenAI-compatible proxy router
+  - `tracker/savings-tracker.ts`: per-request savings calculation
+  - 2 unit tests
+
+- `packages/api/` — `@lokaflow/api` v1.0.0: REST API + OpenAI-compatible proxy on :4141
+  - Fastify server
+  - Source extracted from monolithic server layer
+
+- **Monorepo migration**: all packages moved to `packages/*/`, root `tests/` for integration,
+  `pnpm-workspace.yaml` wiring 12 TypeScript packages + 2 apps
+
+- `fix: improve Gemini empty-response diagnostics with proper SDK typing`
+  - Import `GenerateContentCandidate` type; replace manual `as {}` cast on candidate
+  - `finishReason` now uses SDK's real `FinishReason` enum value
+  - Error message includes candidate count and safetyRatings when present
+  - Distinguishes safety blocks from quota/network empty responses
+
+
 - V3.5 Core Refactor: safely extracted monolithic `src/` logic into dedicated `@lokaflow/core`, `@lokaflow/api`, and `@lokaflow/cli` monorepo packages.
 - Full TypeScript package scaffold (`src/`)
 - `package.json` — pnpm, Node 22, ESM, scripts: dev, build, lint, typecheck, test, check

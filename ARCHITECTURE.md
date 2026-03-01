@@ -1,6 +1,6 @@
 # LokaFlow™ — Full System Architecture
 
-> **Version:** v1.x MVP (current) + V2 roadmap  
+> **Version:** v1 core ✅ + v2 monorepo (in progress)  
 > **Owner:** LearnHubPlay BV · License: BUSL 1.1  
 > **Last updated:** 2026-03-01
 
@@ -143,81 +143,119 @@ query
             → sort desc → slice top-N
 ```
 
-### 2.5 File Layout (current)
+### 2.5 File Layout (current — monorepo)
 
 ```
-lokaflow/                          ← monorepo root (single package for MVP)
-├── src/
-│   ├── types.ts                   Message, LLMResponse, RoutingDecision, LokaFlowConfig
-│   ├── exceptions.ts              Typed error hierarchy (6 error classes)
-│   ├── config.ts                  Zod YAML loader (3-path search, snake_case→camelCase)
-│   ├── index.ts                   Public package entry point
-│   ├── version.ts
-│   │
-│   ├── router/
-│   │   ├── router.ts              Core 5-step pipeline + Step 0 + 2b + delegation
-│   │   ├── classifier.ts          6-signal complexity scorer
-│   │   ├── piiScanner.ts          Regex + compromise NLP
-│   │   ├── budget.ts              SQLite cost tracker
-│   │   └── index.ts
-│   │
-│   ├── providers/                 11 providers — all extend BaseProvider
-│   │   ├── base.ts
-│   │   ├── local.ts               Ollama
-│   │   ├── claude.ts, openai.ts, gemini.ts, groq.ts
-│   │   ├── mistral.ts, together.ts, perplexity.ts
-│   │   ├── azure.ts, cohere.ts
-│   │   └── index.ts
-│   │
-│   ├── search/                    Deep search pipeline (opt-in)
-│   │   ├── engine.ts              SearchEngine orchestrator
-│   │   ├── expander.ts            QueryExpander
-│   │   ├── retriever.ts           ParallelRetriever
-│   │   ├── filter.ts              LocalFilter
-│   │   ├── sources/
-│   │   │   ├── brave.ts           BraveSource
-│   │   │   └── arxiv.ts           ArxivSource
-│   │   └── index.ts
-│   │
-│   ├── memory/                    Memory + RAG pipeline (opt-in)
-│   │   ├── store.ts               MemoryStore (SQLite + cosine similarity)
-│   │   ├── profile.ts             ProfileStore (user prefs + customInstructions)
-│   │   ├── rag.ts                 TfidfVectorizer, RagRetriever, MemoryManager
-│   │   └── index.ts
-│   │
-│   ├── cli/
-│   │   ├── index.ts               lokaflow CLI (commander)
-│   │   ├── chat.ts                Interactive chat + streaming + auto cloud discovery
-│   │   ├── cost.ts                Cost report command
-│   │   └── supporters.ts          GitHub Sponsors list (24h cache)
-│   │
-│   ├── dashboard/
-│   │   ├── tracker.ts             SQLite metadata logger (no content)
-│   │   └── report.ts              Cost + savings report formatter
-│   │
-│   └── utils/
-│       └── security.ts            maskKey(), envVar(), requireEnvVar()
+lokaflow/                          ← pnpm monorepo root
 │
-├── tests/
-│   ├── unit/                      42 + 17 + 27 = 86 test cases (Vitest, no network)
-│   │   ├── classifier.test.ts     12 cases
-│   │   ├── piiScanner.test.ts     14 cases
-│   │   ├── budget.test.ts         8 cases
-│   │   ├── router.test.ts         8 cases
-│   │   ├── search.test.ts         17 cases (fully mocked)
-│   │   └── memory.test.ts         27 cases (in-memory SQLite)
-│   ├── integration/
-│   │   ├── local.test.ts          requires live Ollama
-│   │   └── pipeline.test.ts
-│   └── fixtures/
+├── packages/
+│   │
+│   ├── core/                      @lokaflow/core ✅
+│   │   └── src/
+│   │       ├── types.ts            Message, LLMResponse, RoutingDecision, LokaFlowConfig
+│   │       ├── exceptions.ts       Typed error hierarchy (6 error classes)
+│   │       ├── config.ts           Zod YAML loader (snake_case→camelCase)
+│   │       ├── router/
+│   │       │   ├── router.ts       5-step pipeline + delegation (maxDepth=2)
+│   │       │   ├── classifier.ts   6-signal complexity scorer (0.0–1.0)
+│   │       │   ├── piiScanner.ts   Regex + compromise NLP (email, IBAN, BSN, CC, IP)
+│   │       │   └── budget.ts       SQLite daily/monthly EUR caps
+│   │       ├── providers/          11 providers — all extend BaseProvider
+│   │       │   ├── local.ts        OllamaProvider (round-robin, multi-node)
+│   │       │   ├── claude.ts, openai.ts, gemini.ts, groq.ts
+│   │       │   ├── mistral.ts, together.ts, perplexity.ts
+│   │       │   └── azure.ts, cohere.ts
+│   │       ├── search/             Deep search pipeline (opt-in)
+│   │       │   ├── engine.ts       SearchEngine orchestrator
+│   │       │   ├── expander.ts     QueryExpander (local model → 3 sub-queries)
+│   │       │   ├── retriever.ts    ParallelRetriever (Brave + arXiv)
+│   │       │   ├── filter.ts       LocalFilter (score 0–10, drop below threshold)
+│   │       │   └── sources/        brave.ts, arxiv.ts
+│   │       ├── memory/             Memory + RAG pipeline (opt-in)
+│   │       │   ├── store.ts        MemoryStore (SQLite + cosine similarity)
+│   │       │   ├── profile.ts      ProfileStore (customInstructions, topics)
+│   │       │   └── rag.ts          TfidfVectorizer, RagRetriever, MemoryManager
+│   │       ├── dashboard/          Cost tracker + report formatter
+│   │       └── utils/security.ts   maskKey(), envVar(), requireEnvVar()
+│   │
+│   ├── cli/                       @lokaflow/cli ✅
+│   │   └── src/
+│   │       ├── index.ts            lokaflow CLI (commander)
+│   │       ├── chat.ts             Interactive chat + streaming + memory
+│   │       ├── cost.ts             Cost report command
+│   │       └── supporters.ts       GitHub Sponsors (24h cache)
+│   │
+│   ├── api/                       @lokaflow/api ✅
+│   │   └── src/                   Fastify REST server + OpenAI-compatible proxy
+│   │
+│   ├── route/                     @lokaflow/route ✅
+│   │   └── src/
+│   │       ├── proxy/server.ts     Intelligent LLM proxy router
+│   │       └── tracker/            Savings tracker
+│   │
+│   ├── agent/                     @lokaflow/agent ✅
+│   │   └── src/
+│   │       ├── dag/                cycle-detector, topological-sort
+│   │       ├── decomposer/         decomposition-gate, interim + lokallm decomposers
+│   │       ├── pipeline/           assembler, complexity-scorer, context-packer,
+│   │       │                       execution-engine, model-matcher, prompt-guard,
+│   │       │                       quality-gate, task-splitter
+│   │       ├── registry/           model-registry, interim-models, warm-tracker
+│   │       └── utils/              ollama health helpers, token counting
+│   │
+│   ├── orchestrator/              @lokaflow/orchestrator ✅
+│   │   └── src/
+│   │       ├── complexity/         ComplexityMeasurer (6 dimension scorers)
+│   │       ├── decomposer/         TaskDecomposer, TaskGraph DAG
+│   │       ├── pipeline/           Plan→Execute→Verify→Assemble stages
+│   │       ├── models/             ModelCapabilityRegistry
+│   │       └── budget/             TokenBudgetAllocator
+│   │
+│   ├── mesh/                      @lokaflow/mesh ✅
+│   │   └── src/
+│   │       ├── discovery/          MdnsDiscovery, NodeRegistry
+│   │       ├── scheduler/          MeshScheduler (score-based node selection)
+│   │       ├── executor/           RemoteExecutor, health checks
+│   │       ├── power/              WolSender, SleepStateMachine
+│   │       ├── battery/            ClusterBatteryStore, ChargeGuardian, ThermalGuard,
+│   │       │                       BatteryWorkloadBalancer, HealthTracker, BatteryReport
+│   │       └── green/              carbon.ts (electricity maps)
+│   │
+│   ├── audit/                     @lokaflow/audit ✅
+│   │   └── src/
+│   │       ├── parsers/            ChatGPTParser, ClaudeParser
+│   │       └── engine/             AuditEngine (subscription cost analyser)
+│   │
+│   ├── commons/                   @lokaflow/commons ✅
+│   │   └── src/
+│   │       ├── credits/            Credits ledger
+│   │       ├── routing/            CooperativeRouter
+│   │       └── registry/           Node registry
+│   │
+│   ├── swap/                      @lokaflow/swap ✅
+│   │   └── src/
+│   │       ├── exchange/           listing, settlement
+│   │       ├── pools/              token pools
+│   │       ├── purchasing/         DemandAggregator
+│   │       └── conversion/         token converter
+│   │
+│   ├── vscode/                    lokaflow-vscode 🔧 scaffold
+│   │   └── src/extension.ts
+│   │
+│   └── lokallm/                   Python package 🔧 in progress
+│       └── src/                   Fine-tuned Phi-3 Mini (complexity + decompose)
 │
-├── impl/                          V2 design docs (read-only references)
-│   ├── CLAUDE_orchestrator.md    LokaOrchestrator DAG decomposition
-│   ├── CLAUDE_mesh.md            LokaMesh cluster
-│   ├── CLAUDE_root_v2.md         Full monorepo V2 vision
-│   ├── CLAUDE_audit.md           LokaAudit
-│   └── ...
+├── apps/
+│   ├── web/                       React + Vite dashboard 🔧 in progress
+│   └── mobile/                    React Native + llama.cpp 🔧 scaffold
 │
+├── tests/                         Root integration + fixture tests
+│   ├── unit/                      classifier, piiScanner, budget, router,
+│   │                              search (17 mocked), memory (27 in-mem SQLite)
+│   ├── integration/               requires live Ollama (auto-skipped)
+│   └── fixtures/                  sampleQueries.json, piiSamples.txt
+│
+├── impl/                          Design docs (read-only references)
 └── lokaflow.yaml                  Active config (git-ignored)
     config/lokaflow.example.yaml   Reference with all defaults
 ```
@@ -417,18 +455,24 @@ Output:
 
 ---
 
-## 5. V2 Build Order — Priority 5
+## 5. Build Order — Status
 
-| Step | Feature | Package | Status | Prerequisite |
-|---|---|---|---|---|
-| V2.1 | **REST API** (OpenAI-compatible proxy) | `packages/api/` | 🔲 Next | None |
-| V2.2 | **LokaMesh** (cluster discovery + WoL) | `packages/mesh/` | 🔲 | None |
-| V2.3 | **LokaOrchestrator** (task DAG) | `packages/orchestrator/` | 🔲 | REST API |
-| V2.4 | **LokaAudit** (subscription analyser) | `packages/audit/` | 🔲 | None |
-| V2.5 | **Web UI** (dashboard + chat) | `apps/web/` | 🔲 | REST API |
-| V2.6 | **VS Code plugin** | `packages/vscode/` | 🔲 | REST API |
-| V2.7 | **LokaLLM** (fine-tuned Phi-3) | `packages/lokallm/` | 🔲 | Training data from V2.3 |
-| V2.8 | **LokaMobile** (iOS/Android) | `apps/mobile/` | 🔲 | LokaMesh |
+| Step | Feature | Package | Status |
+|---|---|---|---|
+| V1 | **Core router** (PII, classify, budget, providers) | `packages/core/` | ✅ Done |
+| V1 | **CLI** (chat, cost, supporters) | `packages/cli/` | ✅ Done |
+| V2.1 | **REST API** (OpenAI-compatible proxy on :4141) | `packages/api/` | ✅ Done |
+| V2.2 | **LokaRoute** (intelligent proxy + savings tracker) | `packages/route/` | ✅ Done |
+| V2.3 | **LokaAgent** (8-stage DAG orchestration pipeline) | `packages/agent/` | ✅ Done |
+| V2.4 | **LokaOrchestrator** (task decomposition + DAG execution) | `packages/orchestrator/` | ✅ Done |
+| V2.5 | **LokaMesh** (mDNS discovery, WoL, battery, carbon) | `packages/mesh/` | ✅ Done |
+| V2.6 | **LokaAudit** (ChatGPT/Claude subscription analyser) | `packages/audit/` | ✅ Done |
+| V2.7 | **LokaCommons** (cooperative compute, credits ledger) | `packages/commons/` | ✅ Done |
+| V2.8 | **LokaSwap** (token exchange, group purchasing) | `packages/swap/` | ✅ Done |
+| V2.9 | **Web UI** (dashboard + chat) | `apps/web/` | 🔧 In progress |
+| V2.10 | **VS Code plugin** | `packages/vscode/` | 🔧 Scaffold |
+| V2.11 | **LokaLLM** (fine-tuned Phi-3 Mini INT4) | `packages/lokallm/` | 🔧 In progress |
+| V2.12 | **LokaMobile** (React Native + llama.cpp) | `apps/mobile/` | 🔧 Scaffold |
 
 ---
 
