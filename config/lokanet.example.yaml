@@ -1,0 +1,72 @@
+# lokanet.yaml — LokaMesh cluster configuration
+# Describes your local device cluster for distributed AI inference.
+# This file is git-ignored by default (contains device topology and MAC addresses).
+# Copy to the same directory as lokaflow.yaml and edit for your hardware.
+
+# ── Node configuration ─────────────────────────────────────────────────────────
+
+nodes:
+  # MacBook Air M4 — orchestrator (makes routing decisions, runs your sessions)
+  - id: macbook-air-m4
+    name: MacBook Air M4
+    role: orchestrator
+    ip: auto                          # auto-discovered via mDNS
+    port: 11434
+    ram_gb: 16
+    inference_watts: 6                # Apple Silicon efficiency
+    gpu_acceleration: true            # Metal — ~30 tok/s Mistral 7B
+    storage_hub: false
+    models:
+      - qwen2.5-coder:7b
+      - phi3:mini
+    sleep:
+      enabled: true
+      idle_minutes: 15                # light sleep after 15 min idle
+      wol: false                      # no WoL for laptop (lid close)
+
+  # Mac Mini M2 — always_on (24/7 home base, lowest latency)
+  - id: mac-mini-m2
+    name: Mac Mini M2
+    role: always_on
+    ip: 192.168.2.65                  # static LAN IP
+    port: 11434
+    ram_gb: 8
+    inference_watts: 10
+    gpu_acceleration: true
+    storage_hub: false
+    models:
+      - qwen2.5-coder:7b
+      - mistral:7b
+    sleep:
+      enabled: false                  # always on — no sleep
+
+  # Desktop i5 — storage hub + burst capacity, WoL capable
+  - id: desktop-i5
+    name: Desktop i5
+    role: storage
+    ip: auto
+    port: 11434
+    ram_gb: 32
+    inference_watts: 65               # desktop GPU under load
+    gpu_acceleration: false           # no GPU acceleration
+    storage_hub: true                 # shares model library (NFS/Samba)
+    mac_address: "00-E0-4C-46-08-03" # REQUIRED for WoL — replace with real MAC
+    models: []                        # no inference — model library only
+    sleep:
+      enabled: true
+      idle_minutes: 30                # deeper sleep for desktop
+      wol: true                       # WoL wake for burst demand
+
+# ── Discovery and health ───────────────────────────────────────────────────────
+
+discovery_interval_ms: 30000          # mDNS announce + scan every 30s
+health_check_interval_ms: 10000       # Ollama ping every 10s
+task_timeout_ms: 120000               # max 120s per task
+
+# ── Green computing ────────────────────────────────────────────────────────────
+
+green:
+  enabled: true
+  zone: NL                            # ElectricityMaps zone code (NL, DE, FR, GB, ...)
+  carbon_api_key: ""                  # optional: electricitymap.org free-tier API key
+                                      # Without key: uses EU average 295 gCO₂/kWh

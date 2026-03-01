@@ -1,0 +1,38 @@
+local:
+  provider: ollama
+  base_urls:
+    - http://localhost:11434
+    - http://192.168.2.65:11434
+  default_model: qwen2.5-coder:7b
+  timeout_seconds: 120
+
+router:
+  specialist_provider: gemini
+  specialist_model: gemini-2.0-flash
+  complexity_local_threshold: 0.30
+  complexity_cloud_threshold: 0.70
+  max_local_tokens: 8000
+  pii_scan: false
+  fallback_to_local: true
+
+output:
+  show_routing_decision: true
+  show_cost: true
+  stream: true
+
+search:
+  # Set enabled: true to activate the deep search pipeline
+  # Requires BRAVE_API_KEY in .env for Brave Search (optional)
+  # arXiv requires no API key
+  enabled: false
+  max_results: 5
+  brave_enabled: true
+  arxiv_enabled: true
+  filter_threshold: 5
+
+memory:
+  # Set enabled: true to activate conversation memory (RAG)
+  # Stores exchanges in ~/.lokaflow/memory.db — fully local, zero cloud calls
+  enabled: false
+  top_k: 4
+  session_id: default

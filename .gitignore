@@ -8,6 +8,11 @@
 *.pdf
 *.pptx
 *.xlsx
+**/*.docx
+**/*.pdf
+**/*.pptx
+**/*.xlsx
+tracker.md
 
 # ──────────────────────────────
 # OS
@@ -25,6 +30,9 @@ Desktop.ini
 # Claude Code (AI assistant)
 # ──────────────────────────────
 CLAUDE.md
+CLAUDE*.md
+**/CLAUDE*.md
+impl/**
 
 # ──────────────────────────────
 # Editor / IDE
@@ -67,13 +75,19 @@ coverage.xml
 node_modules/
 .npm
 .yarn/
+.pnpm-store/
 yarn-error.log
 package-lock.json
+pnpm-lock.yaml
 .next/
 .nuxt/
+.vite/
 dist/
+out/
+build/
 .cache/
 *.tsbuildinfo
+.eslintcache
 
 # ──────────────────────────────
 # Rust

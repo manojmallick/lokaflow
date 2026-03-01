@@ -1,0 +1,76 @@
+# LokaFlow™ — Example Configuration
+# © 2026 LearnHubPlay BV. All rights reserved.
+#
+# Copy this file: cp config/lokaflow.example.yaml config/lokaflow.yaml
+# Or place it at: ~/.lokaflow/config.yaml
+#
+# All values shown are defaults. Omit any section to use defaults.
+
+# ── Router ───────────────────────────────────────────────────────────────────
+router:
+  complexity_local_threshold: 0.35 # score < this → local
+  complexity_cloud_threshold: 0.65 # score > this → cloud, else specialist
+  max_local_tokens: 8000 # requests > this token count forced local
+  pii_scan: true # NEVER disable — required by privacy policy
+  pii_action: force_local # force_local | redact | block
+  fallback_to_local: true # if cloud fails, fall back gracefully
+
+# ── Budget ───────────────────────────────────────────────────────────────────
+budget:
+  daily_eur: 2.00 # hard stop at this daily spend
+  monthly_eur: 30.00 # hard stop at this monthly spend
+  warn_at_percent: 80 # warn at 80% of limit
+
+# ── Local models (Ollama) ─────────────────────────────────────────────────────
+local:
+  provider: ollama
+  base_url: http://localhost:11434
+  default_model: mistral:7b # score < 0.35 — used for direct local execution
+  timeout_seconds: 60
+
+# ── Specialist model (score 0.35–0.65) ───────────────────────────────────────
+# The specialist breaks medium-complexity tasks into subtasks and delegates them
+# to local workers for parallel execution. Omit to fall back to local round-robin.
+specialist:
+  provider: ollama              # ollama | claude | openai (any configured provider)
+  model: llama3.3:70b           # a capable model — 70B recommended for planning
+
+# ── Cloud providers ──────────────────────────────────────────────────────────
+cloud:
+  primary: claude # claude | openai | gemini | groq | mistral | together | perplexity | azure | cohere
+  fallback: openai
+  claude_model: claude-sonnet-4-20250514
+  openai_model: gpt-4o
+  gemini_model: gemini-2.0-flash
+  groq_model: llama-3.3-70b-versatile
+  mistral_model: mistral-large-latest                      # requires MISTRAL_API_KEY
+  together_model: meta-llama/Llama-3.3-70B-Instruct-Turbo # requires TOGETHER_API_KEY
+  perplexity_model: llama-3.1-sonar-large-128k-online      # requires PERPLEXITY_API_KEY — adds €0.005/req search cost
+  azure_deployment: gpt-4o                                 # requires AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT
+  cohere_model: command-r-plus                             # requires COHERE_API_KEY
+
+# ── Privacy ──────────────────────────────────────────────────────────────────
+privacy:
+  telemetry: false # NEVER change default — opt-in only
+  log_queries: false # never log raw content
+  log_level: INFO
+
+# ── Output ───────────────────────────────────────────────────────────────────
+output:
+  show_routing_decision: true # which model used + why
+  show_cost: true # cost per query
+  show_savings: true # what it would have cost cloud-only
+  stream: true # stream as tokens arrive
+
+
+# ── Search (not yet active) ───────────────────────────────────────────────────
+# search:
+#   enabled: false
+#   parallel_queries: 10
+#   max_sources: 50
+
+# ── Memory / RAG (not yet active) ────────────────────────────────────────────
+# memory:
+#   enabled: false
+#   vector_db: chroma
+#   chroma_path: ~/.lokaflow/memory

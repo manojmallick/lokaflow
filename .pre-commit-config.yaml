@@ -1,0 +1,57 @@
+# © 2026 LearnHubPlay BV. All rights reserved.
+# Licensed under BUSL 1.1 — see LICENSE for details.
+#
+# Install: pre-commit install  (requires pre-commit: pip install pre-commit)
+# Run all: pre-commit run --all-files
+
+repos:
+  # ── File hygiene ─────────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: detect-private-key
+
+  # ── Secret detection ─────────────────────────────────────────────────────
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: tests/fixtures/
+
+  # ── Node / TypeScript: Prettier ───────────────────────────────────────────
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, ts, tsx, json, yaml, css, markdown]
+        exclude: pnpm-lock.yaml
+
+  # ── Node / TypeScript: ESLint ─────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        language: node
+        entry: pnpm run lint
+        pass_filenames: false
+        types: [ts]
+
+  # ── TypeScript: type check ────────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: typecheck
+        name: tsc typecheck
+        language: node
+        entry: pnpm run typecheck
+        pass_filenames: false
+        types: [ts]

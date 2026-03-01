@@ -1,0 +1,26 @@
+{
+    "name": "@lokaflow/api",
+    "version": "1.0.0",
+    "description": "LokaFlow monolithic server layer",
+    "type": "module",
+    "main": "dist/server.js",
+    "types": "dist/server.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit",
+        "start": "node dist/server.js"
+    },
+    "dependencies": {
+        "fastify": "^4.28.1",
+        "@fastify/cors": "^8.5.0",
+        "@fastify/swagger": "^8.15.0",
+        "@fastify/swagger-ui": "^3.0.0",
+        "fastify-plugin": "^4.5.1",
+        "chalk": "^5.3.0",
+        "zod": "^3.23.8",
+        "@lokaflow/core": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^22.5.5"
+    }
+}
