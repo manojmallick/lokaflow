@@ -59,8 +59,11 @@ function App(): JSX.Element {
         </nav>
       </aside>
       <main className={`content${view === "chat" ? " content-chat" : ""}`}>
+        {/* Chat is always mounted so in-flight LLM responses survive navigation */}
+        <div style={{ display: view === "chat" ? "contents" : "none" }}>
+          <Chat />
+        </div>
         {view === "dashboard" && <Dashboard />}
-        {view === "chat" && <Chat />}
         {view === "mesh" && <MeshCluster />}
         {view === "settings" && <SettingsView />}
       </main>
