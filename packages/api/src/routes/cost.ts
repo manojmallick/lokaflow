@@ -41,9 +41,18 @@ const costRoute: FastifyPluginAsync<CostRouteOptions> = async (fastify, opts) =>
         models: [],
       };
       const monthReports = opts.tracker.getDailyReport(30);
-      const monthTotalEur = monthReports.reduce((sum: number, r: { costEur: number }) => sum + r.costEur, 0);
-      const monthTotalQueries = monthReports.reduce((sum: number, r: { queries: number }) => sum + r.queries, 0);
-      const monthSavingsEur = monthReports.reduce((sum: number, r: { savedEur: number }) => sum + r.savedEur, 0);
+      const monthTotalEur = monthReports.reduce(
+        (sum: number, r: { costEur: number }) => sum + r.costEur,
+        0,
+      );
+      const monthTotalQueries = monthReports.reduce(
+        (sum: number, r: { queries: number }) => sum + r.queries,
+        0,
+      );
+      const monthSavingsEur = monthReports.reduce(
+        (sum: number, r: { savedEur: number }) => sum + r.savedEur,
+        0,
+      );
       const totals = opts.tracker.getTotals();
       const dailyLimit = opts.config.budget.dailyEur;
       const monthlyLimit = opts.config.budget.monthlyEur;

@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# ── Pre-commit: fast checks on staged files only ──────────────────────────────
+# Runs Prettier (auto-format) + ESLint (auto-fix) via lint-staged.
+# Only touches files you are about to commit — fast even in a large monorepo.
+echo "⏳  pre-commit: formatting + linting staged files…"
+npx lint-staged

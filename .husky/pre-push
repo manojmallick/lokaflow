@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# ── Pre-push: heavy checks (build → typecheck → test) ────────────────────────
+# Runs before every `git push`. Catches type errors and test failures that are
+# too expensive to run on every commit but must pass before reaching remote.
+
+echo "⏳  pre-push: build → typecheck → test…"
+
+echo "  → Building workspace packages…"
+pnpm run build || {
+  echo "  ❌  Build failed — push aborted."
+  exit 1
+}
+
+echo "  → Running type check…"
+pnpm run typecheck || {
+  echo "  ❌  Type check failed — push aborted."
+  exit 1
+}
+
+echo "  → Running tests…"
+pnpm run test || {
+  echo "  ❌  Tests failed — push aborted."
+  exit 1
+}
+
+echo "  ✓  All pre-push checks passed."
