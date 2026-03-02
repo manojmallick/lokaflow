@@ -85,9 +85,14 @@ const FORCE_CLOUD_FRONTIER: Rule[] = [
     reason: "legal document drafting",
   },
   {
-    pattern: /(medical|clinical|diagnostic|treatment\s+plan|drug\s+interaction|differential\s+diagnosis).{0,100}(advice|recommend|review|analyse)/i,
+    pattern: /(medical|clinical|diagnostic|treatment\s+plan|drug\s+interaction|differential\s+diagnosis).{0,150}(advice|recommend|review|analyse|analyze|remediat|vulnerabilit|CVE|plan|assess|consult)/i,
     tier: "cloud-frontier",
     reason: "medical domain",
+  },
+  {
+    pattern: /\b(quantum\s+computing|quantum\s+circuit|quantum\s+annealing|photonic\s+computing|qubit|quantum\s+advantage|quantum\s+approach)/i,
+    tier: "cloud-frontier",
+    reason: "quantum computing domain",
   },
 ];
 
@@ -107,12 +112,32 @@ const FORCE_CLOUD_CAPABLE: Rule[] = [
     tier: "cloud-capable",
     reason: "long document analysis",
   },
+  {
+    pattern: /\b(summarise|summarize)\b.{0,150}\b(\d+[\s-]page|legal\s+contract|legal\s+document|compliance\s+report|annual\s+report|key\s+obligations)/i,
+    tier: "cloud-capable",
+    reason: "long legal/compliance document summarisation",
+  },
+];
+
+// ── Force-Local-Capable rules ─────────────────────────────────────────────────
+const FORCE_LOCAL_CAPABLE: Rule[] = [
+  {
+    pattern: /\b(write|implement|create|build|generate)\b.{0,120}\b(function|method|class|tests?|unit\s+tests?|algorithm|script|module|component|interface)\b/i,
+    tier: "local-capable",
+    reason: "programming task",
+  },
+  {
+    pattern: /\b(explain|describe|compare)\b.{0,100}\b(difference|TCP|UDP|HTTP|SQL|algorithm|protocol|pattern|REST|async|thread|stack|heap|SOLID|DRY|CAP\s+theorem)\b/i,
+    tier: "local-capable",
+    reason: "technical concept explanation",
+  },
 ];
 
 /** Single compiled rule bank. */
 const ALL_RULES: Array<{ rules: Rule[] }> = [
   { rules: FORCE_CLOUD_FRONTIER },  // highest priority — check first
   { rules: FORCE_CLOUD_CAPABLE },
+  { rules: FORCE_LOCAL_CAPABLE },
   { rules: FORCE_LOCAL_TRIVIAL },
 ];
 

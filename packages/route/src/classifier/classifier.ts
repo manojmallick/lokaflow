@@ -72,7 +72,12 @@ export class QueryClassifier {
 
     // ── 2. Rule engine (regex pre-filter) ────────────────────────────────────
     const ruleResult = this.rules.match(query);
-    if (ruleResult) return { ...ruleResult, piiDetected };
+    if (ruleResult) {
+      const adjScore = Math.max(0, Math.min(
+        ruleResult.score + SENSITIVITY_DELTA[this.sensitivity], 1,
+      ));
+      return { ...ruleResult, score: adjScore, tier: scoreToTier(adjScore), piiDetected };
+    }
 
     // ── 3. ML scoring ────────────────────────────────────────────────────────
     const userBaseline = this.learner?.currentBaseline() ?? 0.5;
