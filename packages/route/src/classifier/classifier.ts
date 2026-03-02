@@ -37,8 +37,8 @@ export class QueryClassifier {
     this.rules = new RuleEngine();
     this.extractor = new FeatureExtractor();
     this.sensitivity = opts.sensitivity ?? "balanced";
-    this.learner = opts.learner;
-    this.piiScanner = opts.piiScanner;
+    if (opts.learner !== undefined) this.learner = opts.learner;
+    if (opts.piiScanner !== undefined) this.piiScanner = opts.piiScanner;
   }
 
   /**
@@ -54,8 +54,8 @@ export class QueryClassifier {
     let piiDetected = false;
     if (this.piiScanner) {
       try {
-        const result = this.piiScanner.scan(query);
-        if (result.detected) {
+        const result = this.piiScanner.scanSync(query);
+        if (result.containsPii) {
           piiDetected = true;
           return {
             tier: "local-capable",

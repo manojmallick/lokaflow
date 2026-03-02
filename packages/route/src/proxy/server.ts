@@ -59,8 +59,8 @@ export class ProxyServer {
       });
       this.engine = new RouteDecisionEngine({
         policy,
-        tracker:      this.tracker,
-        monthlySpend: () => this.tracker.monthToDateSummary().actualCostUsd,
+        tracker:                this.tracker,
+        currentMonthlySpendEur: () => this.tracker.monthToDateSummary().actualCostUsd,
       });
     } catch {
       // Boot without config — use all defaults
@@ -97,9 +97,10 @@ export class ProxyServer {
       }
 
       // 1. Classify the query
+      const systemMsg = intercepted.messages.find(m => m.role === "system")?.content;
       const classification = this.classifier.classify(intercepted.query, {
-        messages:     intercepted.messages.length,
-        systemPrompt: intercepted.messages.find(m => m.role === "system")?.content,
+        conversationLength: intercepted.messages.length,
+        ...(systemMsg !== undefined && { systemPrompt: systemMsg }),
       });
 
       // 2. Route decision

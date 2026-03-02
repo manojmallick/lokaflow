@@ -31,7 +31,7 @@ export class RouteDecisionEngine {
   constructor(opts: RouteDecisionEngineOptions = {}) {
     this.policy = opts.policy ?? DEFAULT_POLICY;
     this.getMonthlySpend = opts.currentMonthlySpendEur ?? (() => 0);
-    this.tracker = opts.tracker;
+    if (opts.tracker !== undefined) this.tracker = opts.tracker;
 
     // Merge user overrides over defaults
     const defaults = DEFAULT_TIER_MODELS;
@@ -94,8 +94,8 @@ export class RouteDecisionEngine {
       classification: overrideReason
         ? { ...classification, tier, reason: overrideReason }
         : classification,
-      policyOverride,
-      piiDetected: classification.piiDetected,
+      ...(policyOverride !== undefined && { policyOverride }),
+      ...(classification.piiDetected !== undefined && { piiDetected: classification.piiDetected }),
     };
   }
 }

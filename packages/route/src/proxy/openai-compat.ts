@@ -67,8 +67,10 @@ export function normaliseRequest(
     messages,
     model: decision.model,
     stream: (body["stream"] as boolean | undefined) ?? false,
-    temperature: body["temperature"] as number | undefined,
-    max_tokens: (body["max_tokens"] ?? body["maxTokens"]) as number | undefined,
+    ...(body["temperature"] !== undefined && { temperature: body["temperature"] as number }),
+    ...(body["max_tokens"] !== undefined || body["maxTokens"] !== undefined
+      ? { max_tokens: (body["max_tokens"] ?? body["maxTokens"]) as number }
+      : {}),
     targetProvider: tierToProvider(decision.tier),
   };
 }
@@ -152,8 +154,8 @@ function tierToProvider(tier: string): string {
 function buildLokaMeta(decision: RouteDecision) {
   return {
     tier: decision.tier,
-    originalModel: decision.classification.features ? "auto" : "auto",
+    originalModel: "auto",
     classifierScore: decision.classification.score,
-    policyOverride: decision.policyOverride,
+    ...(decision.policyOverride !== undefined && { policyOverride: decision.policyOverride }),
   };
 }
