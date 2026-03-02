@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, ChangeEvent } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, ChangeEvent } from "react";
 import {
   Send,
   Bot,
@@ -33,6 +33,7 @@ import {
   Paperclip,
   X,
   MessageSquare,
+  BarChart2,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -682,6 +683,89 @@ function QueueBar({
   );
 }
 
+// ─── CostEstimator ───────────────────────────────────────────────────────────
+
+function estimatePrompt(text: string): {
+  complexity: number;
+  tier: "local" | "cloud";
+  costEur: number;
+  tokens: number;
+} {
+  if (!text.trim()) return { complexity: 0, tier: "local", costEur: 0, tokens: 0 };
+
+  const lower = text.toLowerCase();
+  const tokens = Math.ceil(text.length / 4);
+  let complexity = 0.25;
+
+  // Length factor
+  if (text.length > 500) complexity += 0.25;
+  else if (text.length > 200) complexity += 0.15;
+  else if (text.length < 30) complexity -= 0.1;
+
+  // Technical / code keywords
+  const codeKw = ["function", "class", "algorithm", "debug", "error", "implement", "refactor", "architecture", "api", "database"];
+  if (codeKw.some((kw) => lower.includes(kw))) complexity += 0.15;
+
+  // Expert / compliance keywords
+  const expertKw = ["gdpr", "compliance", "legal", "medical", "regulation", "audit", "privacy", "liability"];
+  if (expertKw.some((kw) => lower.includes(kw))) complexity += 0.2;
+
+  // Multiple questions
+  const qCount = (text.match(/\?/g) || []).length;
+  if (qCount >= 2) complexity += 0.1;
+
+  complexity = Math.min(0.95, Math.max(0.05, complexity));
+
+  const tier: "local" | "cloud" = complexity >= 0.65 ? "cloud" : "local";
+
+  // Cost estimate: local = €0.00, cloud ≈ €0.002 per 1K tokens
+  const costEur = tier === "cloud" ? (tokens / 1000) * 0.002 : 0;
+
+  return { complexity, tier, costEur, tokens };
+}
+
+function CostEstimator({ prompt }: { prompt: string }) {
+  const est = useMemo(() => estimatePrompt(prompt), [prompt]);
+
+  if (prompt.trim().length < 5) return null;
+
+  const pct = Math.round(est.complexity * 100);
+  const barColor = est.tier === "local" ? "#4ade80" : "#fbbf24";
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "5px 12px",
+        fontSize: 11,
+        color: "var(--text-muted)",
+        borderTop: "1px solid var(--border-color)",
+        background: "rgba(0,0,0,.1)",
+      }}
+    >
+      {est.tier === "local" ? <Cpu size={12} style={{ color: "#4ade80" }} /> : <Cloud size={12} style={{ color: "#fbbf24" }} />}
+      <span style={{ color: est.tier === "local" ? "#4ade80" : "#fbbf24", fontWeight: 600 }}>
+        {est.tier === "local" ? "Local" : "Cloud"}
+      </span>
+      <div style={{ flex: 1, height: 3, background: "rgba(255,255,255,.08)", borderRadius: 99, maxWidth: 80 }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: 99 }} />
+      </div>
+      <span>complexity {pct}%</span>
+      <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+        <BarChart2 size={11} />
+        ~{est.tokens} tokens
+        {est.costEur > 0 ? (
+          <span style={{ color: "#fbbf24" }}> · €{(est.costEur * 100).toFixed(2)}¢</span>
+        ) : (
+          <span style={{ color: "#4ade80" }}> · €0.00</span>
+        )}
+      </span>
+    </div>
+  );
+}
+
 // ─── TemplatesModal ───────────────────────────────────────────────────────────
 
 const TEMPLATE_CATEGORIES = ["All", "Coding", "Writing", "Analysis"];
@@ -1084,6 +1168,91 @@ function ExportMenu({
   );
 }
 
+// ─── Context Window Visualiser ───────────────────────────────────────────────
+
+const MODEL_CTX: Record<string, number> = {
+  "qwen2.5:7b": 131072,
+  "qwen2.5-coder:7b": 131072,
+  "qwen2.5:14b": 131072,
+  "tinyllama:1.1b": 4096,
+  "tinyllama": 4096,
+  "mistral:7b": 32768,
+  "mistral": 32768,
+  "llama3:8b": 8192,
+  "llama3": 8192,
+  "phi:latest": 4096,
+  "gemini-2.0-flash": 1000000,
+  "gemini-1.5-pro": 1000000,
+  "claude-3-haiku": 200000,
+  "claude-3-sonnet": 200000,
+  "gpt-4o": 128000,
+  "gpt-4o-mini": 128000,
+};
+
+function resolveCtxWindow(model: string): number {
+  // Exact match first
+  if (MODEL_CTX[model]) return MODEL_CTX[model];
+  // Prefix match
+  for (const key of Object.keys(MODEL_CTX)) {
+    if (model.startsWith(key) || model.includes(key)) return MODEL_CTX[key];
+  }
+  return 32768; // sensible default
+}
+
+function ContextWindowBar({ msgIndex, messages, model }: { msgIndex: number; messages: Message[]; model: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const ctx = resolveCtxWindow(model);
+
+  // Estimate tokens: 1 token ≈ 4 chars; 40 token system prompt overhead per prior message pair
+  const systemTok = 80; // system preamble
+  const historyTok = messages.slice(0, msgIndex).reduce((acc, m) => acc + Math.ceil(m.content.length / 4) + 12, 0);
+  const thisMsg = messages[msgIndex];
+  const msgTok = thisMsg ? Math.ceil(thisMsg.content.length / 4) : 0;
+  const total = systemTok + historyTok + msgTok;
+  const pct = Math.min((total / ctx) * 100, 100);
+
+  const barColor = pct < 60 ? "#4ade80" : pct < 85 ? "#fbbf24" : "#f87171";
+
+  return (
+    <div className="ctx-bar-wrap">
+      <div className="ctx-bar-label">
+        <span
+          style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+          onClick={() => setExpanded((e) => !e)}
+        >
+          Context window
+          <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 4 }}>
+            {expanded ? "▲" : "▼"}
+          </span>
+        </span>
+        <span style={{ color: barColor, fontWeight: 600 }}>
+          {pct.toFixed(1)}% · {total.toLocaleString()} / {ctx.toLocaleString()} tok
+        </span>
+      </div>
+      <div className="ctx-bar-track">
+        <div className="ctx-bar-fill" style={{ width: `${pct}%`, background: barColor }} />
+      </div>
+      {expanded && (
+        <div className="ctx-bar-detail">
+          {[
+            { label: "System", tok: systemTok, color: "#818cf8" },
+            { label: "History", tok: historyTok, color: "#64748b" },
+            { label: "This msg", tok: msgTok, color: "var(--accent)" },
+          ].map(({ label, tok, color }) => (
+            <span key={label} className="ctx-bar-seg">
+              <span className="ctx-seg-dot" style={{ background: color }} />
+              {label}: {tok.toLocaleString()} tok
+            </span>
+          ))}
+          <span className="ctx-bar-seg" style={{ color: "var(--text-muted)", marginLeft: "auto" }}>
+            {model}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MessageBubble (with edit, copy-menu, attachments) ────────────────────────
 
 function MessageBubble({
@@ -1330,6 +1499,8 @@ export function Chat(): JSX.Element {
 
   // ── Input / attachments ───────────────────────────────────────────────────
   const [input, setInput] = useState("");
+  const [slashSuggestions, setSlashSuggestions] = useState<PromptTemplate[]>([]);
+  const [slashIndex, setSlashIndex] = useState(0);
   const [attachments, setAttachments] = useState<AttachedFile[]>([]);
   const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
   const isLoading = loadingSessionId !== null;
@@ -1616,7 +1787,51 @@ export function Chat(): JSX.Element {
     [input, attachments, processMessage],
   );
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInput(val);
+    if (val.startsWith("/") && val.length > 0) {
+      const query = val.slice(1).toLowerCase();
+      const matches = templates.filter(
+        (t) =>
+          t.name.toLowerCase().includes(query) ||
+          t.category.toLowerCase().includes(query) ||
+          t.template.toLowerCase().includes(query),
+      );
+      setSlashSuggestions(matches.slice(0, 8));
+      setSlashIndex(0);
+    } else {
+      setSlashSuggestions([]);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (slashSuggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSlashIndex((i) => Math.min(i + 1, slashSuggestions.length - 1));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSlashIndex((i) => Math.max(i - 1, 0));
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const tpl = slashSuggestions[slashIndex];
+        if (tpl) {
+          setInput(tpl.template);
+          setSlashSuggestions([]);
+          setTimeout(() => textareaRef.current?.focus(), 50);
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        setSlashSuggestions([]);
+        return;
+      }
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -1700,7 +1915,7 @@ export function Chat(): JSX.Element {
 
         {/* Messages */}
         <div className="chat-messages">
-          {messages.map((msg) => (
+          {messages.map((msg, msgIndex) => (
             <div key={msg.id} className={`message-wrapper ${msg.role}`}>
               <div className="avatar">
                 {msg.role === "assistant" ? (
@@ -1720,6 +1935,13 @@ export function Chat(): JSX.Element {
                   onSaveAsTemplate={handleSaveAsTemplate}
                 />
                 {msg.trace && <TracePanel trace={msg.trace} />}
+                {msg.role === "assistant" && (
+                  <ContextWindowBar
+                    msgIndex={msgIndex}
+                    messages={messages}
+                    model={msg.trace?.model ?? (localStorage.getItem("lf_model") || "qwen2.5:7b")}
+                  />
+                )}
               </div>
             </div>
           ))}
@@ -1777,6 +1999,29 @@ export function Chat(): JSX.Element {
             </div>
           )}
 
+          {/* Slash command dropdown */}
+          {slashSuggestions.length > 0 && (
+            <div className="slash-dropdown">
+              {slashSuggestions.map((tpl, i) => (
+                <div
+                  key={tpl.id}
+                  className={`slash-item${i === slashIndex ? " slash-item-active" : ""}`}
+                  onMouseEnter={() => setSlashIndex(i)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setInput(tpl.template);
+                    setSlashSuggestions([]);
+                    setTimeout(() => textareaRef.current?.focus(), 50);
+                  }}
+                >
+                  <span className="slash-title">{tpl.name}</span>
+                  <span className="slash-category">{tpl.category}</span>
+                </div>
+              ))}
+              <div className="slash-hint">↑↓ navigate · Enter select · Esc close</div>
+            </div>
+          )}
+
           {/* Input row */}
           <div
             className="chat-input-row"
@@ -1803,7 +2048,7 @@ export function Chat(): JSX.Element {
               ref={textareaRef}
               className="chat-textarea"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={
                 isLoading && queue.length >= MAX_QUEUE
@@ -1826,6 +2071,9 @@ export function Chat(): JSX.Element {
               {isLoading ? <Loader2 size={18} className="spin" /> : <Send size={18} />}
             </button>
           </div>
+
+          {/* Pre-send cost estimator */}
+          <CostEstimator prompt={input} />
 
           <div className="chat-footer-hint">
             <span style={{ display: "flex", alignItems: "center", gap: 4 }}>

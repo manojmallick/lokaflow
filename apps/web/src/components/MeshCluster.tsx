@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Cpu, Cloud, Zap, RefreshCw, Wifi, WifiOff, Activity } from "lucide-react";
+import { ChevronDown, ChevronRight, Cloud, Cpu, RefreshCw, Wifi, WifiOff, Zap } from "lucide-react";
 
 interface Provider {
   name: string;
@@ -7,6 +7,11 @@ interface Provider {
   status: "ok" | "error" | "unknown";
   latencyMs: number;
   models?: string[];
+  // Optional extended fields the API may provide
+  cpuPct?: number;
+  ramPct?: number;
+  batteryPct?: number;
+  routingLoad?: number;
 }
 
 interface HealthData {
@@ -16,6 +21,17 @@ interface HealthData {
   providers: Provider[];
 }
 
+/** Format seconds → "4d 23h" or "12h 05m" or "45s" */
+function fmtUptime(seconds: number): string {
+  if (seconds < 60) return `${Math.floor(seconds)}s`;
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${String(mins).padStart(2, "0")}m`;
+  return `${mins}m`;
+}
+
 function TierIcon({ tier }: { tier: string }) {
   if (tier === "cloud") return <Cloud size={14} />;
   if (tier === "specialist") return <Zap size={14} />;
@@ -23,19 +39,44 @@ function TierIcon({ tier }: { tier: string }) {
 }
 
 function StatusDot({ status }: { status: string }) {
-  return <span className={`status-dot ${status}`} title={status} />;
+  const cls = status === "ok" ? "dot-green" : status === "error" ? "dot-red" : "dot-amber";
+  return <span className={`status-dot ${cls}`} title={status} />;
 }
 
-function LatencyBar({ ms }: { ms: number }) {
-  const max = 500;
+/** Latency bar — color is tier-aware, not just speed-based */
+function LatencyBar({ ms, tier, status }: { ms: number; tier: string; status: string }) {
+  const max = tier === "local" ? 300 : 800;
   const pct = Math.min(100, (ms / max) * 100);
-  const color = ms < 50 ? "#10b981" : ms < 200 ? "#eab308" : "#ef4444";
+
+  // Color logic:
+  // - offline/broken → red always
+  // - local + fast (< 100ms) → green
+  // - local + slow (> 100ms) → amber
+  // - cloud reachable → amber (shows it's routable but not free)
+  // - cloud unreachable → red
+  let color = "#4ade80";
+  if (status !== "ok") {
+    color = "#f87171";
+  } else if (tier === "cloud") {
+    color = "#fbbf24";
+  } else if (ms > 100) {
+    color = "#fbbf24";
+  }
+
   return (
     <div className="latency-bar-wrap" title={`${ms}ms`}>
       <div className="latency-bar-bg">
         <div className="latency-bar-fill" style={{ width: `${pct}%`, background: color }} />
       </div>
-      <span className="latency-value">{ms}ms</span>
+      <span className="latency-value" style={{ color }}>{ms}ms</span>
+    </div>
+  );
+}
+
+function MiniBar({ pct, color = "var(--accent)" }: { pct: number; color?: string }) {
+  return (
+    <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,.08)", borderRadius: 99 }}>
+      <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: color, borderRadius: 99 }} />
     </div>
   );
 }
@@ -47,6 +88,7 @@ export function MeshCluster() {
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedNode, setExpandedNode] = useState<string | null>(null);
 
   const fetchHealth = useCallback(async () => {
     setRefreshing(true);
@@ -57,7 +99,7 @@ export function MeshCluster() {
       setHealth(data);
       setError(null);
       setLastRefresh(new Date());
-    } catch (err) {
+    } catch {
       setError(`Cannot reach LokaFlow API at ${API_BASE()}/v1/health`);
     } finally {
       setRefreshing(false);
@@ -74,6 +116,92 @@ export function MeshCluster() {
   const specialistProviders = health?.providers.filter((p) => p.tier === "specialist") ?? [];
   const cloudProviders = health?.providers.filter((p) => p.tier === "cloud") ?? [];
   const onlineCount = health?.providers.filter((p) => p.status === "ok").length ?? 0;
+  const avgLatency =
+    health && health.providers.length > 0
+      ? Math.round(
+          health.providers.filter((p) => p.status === "ok" && p.latencyMs > 0).reduce((a, p) => a + p.latencyMs, 0) /
+            Math.max(1, health.providers.filter((p) => p.status === "ok" && p.latencyMs > 0).length),
+        )
+      : null;
+
+  function renderProviderCard(p: Provider, i: number) {
+    const key = `${p.name}_${i}`;
+    const isExpanded = expandedNode === key;
+    const modelState = p.latencyMs > 0 && p.status === "ok" ? "warm" : "cold";
+
+    return (
+      <div key={key} className={`provider-card ${p.status}`}>
+        <div
+          className="provider-card-top"
+          style={{ cursor: "pointer" }}
+          onClick={() => setExpandedNode(isExpanded ? null : key)}
+        >
+          <StatusDot status={p.status} />
+          <TierIcon tier={p.tier} />
+          <span className="provider-name">{p.name}</span>
+          <span
+            className={`model-state-badge ${modelState === "warm" ? "model-warm" : "model-cold"}`}
+            style={{ marginLeft: "auto", marginRight: 4 }}
+          >
+            {modelState}
+          </span>
+          {isExpanded ? <ChevronDown size={13} style={{ color: "var(--text-muted)" }} /> : <ChevronRight size={13} style={{ color: "var(--text-muted)" }} />}
+        </div>
+
+        <div className="provider-card-bottom">
+          <span className={`provider-status-label ${p.status}`}>
+            {p.status === "ok" ? "Online" : p.status === "error" ? "Offline" : "Unknown"}
+          </span>
+          {p.latencyMs > 0 && <LatencyBar ms={p.latencyMs} tier={p.tier} status={p.status} />}
+        </div>
+
+        {p.models && p.models.length > 0 && (
+          <div className="provider-models">
+            {p.models.map((m) => (
+              <span key={m} className="model-chip" title={m}>{m}</span>
+            ))}
+          </div>
+        )}
+
+        {isExpanded && (
+          <div className="node-card-expanded">
+            <div className="node-card-expanded-row">
+              <span className="nce-lbl">CPU</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
+                <MiniBar pct={p.cpuPct ?? 0} color="#60a5fa" />
+                <span className="nce-val">{p.cpuPct != null ? `${p.cpuPct}%` : "—"}</span>
+              </div>
+            </div>
+            <div className="node-card-expanded-row">
+              <span className="nce-lbl">RAM</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
+                <MiniBar pct={p.ramPct ?? 0} color="#a78bfa" />
+                <span className="nce-val">{p.ramPct != null ? `${p.ramPct}%` : "—"}</span>
+              </div>
+            </div>
+            <div className="node-card-expanded-row">
+              <span className="nce-lbl">Battery</span>
+              <span className="nce-val">{p.batteryPct != null ? `${p.batteryPct}%` : "—"}</span>
+            </div>
+            <div className="node-card-expanded-row">
+              <span className="nce-lbl">Routing load</span>
+              <span className="nce-val">{p.routingLoad != null ? `${p.routingLoad}%` : "—"}</span>
+            </div>
+            <div className="node-card-expanded-row">
+              <span className="nce-lbl">Model state</span>
+              <span className={`model-state-badge ${modelState === "warm" ? "model-warm" : "model-cold"}`}>
+                {modelState === "warm" ? "🟢 Warm" : "🔵 Cold"}
+              </span>
+            </div>
+            <div className="node-card-expanded-row">
+              <span className="nce-lbl">Tier</span>
+              <span className="nce-val" style={{ textTransform: "capitalize" }}>{p.tier}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="mesh-container">
@@ -105,53 +233,45 @@ export function MeshCluster() {
 
       {health && (
         <>
-          {/* Summary row */}
-          <div className="mesh-summary-row">
-            <div className="mesh-summary-card">
-              <Wifi size={16} className="icon-green" />
-              <div>
-                <div className="mesh-stat">
-                  {onlineCount} / {health.providers.length}
+          {/* Cluster overview */}
+          <div className="mesh-cluster-summary">
+            <div className="mesh-summary-item">
+              <div className="mesh-summary-val" style={{ color: onlineCount > 0 ? "#4ade80" : "#f87171" }}>
+                {onlineCount} / {health.providers.length}
+              </div>
+              <div className="mesh-summary-lbl">Online</div>
+            </div>
+            <div className="mesh-summary-item">
+              <div className="mesh-summary-val">{fmtUptime(health.uptime)}</div>
+              <div className="mesh-summary-lbl">API Uptime</div>
+            </div>
+            {avgLatency != null && (
+              <div className="mesh-summary-item">
+                <div className="mesh-summary-val" style={{ color: avgLatency < 100 ? "#4ade80" : avgLatency < 300 ? "#fbbf24" : "#f87171" }}>
+                  {avgLatency}ms
                 </div>
-                <div className="mesh-stat-label">Providers online</div>
+                <div className="mesh-summary-lbl">Avg Latency</div>
               </div>
+            )}
+            <div className="mesh-summary-item">
+              <div className="mesh-summary-val">{localProviders.filter((p) => p.status === "ok").length}</div>
+              <div className="mesh-summary-lbl">Local Nodes</div>
             </div>
-            <div className="mesh-summary-card">
-              <Activity size={16} className="icon-blue" />
-              <div>
-                <div className="mesh-stat">{Math.floor(health.uptime)}s</div>
-                <div className="mesh-stat-label">API uptime</div>
-              </div>
+            <div className="mesh-summary-item">
+              <div className="mesh-summary-val">{cloudProviders.filter((p) => p.status === "ok").length}</div>
+              <div className="mesh-summary-lbl">Cloud Nodes</div>
             </div>
-            <div className="mesh-summary-card">
-              <Cpu size={16} className="icon-purple" />
-              <div>
-                <div className="mesh-stat">v{health.version}</div>
-                <div className="mesh-stat-label">LokaFlow version</div>
-              </div>
+            <div className="mesh-summary-item">
+              <div className="mesh-summary-val">v{health.version}</div>
+              <div className="mesh-summary-lbl">Version</div>
             </div>
           </div>
 
           {/* Provider tiers */}
           {[
-            {
-              label: "Local Models",
-              icon: <Cpu size={15} />,
-              providers: localProviders,
-              color: "#10b981",
-            },
-            {
-              label: "Specialist Models",
-              icon: <Zap size={15} />,
-              providers: specialistProviders,
-              color: "#8b5cf6",
-            },
-            {
-              label: "Cloud Models",
-              icon: <Cloud size={15} />,
-              providers: cloudProviders,
-              color: "#3b82f6",
-            },
+            { label: "Local Models", icon: <Cpu size={15} />, providers: localProviders, color: "#4ade80" },
+            { label: "Specialist Models", icon: <Zap size={15} />, providers: specialistProviders, color: "#a78bfa" },
+            { label: "Cloud Models", icon: <Cloud size={15} />, providers: cloudProviders, color: "#fbbf24" },
           ].map(
             (group) =>
               group.providers.length > 0 && (
@@ -160,32 +280,12 @@ export function MeshCluster() {
                     {group.icon}
                     <span>{group.label}</span>
                     <span className="provider-count">{group.providers.length}</span>
+                    <span style={{ marginLeft: 6, fontSize: 11, color: "var(--text-muted)" }}>
+                      {group.providers.filter((p) => p.status === "ok").length} online
+                    </span>
                   </div>
                   <div className="provider-grid">
-                    {group.providers.map((p, i) => (
-                      <div key={i} className={`provider-card ${p.status}`}>
-                        <div className="provider-card-top">
-                          <StatusDot status={p.status} />
-                          <TierIcon tier={p.tier} />
-                          <span className="provider-name">{p.name}</span>
-                        </div>
-                        <div className="provider-card-bottom">
-                          <span className={`provider-status-label ${p.status}`}>
-                            {p.status === "ok" ? "Online" : "Offline"}
-                          </span>
-                          {p.latencyMs > 0 && <LatencyBar ms={p.latencyMs} />}
-                        </div>
-                        {p.models && p.models.length > 0 && (
-                          <div className="provider-models">
-                            {p.models.map((m) => (
-                              <span key={m} className="model-chip" title={m}>
-                                {m}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {group.providers.map((p, i) => renderProviderCard(p, i))}
                   </div>
                 </div>
               ),
@@ -195,7 +295,7 @@ export function MeshCluster() {
 
       {!health && !error && (
         <div className="mesh-loading">
-          <RefreshCw size={20} className="spin" />
+          <Wifi size={20} className="spin" />
           <span>Connecting to LokaFlow API…</span>
         </div>
       )}
