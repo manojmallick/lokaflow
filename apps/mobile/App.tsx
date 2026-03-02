@@ -1,230 +1,174 @@
-import React, { useState } from 'react';
-import {
-    StyleSheet,
-    Text,
-    View,
-    TextInput,
-    TouchableOpacity,
-    ScrollView,
-    SafeAreaView,
-    KeyboardAvoidingView,
-    Platform,
-    ActivityIndicator
-} from 'react-native';
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
-// When running on an Android Emulator, 10.0.2.2 maps to the host machine's localhost
-// When running in an iOS Simulator, localhost works fine
-const API_URL = Platform.OS === 'android'
-    ? 'http://10.0.2.2:4141/v1/chat/completions'
-    : 'http://localhost:4141/v1/chat/completions';
+import DashboardScreen from "./screens/DashboardScreen";
+import ChatScreen from "./screens/ChatScreen";
+import MeshScreen from "./screens/MeshScreen";
+import PromptLibraryScreen from "./screens/PromptLibraryScreen";
+import AuditScreen from "./screens/AuditScreen";
+import HistoryScreen from "./screens/HistoryScreen";
+import BatchScreen from "./screens/BatchScreen";
+import PlaygroundScreen from "./screens/PlaygroundScreen";
+import SettingsScreen from "./screens/SettingsScreen";
 
-interface Message {
-    role: 'user' | 'assistant';
-    content: string;
+// ── navigation ────────────────────────────────────────────────────────────────
+
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+const TAB_BAR_BG = "#18181b";
+const TAB_ACTIVE = "#10b981";
+const TAB_INACTIVE = "#52525b";
+const HEADER_BG = "#09090b";
+const HEADER_TEXT = "#fafafa";
+const BORDER_COLOR = "#27272a";
+
+// Tab icon component using emoji (no native icon deps required)
+function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
+  return (
+    <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.55, marginBottom: -4 }}>{emoji}</Text>
+  );
 }
+
+// The "More" stack holds Mesh, History, Batch, Playground, Settings
+function MoreStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: HEADER_BG },
+        headerTintColor: HEADER_TEXT,
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: "#09090b" },
+      }}
+    >
+      <Stack.Screen name="MoreHome" component={MoreHomeScreen} options={{ title: "More" }} />
+      <Stack.Screen name="Mesh" component={MeshScreen} options={{ title: "Mesh Cluster" }} />
+      <Stack.Screen name="History" component={HistoryScreen} options={{ title: "History" }} />
+      <Stack.Screen name="Batch" component={BatchScreen} options={{ title: "Batch & Schedule" }} />
+      <Stack.Screen
+        name="Playground"
+        component={PlaygroundScreen}
+        options={{ title: "Playground" }}
+      />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: "Settings" }} />
+    </Stack.Navigator>
+  );
+}
+
+// "More" home screen — grid of links
+function MoreHomeScreen({ navigation }: any) {
+  const items = [
+    { screen: "Mesh", label: "Mesh Cluster", emoji: "📡", desc: "Provider health & latency" },
+    { screen: "History", label: "History", emoji: "🔍", desc: "Search all conversations" },
+    { screen: "Batch", label: "Batch & Schedule", emoji: "📅", desc: "Scheduled AI jobs" },
+    { screen: "Playground", label: "Playground", emoji: "🧪", desc: "A/B model comparison" },
+    { screen: "Settings", label: "Settings", emoji: "⚙️", desc: "Connection, keys & privacy" },
+  ];
+  return (
+    <View style={sMore.container}>
+      {items.map((item) => (
+        <TouchableOpacity
+          key={item.screen}
+          style={sMore.item}
+          onPress={() => navigation.navigate(item.screen)}
+          activeOpacity={0.7}
+        >
+          <Text style={sMore.emoji}>{item.emoji}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={sMore.label}>{item.label}</Text>
+            <Text style={sMore.desc}>{item.desc}</Text>
+          </View>
+          <Text style={sMore.arrow}>›</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
+const sMore = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#09090b", padding: 16, gap: 10 },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: "#18181b",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#27272a",
+  },
+  emoji: { fontSize: 24, width: 32, textAlign: "center" },
+  label: { color: "#fafafa", fontSize: 15, fontWeight: "600", marginBottom: 2 },
+  desc: { color: "#71717a", fontSize: 12 },
+  arrow: { color: "#52525b", fontSize: 22, fontWeight: "300" },
+});
+
+// ── root app ───────────────────────────────────────────────────────────────────
 
 export default function App() {
-    const [messages, setMessages] = useState<Message[]>([
-        { role: 'assistant', content: 'Hello! I am LokaMobile, your local-first AI assistant powered by LokaFlow on your desktop network. How can I help?' }
-    ]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-
-    const sendMessage = async () => {
-        if (!input.trim() || isLoading) return;
-
-        const userMsg: Message = { role: 'user', content: input.trim() };
-        setMessages(prev => [...prev, userMsg]);
-        setInput('');
-        setIsLoading(true);
-
-        try {
-            // In a real mobile app, you would handle SSE streaming or standard JSON
-            // We do a standard JSON fetch here for simplicity of the scaffold
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    messages: [...messages, userMsg],
-                    stream: false // Using non-streaming for the React Native scaffold for simplicity
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const botReply = data.choices?.[0]?.message?.content || 'No response received.';
-
-            setMessages(prev => [...prev, { role: 'assistant', content: botReply }]);
-        } catch (error) {
-            console.error(error);
-            setMessages(prev => [...prev, { role: 'assistant', content: `❌ Connection error. Ensure 'lokaflow serve' is running on your desktop. (${String(error)})` }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            >
-                <View style={styles.header}>
-                    <Text style={styles.headerText}>LokaMobile (V2.8)</Text>
-                    <Text style={styles.statusText}>Connecting to Desktop Mesh</Text>
-                </View>
-
-                <ScrollView style={styles.chatArea} contentContainerStyle={styles.chatContent}>
-                    {messages.map((msg, index) => (
-                        <View
-                            key={index}
-                            style={[
-                                styles.messageBubble,
-                                msg.role === 'user' ? styles.messageUser : styles.messageAssistant
-                            ]}
-                        >
-                            <Text
-                                style={[
-                                    styles.messageText,
-                                    msg.role === 'user' ? styles.messageTextUser : styles.messageTextAssistant
-                                ]}
-                            >
-                                {msg.content}
-                            </Text>
-                        </View>
-                    ))}
-                    {isLoading && (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator color="#10b981" />
-                            <Text style={styles.loadingText}>Routing via LokaFlow...</Text>
-                        </View>
-                    )}
-                </ScrollView>
-
-                <View style={styles.inputArea}>
-                    <TextInput
-                        style={styles.input}
-                        value={input}
-                        onChangeText={setInput}
-                        placeholder="Type a message..."
-                        placeholderTextColor="#71717a"
-                        onSubmitEditing={sendMessage}
-                    />
-                    <TouchableOpacity
-                        style={[styles.sendButton, (!input.trim() || isLoading) && styles.sendButtonDisabled]}
-                        onPress={sendMessage}
-                        disabled={!input.trim() || isLoading}
-                    >
-                        <Text style={styles.sendButtonText}>Send</Text>
-                    </TouchableOpacity>
-                </View>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
-    );
+  return (
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={{
+          headerStyle: { backgroundColor: HEADER_BG },
+          headerTitleStyle: { color: HEADER_TEXT },
+          headerShadowVisible: false,
+          tabBarStyle: {
+            backgroundColor: TAB_BAR_BG,
+            borderTopColor: BORDER_COLOR,
+            borderTopWidth: 1,
+          },
+          tabBarActiveTintColor: TAB_ACTIVE,
+          tabBarInactiveTintColor: TAB_INACTIVE,
+          tabBarLabelStyle: { fontSize: 11, marginBottom: 2 },
+        }}
+      >
+        <Tab.Screen
+          name="Dashboard"
+          component={DashboardScreen}
+          options={{
+            title: "Dashboard",
+            tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />,
+          }}
+        />
+        <Tab.Screen
+          name="Chat"
+          component={ChatScreen}
+          options={{
+            headerShown: false,
+            title: "Chat",
+            tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} />,
+          }}
+        />
+        <Tab.Screen
+          name="Prompts"
+          component={PromptLibraryScreen}
+          options={{
+            title: "Prompts",
+            tabBarIcon: ({ focused }) => <TabIcon emoji="📚" focused={focused} />,
+          }}
+        />
+        <Tab.Screen
+          name="Audit"
+          component={AuditScreen}
+          options={{
+            title: "Audit",
+            tabBarIcon: ({ focused }) => <TabIcon emoji="💰" focused={focused} />,
+          }}
+        />
+        <Tab.Screen
+          name="More"
+          component={MoreStack}
+          options={{
+            headerShown: false,
+            title: "More",
+            tabBarIcon: ({ focused }) => <TabIcon emoji="☰" focused={focused} />,
+          }}
+        />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#09090b',
-    },
-    header: {
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#27272a',
-        alignItems: 'center',
-    },
-    headerText: {
-        color: '#fafafa',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    statusText: {
-        color: '#10b981',
-        fontSize: 12,
-        marginTop: 4,
-    },
-    chatArea: {
-        flex: 1,
-    },
-    chatContent: {
-        padding: 16,
-        gap: 12,
-    },
-    messageBubble: {
-        maxWidth: '85%',
-        padding: 12,
-        borderRadius: 16,
-    },
-    messageUser: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#27272a',
-        borderBottomRightRadius: 4,
-    },
-    messageAssistant: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#064e3b',
-        borderBottomLeftRadius: 4,
-    },
-    messageText: {
-        fontSize: 16,
-        lineHeight: 22,
-    },
-    messageTextUser: {
-        color: '#fafafa',
-    },
-    messageTextAssistant: {
-        color: '#ecfdf5',
-    },
-    loadingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        alignSelf: 'flex-start',
-        padding: 12,
-        gap: 8,
-    },
-    loadingText: {
-        color: '#a1a1aa',
-        fontSize: 14,
-    },
-    inputArea: {
-        flexDirection: 'row',
-        padding: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#27272a',
-        backgroundColor: '#18181b',
-        alignItems: 'center',
-        gap: 8,
-    },
-    input: {
-        flex: 1,
-        backgroundColor: '#27272a',
-        color: '#fafafa',
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        fontSize: 16,
-        maxHeight: 100,
-    },
-    sendButton: {
-        backgroundColor: '#10b981',
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        justifyContent: 'center',
-    },
-    sendButtonDisabled: {
-        backgroundColor: '#064e3b',
-        opacity: 0.5,
-    },
-    sendButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-});

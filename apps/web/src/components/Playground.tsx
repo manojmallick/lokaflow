@@ -17,14 +17,55 @@ interface BenchmarkEntry {
   avgLatencyMs: number;
 }
 
-const DEFAULT_MODELS_A = ["qwen2.5:7b", "qwen2.5-coder:7b", "tinyllama:1.1b", "mistral:7b", "llama3:8b", "phi:latest"];
-const DEFAULT_MODELS_B = ["qwen2.5:7b", "qwen2.5-coder:7b", "tinyllama:1.1b", "mistral:7b", "llama3:8b", "phi:latest", "gemini-2.0-flash", "claude-3-haiku", "gpt-4o-mini"];
+const DEFAULT_MODELS_A = [
+  "qwen2.5:7b",
+  "qwen2.5-coder:7b",
+  "tinyllama:1.1b",
+  "mistral:7b",
+  "llama3:8b",
+  "phi:latest",
+];
+const DEFAULT_MODELS_B = [
+  "qwen2.5:7b",
+  "qwen2.5-coder:7b",
+  "tinyllama:1.1b",
+  "mistral:7b",
+  "llama3:8b",
+  "phi:latest",
+  "gemini-2.0-flash",
+  "claude-3-haiku",
+  "gpt-4o-mini",
+];
 
 const DEMO_BENCHMARK: BenchmarkEntry[] = [
-  { category: "Compliance analysis", winner: "qwen2.5:7b", avgRating: 4.2, queryCount: 14, avgLatencyMs: 4200 },
-  { category: "Code generation", winner: "qwen2.5-coder:7b", avgRating: 4.6, queryCount: 22, avgLatencyMs: 3100 },
-  { category: "Summarisation", winner: "mistral:7b", avgRating: 4.1, queryCount: 9, avgLatencyMs: 2800 },
-  { category: "Creative writing", winner: "gemini-2.0-flash", avgRating: 4.5, queryCount: 6, avgLatencyMs: 19000 },
+  {
+    category: "Compliance analysis",
+    winner: "qwen2.5:7b",
+    avgRating: 4.2,
+    queryCount: 14,
+    avgLatencyMs: 4200,
+  },
+  {
+    category: "Code generation",
+    winner: "qwen2.5-coder:7b",
+    avgRating: 4.6,
+    queryCount: 22,
+    avgLatencyMs: 3100,
+  },
+  {
+    category: "Summarisation",
+    winner: "mistral:7b",
+    avgRating: 4.1,
+    queryCount: 9,
+    avgLatencyMs: 2800,
+  },
+  {
+    category: "Creative writing",
+    winner: "gemini-2.0-flash",
+    avgRating: 4.5,
+    queryCount: 6,
+    avgLatencyMs: 19000,
+  },
 ];
 
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -57,15 +98,18 @@ function mockRun(model: string, prompt: string): Promise<RunResult> {
   const costEur = isCloud ? (tokens / 1000) * 0.002 : 0;
 
   return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        output: `[Mock output from ${model}]\n\nHere is the analysis of your prompt:\n\n${prompt.slice(0, 80)}...\n\nKey points:\n- This is a simulated response from ${model}\n- Connect to a real LokaFlow server to get live outputs\n- Compare quality by rating both responses below`,
-        latencyMs: Math.round(baseLatency),
-        tokens,
-        costEur,
-        rating: 0,
-      });
-    }, Math.min(baseLatency, 2000)); // Cap demo at 2s
+    setTimeout(
+      () => {
+        resolve({
+          output: `[Mock output from ${model}]\n\nHere is the analysis of your prompt:\n\n${prompt.slice(0, 80)}...\n\nKey points:\n- This is a simulated response from ${model}\n- Connect to a real LokaFlow server to get live outputs\n- Compare quality by rating both responses below`,
+          latencyMs: Math.round(baseLatency),
+          tokens,
+          costEur,
+          rating: 0,
+        });
+      },
+      Math.min(baseLatency, 2000),
+    ); // Cap demo at 2s
   });
 }
 
@@ -96,11 +140,11 @@ export function Playground() {
   }
 
   function rateA(rating: number) {
-    setResultA((r) => r ? { ...r, rating } : null);
+    setResultA((r) => (r ? { ...r, rating } : null));
   }
 
   function rateB(rating: number) {
-    setResultB((r) => r ? { ...r, rating } : null);
+    setResultB((r) => (r ? { ...r, rating } : null));
   }
 
   function saveToHistory() {
@@ -109,21 +153,38 @@ export function Playground() {
     // Derive category from prompt
     const lower = prompt.toLowerCase();
     let category = "General";
-    if (lower.includes("code") || lower.includes("function") || lower.includes("debug")) category = "Code generation";
-    else if (lower.includes("dora") || lower.includes("compliance") || lower.includes("gdpr")) category = "Compliance analysis";
+    if (lower.includes("code") || lower.includes("function") || lower.includes("debug"))
+      category = "Code generation";
+    else if (lower.includes("dora") || lower.includes("compliance") || lower.includes("gdpr"))
+      category = "Compliance analysis";
     else if (lower.includes("summar")) category = "Summarisation";
-    else if (lower.includes("creat") || lower.includes("writ") || lower.includes("story")) category = "Creative writing";
+    else if (lower.includes("creat") || lower.includes("writ") || lower.includes("story"))
+      category = "Creative writing";
 
     setBenchmark((prev) => {
       const existing = prev.find((b) => b.category === category);
       if (existing) {
         return prev.map((b) =>
           b.category === category
-            ? { ...b, queryCount: b.queryCount + 1, winner: winnerModel, avgRating: (b.avgRating + Math.max(resultA.rating, resultB.rating)) / 2 }
-            : b
+            ? {
+                ...b,
+                queryCount: b.queryCount + 1,
+                winner: winnerModel,
+                avgRating: (b.avgRating + Math.max(resultA.rating, resultB.rating)) / 2,
+              }
+            : b,
         );
       }
-      return [...prev, { category, winner: winnerModel, avgRating: Math.max(resultA.rating, resultB.rating), queryCount: 1, avgLatencyMs: (resultA.latencyMs + resultB.latencyMs) / 2 }];
+      return [
+        ...prev,
+        {
+          category,
+          winner: winnerModel,
+          avgRating: Math.max(resultA.rating, resultB.rating),
+          queryCount: 1,
+          avgLatencyMs: (resultA.latencyMs + resultB.latencyMs) / 2,
+        },
+      ];
     });
   }
 
@@ -147,7 +208,15 @@ export function Playground() {
           </h1>
           <p className="subtitle">Test any two models side-by-side on your own prompts.</p>
         </div>
-        <button className="btn-secondary" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5 }} onClick={() => { setResultA(null); setResultB(null); setPrompt(""); }}>
+        <button
+          className="btn-secondary"
+          style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}
+          onClick={() => {
+            setResultA(null);
+            setResultB(null);
+            setPrompt("");
+          }}
+        >
           <RotateCcw size={13} /> Reset
         </button>
       </div>
@@ -156,15 +225,36 @@ export function Playground() {
       <div className="playground-selectors">
         <div className="playground-model-col">
           <label style={{ fontSize: 11, color: "var(--text-muted)" }}>Model A</label>
-          <select className="playground-model-select" value={modelA} onChange={(e) => setModelA(e.target.value)}>
-            {DEFAULT_MODELS_A.map((m) => <option key={m}>{m}</option>)}
+          <select
+            className="playground-model-select"
+            value={modelA}
+            onChange={(e) => setModelA(e.target.value)}
+          >
+            {DEFAULT_MODELS_A.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
           </select>
         </div>
-        <div style={{ fontSize: 18, color: "var(--text-muted)", alignSelf: "flex-end", paddingBottom: 6 }}>vs</div>
+        <div
+          style={{
+            fontSize: 18,
+            color: "var(--text-muted)",
+            alignSelf: "flex-end",
+            paddingBottom: 6,
+          }}
+        >
+          vs
+        </div>
         <div className="playground-model-col">
           <label style={{ fontSize: 11, color: "var(--text-muted)" }}>Model B</label>
-          <select className="playground-model-select" value={modelB} onChange={(e) => setModelB(e.target.value)}>
-            {DEFAULT_MODELS_B.map((m) => <option key={m}>{m}</option>)}
+          <select
+            className="playground-model-select"
+            value={modelB}
+            onChange={(e) => setModelB(e.target.value)}
+          >
+            {DEFAULT_MODELS_B.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -196,7 +286,10 @@ export function Playground() {
             { model: modelA, result: resultA, loading: loadingA, onRate: rateA },
             { model: modelB, result: resultB, loading: loadingB, onRate: rateB },
           ].map(({ model, result, loading, onRate }) => (
-            <div key={model} className={`playground-result-col ${winner === model ? "playground-winner" : ""}`}>
+            <div
+              key={model}
+              className={`playground-result-col ${winner === model ? "playground-winner" : ""}`}
+            >
               <div className="playground-result-header">
                 <strong style={{ fontSize: 13 }}>{model}</strong>
                 {winner === model && (
@@ -207,14 +300,28 @@ export function Playground() {
               </div>
 
               {loading ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "40px 0", justifyContent: "center", color: "var(--text-muted)", fontSize: 13 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "40px 0",
+                    justifyContent: "center",
+                    color: "var(--text-muted)",
+                    fontSize: 13,
+                  }}
+                >
                   <Loader2 size={16} className="spin" /> Running on {model}…
                 </div>
               ) : result ? (
                 <>
                   <div className="playground-output">{result.output}</div>
                   <div className="playground-stats">
-                    <span>{result.latencyMs < 1000 ? `${result.latencyMs}ms` : `${(result.latencyMs / 1000).toFixed(1)}s`}</span>
+                    <span>
+                      {result.latencyMs < 1000
+                        ? `${result.latencyMs}ms`
+                        : `${(result.latencyMs / 1000).toFixed(1)}s`}
+                    </span>
                     <span>{result.tokens.toLocaleString()} tok</span>
                     <span style={{ color: result.costEur === 0 ? "#4ade80" : "#fbbf24" }}>
                       {result.costEur === 0 ? "€0.00" : `€${result.costEur.toFixed(4)}`}
@@ -223,7 +330,11 @@ export function Playground() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 4 }}>
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Rate:</span>
                     <StarRating value={result.rating} onChange={onRate} />
-                    {result.rating > 0 && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{result.rating}/5</span>}
+                    {result.rating > 0 && (
+                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                        {result.rating}/5
+                      </span>
+                    )}
                   </div>
                 </>
               ) : null}
@@ -233,40 +344,71 @@ export function Playground() {
       )}
 
       {winner && winner !== "Tie" && resultA && resultB && (
-        <div style={{ background: "rgba(59,130,246,.07)", border: "1px solid rgba(59,130,246,.2)", borderRadius: 8, padding: "12px 16px", fontSize: 13 }}>
+        <div
+          style={{
+            background: "rgba(59,130,246,.07)",
+            border: "1px solid rgba(59,130,246,.2)",
+            borderRadius: 8,
+            padding: "12px 16px",
+            fontSize: 13,
+          }}
+        >
           <strong style={{ color: "#93c5fd" }}>Result: </strong>
           <span style={{ color: "var(--text-main)" }}>{winner} wins — better quality</span>
-          {winner !== modelB && resultA.latencyMs > resultB.latencyMs ? `, ${((resultB.latencyMs / resultA.latencyMs) * 100).toFixed(0)}% faster on ${modelB}` : ""}
-          <button className="btn-secondary" style={{ float: "right", fontSize: 11, padding: "3px 10px" }} onClick={saveToHistory}>
+          {winner !== modelB && resultA.latencyMs > resultB.latencyMs
+            ? `, ${((resultB.latencyMs / resultA.latencyMs) * 100).toFixed(0)}% faster on ${modelB}`
+            : ""}
+          <button
+            className="btn-secondary"
+            style={{ float: "right", fontSize: 11, padding: "3px 10px" }}
+            onClick={saveToHistory}
+          >
             Save to benchmark history
           </button>
         </div>
       )}
       {winner === "Tie" && (
-        <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "8px 0" }}>Tie — both models rated equally</div>
+        <div
+          style={{
+            fontSize: 13,
+            color: "var(--text-muted)",
+            textAlign: "center",
+            padding: "8px 0",
+          }}
+        >
+          Tie — both models rated equally
+        </div>
       )}
 
       {/* Benchmark history */}
       <div className="playground-benchmark">
         <div className="batch-section-title">Your Benchmark History</div>
-        <div className="playground-bench-table">
-          <div className="playground-bench-header">
-            <span>Category</span>
-            <span>Best Model</span>
-            <span>Avg Rating</span>
-            <span>Queries</span>
-            <span>Avg Latency</span>
-          </div>
-          {benchmark.map((b) => (
-            <div key={b.category} className="playground-bench-row">
-              <span>{b.category}</span>
-              <span style={{ color: "var(--accent)" }}>{b.winner}</span>
-              <span style={{ color: "#fbbf24" }}>★ {b.avgRating.toFixed(1)}/5</span>
-              <span>{b.queryCount}</span>
-              <span style={{ color: "var(--text-muted)" }}>{b.avgLatencyMs < 1000 ? `${b.avgLatencyMs}ms` : `${(b.avgLatencyMs / 1000).toFixed(1)}s`}</span>
-            </div>
-          ))}
-        </div>
+        <table className="playground-bench-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Best Model</th>
+              <th>Avg Rating</th>
+              <th>Queries</th>
+              <th>Avg Latency</th>
+            </tr>
+          </thead>
+          <tbody>
+            {benchmark.map((b) => (
+              <tr key={b.category}>
+                <td>{b.category}</td>
+                <td style={{ color: "var(--accent)" }}>{b.winner}</td>
+                <td style={{ color: "#fbbf24" }}>★ {b.avgRating.toFixed(1)}/5</td>
+                <td>{b.queryCount}</td>
+                <td style={{ color: "var(--text-muted)" }}>
+                  {b.avgLatencyMs < 1000
+                    ? `${b.avgLatencyMs}ms`
+                    : `${(b.avgLatencyMs / 1000).toFixed(1)}s`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

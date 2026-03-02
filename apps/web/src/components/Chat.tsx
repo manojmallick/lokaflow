@@ -311,7 +311,67 @@ const CODE_EXT_MAP: Record<string, string> = {
   c: "c",
 };
 
-function MessageContent({ content }: { content: string }): JSX.Element {
+// ─── ExplainButton ────────────────────────────────────────────────────────────
+
+function ExplainButton({
+  code,
+  onExplain,
+}: {
+  code: string;
+  onExplain: (code: string, mode: "basic" | "detailed") => void;
+}): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+  return (
+    <div className="explain-wrap" ref={ref}>
+      <button
+        className="copy-btn explain-btn"
+        onClick={() => setOpen((v) => !v)}
+        title="Explain this code"
+      >
+        <BookOpen size={13} /> Explain ▾
+      </button>
+      {open && (
+        <div className="explain-dropdown">
+          <button
+            className="explain-opt"
+            onClick={() => {
+              onExplain(code, "basic");
+              setOpen(false);
+            }}
+          >
+            🟢 Basic — simple English, no jargon
+          </button>
+          <button
+            className="explain-opt"
+            onClick={() => {
+              onExplain(code, "detailed");
+              setOpen(false);
+            }}
+          >
+            🔵 Detailed — deep dive, line by line
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MessageContent({
+  content,
+  onExplain,
+}: {
+  content: string;
+  onExplain?: (code: string, mode: "basic" | "detailed") => void;
+}): JSX.Element {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -327,6 +387,9 @@ function MessageContent({ content }: { content: string }): JSX.Element {
               <div className="code-block-header">
                 <span className="code-lang">{lang || "code"}</span>
                 <div className="code-block-actions">
+                  {onExplain && (
+                    <ExplainButton code={String(codeText).trimEnd()} onExplain={onExplain} />
+                  )}
                   <button
                     className="copy-btn"
                     title="Download as file"
@@ -703,11 +766,31 @@ function estimatePrompt(text: string): {
   else if (text.length < 30) complexity -= 0.1;
 
   // Technical / code keywords
-  const codeKw = ["function", "class", "algorithm", "debug", "error", "implement", "refactor", "architecture", "api", "database"];
+  const codeKw = [
+    "function",
+    "class",
+    "algorithm",
+    "debug",
+    "error",
+    "implement",
+    "refactor",
+    "architecture",
+    "api",
+    "database",
+  ];
   if (codeKw.some((kw) => lower.includes(kw))) complexity += 0.15;
 
   // Expert / compliance keywords
-  const expertKw = ["gdpr", "compliance", "legal", "medical", "regulation", "audit", "privacy", "liability"];
+  const expertKw = [
+    "gdpr",
+    "compliance",
+    "legal",
+    "medical",
+    "regulation",
+    "audit",
+    "privacy",
+    "liability",
+  ];
   if (expertKw.some((kw) => lower.includes(kw))) complexity += 0.2;
 
   // Multiple questions
@@ -745,17 +828,28 @@ function CostEstimator({ prompt }: { prompt: string }) {
         background: "rgba(0,0,0,.1)",
       }}
     >
-      {est.tier === "local" ? <Cpu size={12} style={{ color: "#4ade80" }} /> : <Cloud size={12} style={{ color: "#fbbf24" }} />}
+      {est.tier === "local" ? (
+        <Cpu size={12} style={{ color: "#4ade80" }} />
+      ) : (
+        <Cloud size={12} style={{ color: "#fbbf24" }} />
+      )}
       <span style={{ color: est.tier === "local" ? "#4ade80" : "#fbbf24", fontWeight: 600 }}>
         {est.tier === "local" ? "Local" : "Cloud"}
       </span>
-      <div style={{ flex: 1, height: 3, background: "rgba(255,255,255,.08)", borderRadius: 99, maxWidth: 80 }}>
+      <div
+        style={{
+          flex: 1,
+          height: 3,
+          background: "rgba(255,255,255,.08)",
+          borderRadius: 99,
+          maxWidth: 80,
+        }}
+      >
         <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: 99 }} />
       </div>
       <span>complexity {pct}%</span>
       <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
-        <BarChart2 size={11} />
-        ~{est.tokens} tokens
+        <BarChart2 size={11} />~{est.tokens} tokens
         {est.costEur > 0 ? (
           <span style={{ color: "#fbbf24" }}> · €{(est.costEur * 100).toFixed(2)}¢</span>
         ) : (
@@ -1175,11 +1269,11 @@ const MODEL_CTX: Record<string, number> = {
   "qwen2.5-coder:7b": 131072,
   "qwen2.5:14b": 131072,
   "tinyllama:1.1b": 4096,
-  "tinyllama": 4096,
+  tinyllama: 4096,
   "mistral:7b": 32768,
-  "mistral": 32768,
+  mistral: 32768,
   "llama3:8b": 8192,
-  "llama3": 8192,
+  llama3: 8192,
   "phi:latest": 4096,
   "gemini-2.0-flash": 1000000,
   "gemini-1.5-pro": 1000000,
@@ -1199,13 +1293,23 @@ function resolveCtxWindow(model: string): number {
   return 32768; // sensible default
 }
 
-function ContextWindowBar({ msgIndex, messages, model }: { msgIndex: number; messages: Message[]; model: string }) {
+function ContextWindowBar({
+  msgIndex,
+  messages,
+  model,
+}: {
+  msgIndex: number;
+  messages: Message[];
+  model: string;
+}) {
   const [expanded, setExpanded] = useState(false);
   const ctx = resolveCtxWindow(model);
 
   // Estimate tokens: 1 token ≈ 4 chars; 40 token system prompt overhead per prior message pair
   const systemTok = 80; // system preamble
-  const historyTok = messages.slice(0, msgIndex).reduce((acc, m) => acc + Math.ceil(m.content.length / 4) + 12, 0);
+  const historyTok = messages
+    .slice(0, msgIndex)
+    .reduce((acc, m) => acc + Math.ceil(m.content.length / 4) + 12, 0);
   const thisMsg = messages[msgIndex];
   const msgTok = thisMsg ? Math.ceil(thisMsg.content.length / 4) : 0;
   const total = systemTok + historyTok + msgTok;
@@ -1259,10 +1363,12 @@ function MessageBubble({
   msg,
   onEditResend,
   onSaveAsTemplate,
+  onExplain,
 }: {
   msg: Message;
   onEditResend: (newContent: string) => void;
   onSaveAsTemplate: (content: string) => void;
+  onExplain?: (code: string, mode: "basic" | "detailed") => void;
 }): JSX.Element {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(msg.content);
@@ -1323,7 +1429,7 @@ function MessageBubble({
           </div>
         </div>
       ) : msg.role === "assistant" ? (
-        <MessageContent content={msg.content} />
+        <MessageContent content={msg.content} onExplain={onExplain} />
       ) : (
         <span className="user-text">{msg.content}</span>
       )}
@@ -1496,6 +1602,16 @@ export function Chat(): JSX.Element {
     setTemplatePrefill(content);
     setShowTemplates(true);
   };
+
+  // ── Explain code via local LLM ────────────────────────────────────────────
+  const handleExplainCode = useCallback((code: string, mode: "basic" | "detailed") => {
+    const prompt =
+      mode === "basic"
+        ? `Please explain the following code in **simple, plain English** that anyone can understand — no jargon, no assumed background. Use a short intro, then a numbered step-by-step walkthrough of what each part does, and finish with a one-sentence summary of the overall purpose.\n\n\`\`\`\n${code}\n\`\`\``
+        : `Please provide a **detailed technical explanation** of the following code. Cover:\n1. Overall purpose and design pattern\n2. Line-by-line or block-by-block breakdown\n3. Key algorithms or data structures used\n4. Potential edge cases or limitations\n5. Suggestions to improve or extend this code\n\n\`\`\`\n${code}\n\`\`\``;
+    setInput(prompt);
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  }, []);
 
   // ── Input / attachments ───────────────────────────────────────────────────
   const [input, setInput] = useState("");
@@ -1933,6 +2049,7 @@ export function Chat(): JSX.Element {
                   msg={msg}
                   onEditResend={(newContent) => handleEditResend(msg.id, newContent)}
                   onSaveAsTemplate={handleSaveAsTemplate}
+                  onExplain={handleExplainCode}
                 />
                 {msg.trace && <TracePanel trace={msg.trace} />}
                 {msg.role === "assistant" && (
