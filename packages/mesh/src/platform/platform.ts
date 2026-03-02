@@ -20,8 +20,8 @@ export interface PlatformCapabilities {
   os: OsFamily;
   arch: string;
   kernelRelease: string;
-  supportsRawSockets: boolean;     // needed for mDNS multicast
-  supportsMulticastDns: boolean;   // mDNS / Bonjour available
+  supportsRawSockets: boolean; // needed for mDNS multicast
+  supportsMulticastDns: boolean; // mDNS / Bonjour available
   recommendedDiscovery: DiscoveryBackend;
   recommendedPowerBackend: PowerBackend;
   recommendedBatteryBackend: BatteryBackend;
@@ -74,7 +74,11 @@ function hasBinary(name: string): boolean {
   }
 }
 
-function detectDiscoveryBackend(os: OsFamily, isWsl: boolean, isContainer: boolean): DiscoveryBackend {
+function detectDiscoveryBackend(
+  os: OsFamily,
+  isWsl: boolean,
+  isContainer: boolean,
+): DiscoveryBackend {
   // Windows-native, WSL, and Docker containers can't reliably send multicast
   if (os === "windows" || isWsl || isContainer) return "http";
   // macOS and native Linux generally support mDNS

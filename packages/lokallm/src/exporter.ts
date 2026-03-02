@@ -47,10 +47,7 @@ export class GGUFExporter extends EventEmitter {
   async export(config: ExportConfig): Promise<string> {
     this.startedAt = Date.now();
 
-    const args = [
-      "--adapter", config.adapter,
-      "--output", config.output,
-    ];
+    const args = ["--adapter", config.adapter, "--output", config.output];
     if (config.baseModel) args.push("--base_model", config.baseModel);
 
     this.runner = new PythonRunner(GGUF_SCRIPT, {

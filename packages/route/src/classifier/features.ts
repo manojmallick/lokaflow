@@ -10,20 +10,23 @@ import type { ClassifierFeatures, QueryContext } from "../types/classification.j
 
 // ── Signal weight configuration ──────────────────────────────────────────────
 // Weights must sum to 1.0.
-export const SIGNAL_WEIGHTS: Record<keyof Omit<ClassifierFeatures, "historicalComplexityBaseline">, number> = {
-  tokenCount:                   0.10,
-  attachmentCount:              0.05,
-  questionDepth:                0.18,
-  technicalTermDensity:         0.12,
-  multiPartDetected:            0.08,
-  imperativeComplexity:         0.15,
-  regulatoryKeywords:           0.10,
-  codeDetected:                 0.05,
-  mathDetected:                 0.03,
-  priorTurns:                   0.04,
-  systemPromptComplexity:       0.04,
-  outputFormatRequested:        0.04,
-  lengthRequested:              0.02,
+export const SIGNAL_WEIGHTS: Record<
+  keyof Omit<ClassifierFeatures, "historicalComplexityBaseline">,
+  number
+> = {
+  tokenCount: 0.1,
+  attachmentCount: 0.05,
+  questionDepth: 0.18,
+  technicalTermDensity: 0.12,
+  multiPartDetected: 0.08,
+  imperativeComplexity: 0.15,
+  regulatoryKeywords: 0.1,
+  codeDetected: 0.05,
+  mathDetected: 0.03,
+  priorTurns: 0.04,
+  systemPromptComplexity: 0.04,
+  outputFormatRequested: 0.04,
+  lengthRequested: 0.02,
 };
 
 // Historical baseline contributes 0% to the raw score — learner applies an
@@ -32,19 +35,19 @@ export const SIGNAL_WEIGHTS: Record<keyof Omit<ClassifierFeatures, "historicalCo
 export class FeatureExtractor {
   extract(query: string, ctx: QueryContext = {}): ClassifierFeatures {
     return {
-      tokenCount:                   this.scoreTokenCount(query),
-      attachmentCount:              this.scoreAttachments(ctx),
-      questionDepth:                this.scoreQuestionDepth(query),
-      technicalTermDensity:         this.scoreTechnicalDensity(query),
-      multiPartDetected:            this.detectMultiPart(query),
-      imperativeComplexity:         this.scoreImperative(query),
-      regulatoryKeywords:           this.detectRegulatory(query),
-      codeDetected:                 this.detectCode(query),
-      mathDetected:                 this.detectMath(query),
-      priorTurns:                   this.scorePriorTurns(ctx),
-      systemPromptComplexity:       this.scoreSystemPrompt(ctx),
-      outputFormatRequested:        this.detectOutputFormat(query),
-      lengthRequested:              this.detectLengthRequest(query),
+      tokenCount: this.scoreTokenCount(query),
+      attachmentCount: this.scoreAttachments(ctx),
+      questionDepth: this.scoreQuestionDepth(query),
+      technicalTermDensity: this.scoreTechnicalDensity(query),
+      multiPartDetected: this.detectMultiPart(query),
+      imperativeComplexity: this.scoreImperative(query),
+      regulatoryKeywords: this.detectRegulatory(query),
+      codeDetected: this.detectCode(query),
+      mathDetected: this.detectMath(query),
+      priorTurns: this.scorePriorTurns(ctx),
+      systemPromptComplexity: this.scoreSystemPrompt(ctx),
+      outputFormatRequested: this.detectOutputFormat(query),
+      lengthRequested: this.detectLengthRequest(query),
       historicalComplexityBaseline: ctx.userBaseline ?? 0.5,
     };
   }
@@ -73,8 +76,14 @@ export class FeatureExtractor {
    */
   private scoreQuestionDepth(query: string): number {
     const q = query.toLowerCase();
-    if (/\b(design|architect|recommend|justify|strategis[e|z]|strategiz|propose|formulate|devise)\b/.test(q)) return 1.0;
-    if (/\b(analyse|analyze|evaluate|compare|contrast|assess|critique|argue|debate)\b/.test(q)) return 0.8;
+    if (
+      /\b(design|architect|recommend|justify|strategis[e|z]|strategiz|propose|formulate|devise)\b/.test(
+        q,
+      )
+    )
+      return 1.0;
+    if (/\b(analyse|analyze|evaluate|compare|contrast|assess|critique|argue|debate)\b/.test(q))
+      return 0.8;
     if (/\b(explain|describe|discuss|elaborate|why|because|reason)\b/.test(q)) return 0.5;
     if (/\bhow\b/.test(q)) return 0.3;
     if (/\b(what|who|when|where|which|name|list)\b/.test(q)) return 0.1;
@@ -85,20 +94,20 @@ export class FeatureExtractor {
   private scoreTechnicalDensity(query: string): number {
     const words = query.split(/\s+/);
     const techPatterns = [
-      /```/,                            // code block
+      /```/, // code block
       /\berror\b|\bexception\b|\bstack trace\b/i,
-      /\.[a-z]{2,5}\b/,                 // file extensions
-      /https?:\/\//,                    // URL
+      /\.[a-z]{2,5}\b/, // file extensions
+      /https?:\/\//, // URL
       /\b(API|HTTP|REST|gRPC|JSON|XML|SQL|NoSQL|TCP|UDP|TLS|SSE|OAuth)\b/i,
       /\b(function|class|interface|import|export|async|await|Promise)\b/,
       /\b(Docker|Kubernetes|k8s|CI\/CD|pipeline|terraform|AWS|GCP|Azure)\b/i,
-      /[a-zA-Z_][a-zA-Z0-9_]*\(.*\)/,  // function call syntax
-      /=>/,                             // arrow function
+      /[a-zA-Z_][a-zA-Z0-9_]*\(.*\)/, // function call syntax
+      /=>/, // arrow function
       /\b(null|undefined|boolean|integer|string|array|object)\b/i,
     ];
     const score = techPatterns.reduce((n, p) => n + (p.test(query) ? 0.1 : 0), 0);
     // Density: also factor in acronym density among total words
-    const acronyms = words.filter(w => /^[A-Z]{2,}$/.test(w)).length;
+    const acronyms = words.filter((w) => /^[A-Z]{2,}$/.test(w)).length;
     return Math.min(score + (acronyms / Math.max(words.length, 1)) * 0.5, 1);
   }
 
@@ -106,13 +115,13 @@ export class FeatureExtractor {
   private detectMultiPart(query: string): boolean {
     const multiMarkers = [
       /\band\s+(also|then|additionally|furthermore)\b/i,
-      /\d+\.\s+\w/,                          // numbered list
+      /\d+\.\s+\w/, // numbered list
       /\b(first|second|third|finally|lastly)\b/i,
-      /\?.*\?/,                              // two or more question marks
-      /;\s+\w/,                              // semicolon as sentence divider
+      /\?.*\?/, // two or more question marks
+      /;\s+\w/, // semicolon as sentence divider
       /\b(as well as|in addition|on top of)\b/i,
     ];
-    return multiMarkers.some(p => p.test(query));
+    return multiMarkers.some((p) => p.test(query));
   }
 
   /**
@@ -126,8 +135,10 @@ export class FeatureExtractor {
    */
   private scoreImperative(query: string): number {
     const q = query.toLowerCase();
-    if (/\b(justify|argue|propose|strategis[e|z]|strategiz|formulate|devise|challenge)\b/.test(q)) return 1.0;
-    if (/\b(design|architect|evaluate|compare|contrast|assess|analyse|analyze)\b/.test(q)) return 0.85;
+    if (/\b(justify|argue|propose|strategis[e|z]|strategiz|formulate|devise|challenge)\b/.test(q))
+      return 1.0;
+    if (/\b(design|architect|evaluate|compare|contrast|assess|analyse|analyze)\b/.test(q))
+      return 0.85;
     if (/\b(review|audit|critique|inspect|debug|refactor|optimise|optimize)\b/.test(q)) return 0.65;
     if (/\b(explain|describe|discuss|clarify|elaborate)\b/.test(q)) return 0.5;
     if (/\b(write|generate|create|build|implement|code)\b/.test(q)) return 0.35;
@@ -137,7 +148,9 @@ export class FeatureExtractor {
 
   /** True if recognised regulatory framework terms are present. */
   private detectRegulatory(query: string): boolean {
-    return /\b(DORA|SOX|Sarbanes.Oxley|GDPR|MiFID|Basel\s+III|NIS2|OFAC|FATF|HIPAA|PCI.DSS|ISO\s*27001|FCA|FINRA|ESMA|BaFin|DNB)\b/i.test(query);
+    return /\b(DORA|SOX|Sarbanes.Oxley|GDPR|MiFID|Basel\s+III|NIS2|OFAC|FATF|HIPAA|PCI.DSS|ISO\s*27001|FCA|FINRA|ESMA|BaFin|DNB)\b/i.test(
+      query,
+    );
   }
 
   /** True if the query contains code snippets or programming syntax. */
@@ -157,7 +170,9 @@ export class FeatureExtractor {
       /[∑∫∂∇√π∞±≤≥≠≈∀∃⊂⊃∪∩]/.test(query) ||
       /\$\$.+\$\$/.test(query) ||
       /\\\(.*\\\)/.test(query) ||
-      /\b(derivative|integral|matrix|eigenvalue|gradient|probability|theorem|proof|equation)\b/i.test(query)
+      /\b(derivative|integral|matrix|eigenvalue|gradient|probability|theorem|proof|equation)\b/i.test(
+        query,
+      )
     );
   }
 
@@ -175,12 +190,16 @@ export class FeatureExtractor {
 
   /** True if structured output (JSON schema, table, report, CSV) requested. */
   private detectOutputFormat(query: string): boolean {
-    return /\b(JSON|XML|CSV|table|report|schema|structured output|markdown table|bullet point[s]?|numbered list)\b/i.test(query);
+    return /\b(JSON|XML|CSV|table|report|schema|structured output|markdown table|bullet point[s]?|numbered list)\b/i.test(
+      query,
+    );
   }
 
   /** True if the user explicitly asks for a detailed / long response. */
   private detectLengthRequest(query: string): boolean {
-    return /\b(detailed|comprehensive|exhaustive|full|complete|in[\s-]depth|thorough|extensive|long)\b/i.test(query);
+    return /\b(detailed|comprehensive|exhaustive|full|complete|in[\s-]depth|thorough|extensive|long)\b/i.test(
+      query,
+    );
   }
 }
 
@@ -192,17 +211,17 @@ export function computeCompositeScore(features: ClassifierFeatures): number {
   const boolToNum = (b: boolean) => (b ? 1 : 0);
 
   const raw =
-    features.tokenCount              * SIGNAL_WEIGHTS.tokenCount +
-    features.attachmentCount         * SIGNAL_WEIGHTS.attachmentCount +
-    features.questionDepth           * SIGNAL_WEIGHTS.questionDepth +
-    features.technicalTermDensity    * SIGNAL_WEIGHTS.technicalTermDensity +
+    features.tokenCount * SIGNAL_WEIGHTS.tokenCount +
+    features.attachmentCount * SIGNAL_WEIGHTS.attachmentCount +
+    features.questionDepth * SIGNAL_WEIGHTS.questionDepth +
+    features.technicalTermDensity * SIGNAL_WEIGHTS.technicalTermDensity +
     boolToNum(features.multiPartDetected) * SIGNAL_WEIGHTS.multiPartDetected +
-    features.imperativeComplexity    * SIGNAL_WEIGHTS.imperativeComplexity +
+    features.imperativeComplexity * SIGNAL_WEIGHTS.imperativeComplexity +
     boolToNum(features.regulatoryKeywords) * SIGNAL_WEIGHTS.regulatoryKeywords +
     boolToNum(features.codeDetected) * SIGNAL_WEIGHTS.codeDetected +
     boolToNum(features.mathDetected) * SIGNAL_WEIGHTS.mathDetected +
-    features.priorTurns              * SIGNAL_WEIGHTS.priorTurns +
-    features.systemPromptComplexity  * SIGNAL_WEIGHTS.systemPromptComplexity +
+    features.priorTurns * SIGNAL_WEIGHTS.priorTurns +
+    features.systemPromptComplexity * SIGNAL_WEIGHTS.systemPromptComplexity +
     boolToNum(features.outputFormatRequested) * SIGNAL_WEIGHTS.outputFormatRequested +
     boolToNum(features.lengthRequested) * SIGNAL_WEIGHTS.lengthRequested;
 

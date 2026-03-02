@@ -271,7 +271,10 @@ export class Router {
     let actualTier = tier;
 
     try {
-      if ((tier === "specialist" || tier === "cloud") && this.config.router.delegationEnabled === true) {
+      if (
+        (tier === "specialist" || tier === "cloud") &&
+        this.config.router.delegationEnabled === true
+      ) {
         // ── LokaAgent 8-stage pipeline ─────────────────────────────────────
         // Stage flow: PromptGuard → ComplexityScorer → TaskSplitter (DAG) →
         //             ModelMatcher → ContextPacker → ExecutionEngine →
@@ -293,13 +296,9 @@ export class Router {
 
         // Emit subtask traces in the existing format so TracePanel renders them
         const execNodes = agentResp.trace.execution.nodes;
-        const depthMap = new Map(
-          agentResp.trace.decomposition.nodes.map((n) => [n.id, n.depth]),
-        );
+        const depthMap = new Map(agentResp.trace.decomposition.nodes.map((n) => [n.id, n.depth]));
 
-        trace.push(
-          `  → Distributing ${execNodes.length} sub-tasks recursively (maxDepth=3)...`,
-        );
+        trace.push(`  → Distributing ${execNodes.length} sub-tasks recursively (maxDepth=3)...`);
         if (options.onStream) {
           options.onStream(
             `> ⚡ *Distributing ${execNodes.length} sub-tasks across LokaAgent worker tree...*\n\n`,
@@ -319,14 +318,31 @@ export class Router {
         const gatesTotal = agentResp.trace.qualityGates.length;
         trace.push(`[AGENT] QualityGate: ${gatesPassed}/${gatesTotal} nodes passed.`);
         if (agentResp.partial) {
-          trace.push(`[AGENT] Some nodes were escalated to cloud (quality gate failed local output).`);
+          trace.push(
+            `[AGENT] Some nodes were escalated to cloud (quality gate failed local output).`,
+          );
         }
 
         // Telemetry block
         const sv = agentResp.trace.savings;
+        const m = agentResp.metrics;
+
+        // Token % breakdown ─ planner (local decomposer) + local workers + cloud workers
+        const plannerTotal = m.plannerInputTokens + m.plannerOutputTokens;
+        const localTotal = sv.actualLocalTokens;
+        const cloudTotal = sv.actualCloudTokens;
+        const grandTotal = plannerTotal + localTotal + cloudTotal || 1; // avoid ÷0
+        const pctOf = (n: number) => ((n / grandTotal) * 100).toFixed(1);
+
         let telemetryStr = `\n---\n### 📊 LokaAgent Telemetry\n`;
         telemetryStr += `- **Nodes**: ${sv.totalNodes} total · ${sv.localNodes} local · ${sv.cloudNodes} cloud · ${sv.escalatedNodes} escalated\n`;
-        telemetryStr += `- **Tokens**: ${sv.actualLocalTokens} local · ${sv.actualCloudTokens} cloud (equivalent cloud: ${sv.cloudEquivalentTokens})\n`;
+        telemetryStr += `- **Token breakdown** (in+out):\n`;
+        telemetryStr += `  - 🧠 Specialist/Planner: **${plannerTotal}** (${m.plannerInputTokens} in · ${m.plannerOutputTokens} out) — **${pctOf(plannerTotal)}%**\n`;
+        telemetryStr += `  - 🖥️ Local workers: **${localTotal}** — **${pctOf(localTotal)}%**\n`;
+        if (cloudTotal > 0) {
+          telemetryStr += `  - ☁️ Cloud workers: **${cloudTotal}** — **${pctOf(cloudTotal)}%**\n`;
+        }
+        telemetryStr += `  - 📦 Total: **${grandTotal}** tokens\n`;
         telemetryStr += `- **Savings**: ${sv.savingPercent.toFixed(1)}% · **€${sv.savingEur.toFixed(5)}** vs pure-cloud\n`;
         telemetryStr += `- **Assembly strategy**: ${agentResp.trace.assembly.strategy}\n`;
 

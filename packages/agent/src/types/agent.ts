@@ -356,6 +356,9 @@ export interface AgentMetrics {
   totalLatencyMs: number;
   totalInputTokens: number;
   totalOutputTokens: number;
+  /** Tokens consumed by the planner/decomposer (specialist or local) to generate the execution plan. */
+  plannerInputTokens: number;
+  plannerOutputTokens: number;
   nodesExecuted: number;
   nodesEscalated: number;
   estimatedCostEur: number;

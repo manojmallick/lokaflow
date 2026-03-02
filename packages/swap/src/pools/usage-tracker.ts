@@ -78,10 +78,21 @@ export class PoolConsumptionTracker {
   /** Record an API token consumption event */
   record(event: Omit<UsageEvent, "recordedAt"> & { recordedAt?: string }): void {
     const recordedAt = event.recordedAt ?? new Date().toISOString();
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO pool_usage_events (pool_id, member_id, provider, tokens_used, model_id, recorded_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(event.poolId, event.memberId, event.provider, event.tokensUsed, event.modelId, recordedAt);
+    `,
+      )
+      .run(
+        event.poolId,
+        event.memberId,
+        event.provider,
+        event.tokensUsed,
+        event.modelId,
+        recordedAt,
+      );
   }
 
   /** Usage summary for a specific member across all their pools */
@@ -103,12 +114,16 @@ export class PoolConsumptionTracker {
     const rows = this.db.prepare(baseQuery).all(...args) as any[];
 
     return rows.map((row) => {
-      const dailyRows = this.db.prepare(`
+      const dailyRows = this.db
+        .prepare(
+          `
         SELECT date(recorded_at) as day, SUM(tokens_used) as tokens
         FROM pool_usage_events
         WHERE member_id = ? AND provider = ? AND date(recorded_at) >= date('now', ?)
         GROUP BY date(recorded_at)
-      `).all(memberId, row.provider, `-${days} days`) as any[];
+      `,
+        )
+        .all(memberId, row.provider, `-${days} days`) as any[];
 
       const dailyBreakdown: Record<string, number> = {};
       for (const d of dailyRows) {
@@ -120,9 +135,8 @@ export class PoolConsumptionTracker {
         provider: row.provider,
         totalTokensUsed: row.total_tokens ?? 0,
         totalRequests: row.total_requests ?? 0,
-        avgTokensPerRequest: row.total_requests > 0
-          ? Math.round(row.total_tokens / row.total_requests)
-          : 0,
+        avgTokensPerRequest:
+          row.total_requests > 0 ? Math.round(row.total_tokens / row.total_requests) : 0,
         firstUsedAt: row.first_used ?? null,
         lastUsedAt: row.last_used ?? null,
         dailyBreakdown,
@@ -132,23 +146,31 @@ export class PoolConsumptionTracker {
 
   /** Usage summary for an entire pool */
   getPoolSummary(poolId: string): PoolUsageSummary | null {
-    const overview = this.db.prepare(`
+    const overview = this.db
+      .prepare(
+        `
       SELECT
         provider,
         SUM(tokens_used) as total_tokens,
         COUNT(*) as total_requests,
         COUNT(DISTINCT member_id) as member_count
       FROM pool_usage_events WHERE pool_id = ?
-    `).get(poolId) as any;
+    `,
+      )
+      .get(poolId) as any;
 
     if (!overview) return null;
 
-    const topRows = this.db.prepare(`
+    const topRows = this.db
+      .prepare(
+        `
       SELECT member_id, SUM(tokens_used) as tokens
       FROM pool_usage_events WHERE pool_id = ?
       GROUP BY member_id
       ORDER BY tokens DESC LIMIT 10
-    `).all(poolId) as any[];
+    `,
+      )
+      .all(poolId) as any[];
 
     return {
       poolId,
@@ -163,12 +185,16 @@ export class PoolConsumptionTracker {
   /** Most recent N events for a member/pool combination */
   getRecentEvents(memberId: string, poolId?: string, limit = 50): UsageEvent[] {
     const rows = poolId
-      ? (this.db.prepare(
-          `SELECT * FROM pool_usage_events WHERE member_id = ? AND pool_id = ? ORDER BY recorded_at DESC LIMIT ?`,
-        ).all(memberId, poolId, limit) as any[])
-      : (this.db.prepare(
-          `SELECT * FROM pool_usage_events WHERE member_id = ? ORDER BY recorded_at DESC LIMIT ?`,
-        ).all(memberId, limit) as any[]);
+      ? (this.db
+          .prepare(
+            `SELECT * FROM pool_usage_events WHERE member_id = ? AND pool_id = ? ORDER BY recorded_at DESC LIMIT ?`,
+          )
+          .all(memberId, poolId, limit) as any[])
+      : (this.db
+          .prepare(
+            `SELECT * FROM pool_usage_events WHERE member_id = ? ORDER BY recorded_at DESC LIMIT ?`,
+          )
+          .all(memberId, limit) as any[]);
 
     return rows.map((r) => ({
       poolId: r.pool_id,

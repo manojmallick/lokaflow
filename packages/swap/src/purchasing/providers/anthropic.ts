@@ -6,10 +6,10 @@ import { ApiProviderIntegration, ProviderBalance, ProviderRate } from "./base.js
 
 // Current Anthropic pay-as-you-go rates (USD/1M tokens) — update quarterly
 const ANTHROPIC_RATES: Record<string, { input: number; output: number }> = {
-  "claude-opus-4":    { input: 15.00, output: 75.00 },
-  "claude-sonnet-4":  { input:  3.00, output: 15.00 },
-  "claude-haiku-3.5": { input:  0.80, output:  4.00 },
-  "default":          { input:  3.00, output: 15.00 },
+  "claude-opus-4": { input: 15.0, output: 75.0 },
+  "claude-sonnet-4": { input: 3.0, output: 15.0 },
+  "claude-haiku-3.5": { input: 0.8, output: 4.0 },
+  default: { input: 3.0, output: 15.0 },
 };
 
 /**
@@ -53,7 +53,7 @@ export class AnthropicProvider implements ApiProviderIntegration {
     // Fallback: return unknown balance
     return {
       provider: "anthropic",
-      balance: -1,         // -1 = unknown
+      balance: -1, // -1 = unknown
       unit: "tokens",
       fetchedAt: new Date().toISOString(),
     };

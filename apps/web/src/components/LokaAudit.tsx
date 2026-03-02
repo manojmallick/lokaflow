@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { BarChart2, Download, Leaf, RefreshCw, Share2, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  BarChart2,
+  Download,
+  Leaf,
+  RefreshCw,
+  Share2,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 
 interface CostData {
   today: {
@@ -138,7 +146,11 @@ export function LokaAudit() {
           <BarChart2 size={36} />
           <strong>Could not load cost data</strong>
           <span>Make sure LokaFlow server is running at {apiUrl}</span>
-          <button className="btn-secondary" onClick={fetchData} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button
+            className="btn-secondary"
+            onClick={fetchData}
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
             <RefreshCw size={14} /> Retry
           </button>
         </div>
@@ -153,7 +165,10 @@ export function LokaAudit() {
 
   const efficiencyScore = Math.min(
     99,
-    Math.round(cost.month.localPercent * 0.7 + (cost.month.savingsVsNaiveEur / (cost.month.totalEur + cost.month.savingsVsNaiveEur)) * 30),
+    Math.round(
+      cost.month.localPercent * 0.7 +
+        (cost.month.savingsVsNaiveEur / (cost.month.totalEur + cost.month.savingsVsNaiveEur)) * 30,
+    ),
   );
 
   function exportReport() {
@@ -183,13 +198,25 @@ export function LokaAudit() {
           Savings Audit
         </h1>
         <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn-secondary" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }} onClick={fetchData}>
+          <button
+            className="btn-secondary"
+            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}
+            onClick={fetchData}
+          >
             <RefreshCw size={14} /> Refresh
           </button>
-          <button className="btn-secondary" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }} onClick={exportReport}>
+          <button
+            className="btn-secondary"
+            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}
+            onClick={exportReport}
+          >
             <Download size={14} /> Export
           </button>
-          <button className="btn-secondary" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }} onClick={() => setShowShare(true)}>
+          <button
+            className="btn-secondary"
+            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}
+            onClick={() => setShowShare(true)}
+          >
             <Share2 size={14} /> Share
           </button>
         </div>
@@ -228,7 +255,16 @@ export function LokaAudit() {
           {trend.map((t, i) => {
             const h = Math.max(4, (t.cost / maxTrendCost) * 72);
             return (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 2,
+                }}
+              >
                 <div
                   title={`${t.day}: ${fmtEur(t.cost)}`}
                   style={{
@@ -243,7 +279,15 @@ export function LokaAudit() {
             );
           })}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text-muted)", marginTop: 4 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: 10,
+            color: "var(--text-muted)",
+            marginTop: 4,
+          }}
+        >
           <span>{trend[0].day}</span>
           <span>{trend[trend.length - 1].day}</span>
         </div>
@@ -316,7 +360,9 @@ export function LokaAudit() {
               <span style={{ color: "var(--text-main)" }}>{cat.label}</span>
               <span style={{ textAlign: "right", color: "#4ade80" }}>{cat.local}</span>
               <span style={{ textAlign: "right", color: "#fbbf24" }}>{cat.cloud}</span>
-              <span style={{ textAlign: "right", color: "var(--text-main)" }}>{fmtEur(cat.savings)}</span>
+              <span style={{ textAlign: "right", color: "var(--text-main)" }}>
+                {fmtEur(cat.savings)}
+              </span>
             </div>
           ))}
         </div>
@@ -325,7 +371,7 @@ export function LokaAudit() {
       {/* CO₂ / Energy Dashboard */}
       {(() => {
         // Cloud: ~0.0025 kWh per 1000 tokens; local ARM: ~0.0008 kWh per 1000 tokens
-        const localTok = cost.month.queryCount * cost.month.localPercent / 100 * 400;   // est. 400 tok/query avg
+        const localTok = ((cost.month.queryCount * cost.month.localPercent) / 100) * 400; // est. 400 tok/query avg
         const cloudTok = cost.month.queryCount * (1 - cost.month.localPercent / 100) * 400;
         const cloudKwh = (cloudTok / 1000) * 0.0025;
         const localKwh = (localTok / 1000) * 0.0008;
@@ -335,7 +381,10 @@ export function LokaAudit() {
         const treeDays = co2Kg * 62.5; // 1 tree absorbs ~5.9kg CO₂/year → ~16g/day
         return (
           <div className="audit-chart-card">
-            <div className="audit-chart-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div
+              className="audit-chart-title"
+              style={{ display: "flex", alignItems: "center", gap: 6 }}
+            >
               <Leaf size={14} style={{ color: "#4ade80" }} /> CO₂ &amp; Energy Impact (Month)
             </div>
             <div className="co2-grid">
@@ -404,17 +453,38 @@ export function LokaAudit() {
                 <span className="report-card-period">Monthly AI Report</span>
               </div>
               <div className="report-card-stats">
-                <div className="rc-stat"><div className="rc-val green">{fmtEur(cost.month.savingsVsNaiveEur)}</div><div className="rc-lbl">Saved</div></div>
-                <div className="rc-stat"><div className="rc-val">{cost.month.queryCount.toLocaleString()}</div><div className="rc-lbl">AI Queries</div></div>
-                <div className="rc-stat"><div className="rc-val green">{fmtPct(cost.month.localPercent)}</div><div className="rc-lbl">Local</div></div>
-                <div className="rc-stat"><div className="rc-val green">{efficiencyScore}%</div><div className="rc-lbl">Efficiency</div></div>
+                <div className="rc-stat">
+                  <div className="rc-val green">{fmtEur(cost.month.savingsVsNaiveEur)}</div>
+                  <div className="rc-lbl">Saved</div>
+                </div>
+                <div className="rc-stat">
+                  <div className="rc-val">{cost.month.queryCount.toLocaleString()}</div>
+                  <div className="rc-lbl">AI Queries</div>
+                </div>
+                <div className="rc-stat">
+                  <div className="rc-val green">{fmtPct(cost.month.localPercent)}</div>
+                  <div className="rc-lbl">Local</div>
+                </div>
+                <div className="rc-stat">
+                  <div className="rc-val green">{efficiencyScore}%</div>
+                  <div className="rc-lbl">Efficiency</div>
+                </div>
               </div>
-              <div className="report-card-footer">Powered by LokaFlow™ — Private AI Infrastructure</div>
+              <div className="report-card-footer">
+                Powered by LokaFlow™ — Private AI Infrastructure
+              </div>
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <button
                 className="btn-primary"
-                style={{ flex: 1, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                style={{
+                  flex: 1,
+                  fontSize: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
                 onClick={() => {
                   const text = `🤖 LokaFlow™ Monthly AI Report\n\n✅ ${fmtEur(cost.month.savingsVsNaiveEur)} saved\n📊 ${cost.month.queryCount.toLocaleString()} queries\n🏠 ${fmtPct(cost.month.localPercent)} routed locally\n⚡ ${efficiencyScore}% efficiency score\n\n#LokaFlow #PrivateAI #CostOptimisation`;
                   void navigator.clipboard.writeText(text);
@@ -424,7 +494,13 @@ export function LokaAudit() {
               >
                 {copied ? "✓ Copied!" : "Copy stats"}
               </button>
-              <button className="btn-secondary" style={{ flex: 1, fontSize: 12 }} onClick={() => setShowShare(false)}>Close</button>
+              <button
+                className="btn-secondary"
+                style={{ flex: 1, fontSize: 12 }}
+                onClick={() => setShowShare(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -432,4 +508,3 @@ export function LokaAudit() {
     </div>
   );
 }
-

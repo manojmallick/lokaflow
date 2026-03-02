@@ -36,6 +36,7 @@ export class Assembler {
     intent: IntentProfile,
     partialTrace: Omit<AgentTrace, "assembly" | "savings"> & { savings?: AgentTrace["savings"] },
     dependencyOrder: string[],
+    planTokens: { input: number; output: number } = { input: 0, output: 0 },
   ): Promise<FinalOutput> {
     const ordered = this.orderResults(results, dependencyOrder);
     let content: string;
@@ -59,7 +60,7 @@ export class Assembler {
     };
 
     const savings = partialTrace.savings ?? this.buildSavingsTrace(results);
-    const metrics = this.buildMetrics(results);
+    const metrics = this.buildMetrics(results, planTokens);
 
     const trace: AgentTrace = {
       ...(partialTrace as Omit<AgentTrace, "assembly" | "savings">),
@@ -156,18 +157,25 @@ export class Assembler {
     };
   }
 
-  private buildMetrics(results: Map<string, NodeResult>): AgentMetrics {
+  private buildMetrics(
+    results: Map<string, NodeResult>,
+    planTokens: { input: number; output: number } = { input: 0, output: 0 },
+  ): AgentMetrics {
     const nodes = [...results.values()];
-    const totalInputTokens = nodes.reduce((s, n) => s + n.tokensUsed.inputTokens, 0);
-    const totalOutputTokens = nodes.reduce((s, n) => s + n.tokensUsed.outputTokens, 0);
+    const workerInputTokens = nodes.reduce((s, n) => s + n.tokensUsed.inputTokens, 0);
+    const workerOutputTokens = nodes.reduce((s, n) => s + n.tokensUsed.outputTokens, 0);
     const nodesEscalated = nodes.filter((n) => n.escalated).length;
     // Latency: sum of sequential layers — simplified to max latency observed
     const totalLatencyMs = Math.max(...nodes.map((n) => n.latencyMs), 0);
+    const totalInputTokens = workerInputTokens + planTokens.input;
+    const totalOutputTokens = workerOutputTokens + planTokens.output;
 
     return {
       totalLatencyMs,
       totalInputTokens,
       totalOutputTokens,
+      plannerInputTokens: planTokens.input,
+      plannerOutputTokens: planTokens.output,
       nodesExecuted: nodes.length,
       nodesEscalated,
       estimatedCostEur: (totalInputTokens / 1000) * 0.002 + nodesEscalated * 0.003,

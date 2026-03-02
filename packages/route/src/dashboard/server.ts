@@ -26,8 +26,8 @@ export class DashboardServer {
 
   constructor(config: DashboardConfig = {}) {
     this.port = config.port ?? 4040;
-    this.sub  = config.subscriptionKey ?? "claude-pro";
-    this.report  = new SavingsReport(config.dbPath);
+    this.sub = config.subscriptionKey ?? "claude-pro";
+    this.report = new SavingsReport(config.dbPath);
     this.tracker = new SavingsTracker(config.dbPath);
     this.app = Fastify({ logger: false });
     this.registerRoutes();

@@ -6,12 +6,12 @@ import { ApiProviderIntegration, ProviderBalance, ProviderRate } from "./base.js
 
 // Current OpenAI pay-as-you-go rates (USD/1M tokens) — update quarterly
 const OPENAI_RATES: Record<string, { input: number; output: number }> = {
-  "gpt-4o":           { input: 2.50, output: 10.00 },
-  "gpt-4o-mini":      { input: 0.15, output:  0.60 },
-  "gpt-4-turbo":      { input: 10.00, output: 30.00 },
-  "o1":               { input: 15.00, output: 60.00 },
-  "o3-mini":          { input: 1.10, output:  4.40 },
-  "default":          { input: 2.50, output: 10.00 },
+  "gpt-4o": { input: 2.5, output: 10.0 },
+  "gpt-4o-mini": { input: 0.15, output: 0.6 },
+  "gpt-4-turbo": { input: 10.0, output: 30.0 },
+  o1: { input: 15.0, output: 60.0 },
+  "o3-mini": { input: 1.1, output: 4.4 },
+  default: { input: 2.5, output: 10.0 },
 };
 
 /**

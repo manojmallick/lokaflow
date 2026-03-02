@@ -136,10 +136,15 @@ function TraceRow({ entry }: { entry: HistoryEntry }) {
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </div>
         <div className="trace-row-icons">
-          {isCloud
-            ? <span className="trace-icon trace-cloud-icon" title="Cloud">☁️</span>
-            : <span className="trace-icon trace-local-icon" title="Local">🖥️</span>
-          }
+          {isCloud ? (
+            <span className="trace-icon trace-cloud-icon" title="Cloud">
+              ☁️
+            </span>
+          ) : (
+            <span className="trace-icon trace-local-icon" title="Local">
+              🖥️
+            </span>
+          )}
         </div>
         <div className="trace-row-prompt">{shortPrompt(entry.prompt, entry.reason)}</div>
         <div className="trace-row-meta">
@@ -157,20 +162,33 @@ function TraceRow({ entry }: { entry: HistoryEntry }) {
           <div className="trace-section-label">PIPELINE</div>
           <div className="trace-stage">
             <span className="trace-stage-name">PromptGuard</span>
-            <div className="trace-bar-wrap"><div className="trace-bar" style={{ width: "8%" }} /></div>
-            <span className="trace-stage-meta">✅ PII: none · <span className={`trace-cmplx ${cmplx.cls}`}>{cmplx.label}</span></span>
+            <div className="trace-bar-wrap">
+              <div className="trace-bar" style={{ width: "8%" }} />
+            </div>
+            <span className="trace-stage-meta">
+              ✅ PII: none · <span className={`trace-cmplx ${cmplx.cls}`}>{cmplx.label}</span>
+            </span>
           </div>
           <div className="trace-stage">
             <span className="trace-stage-name">ComplexityScore</span>
-            <div className="trace-bar-wrap"><div className="trace-bar" style={{ width: `${Math.round(entry.score * 100)}%` }} /></div>
-            <span className="trace-stage-meta">🧠 {entry.score.toFixed(2)} → <span className={`trace-cmplx ${cmplx.cls}`}>{cmplx.label}</span></span>
+            <div className="trace-bar-wrap">
+              <div className="trace-bar" style={{ width: `${Math.round(entry.score * 100)}%` }} />
+            </div>
+            <span className="trace-stage-meta">
+              🧠 {entry.score.toFixed(2)} →{" "}
+              <span className={`trace-cmplx ${cmplx.cls}`}>{cmplx.label}</span>
+            </span>
           </div>
           <div className="trace-stage">
             <span className="trace-stage-name">Router</span>
-            <div className="trace-bar-wrap"><div className="trace-bar" style={{ width: "15%" }} /></div>
+            <div className="trace-bar-wrap">
+              <div className="trace-bar" style={{ width: "15%" }} />
+            </div>
             <span className="trace-stage-meta">{entry.reason || `Tier: ${entry.tier}`}</span>
           </div>
-          <div className="trace-section-label" style={{ marginTop: 12 }}>EXECUTION</div>
+          <div className="trace-section-label" style={{ marginTop: 12 }}>
+            EXECUTION
+          </div>
           <div className="trace-execution-row">
             <span className={`tier-badge-small ${entry.tier}`}>
               {isLocal ? "🖥️ local" : isCloud ? "☁️ cloud" : "⚡ specialist"}
@@ -196,7 +214,9 @@ function TraceRow({ entry }: { entry: HistoryEntry }) {
             </div>
             <div className="trace-summary-row">
               <span className="trace-sum-label">Complexity</span>
-              <span className={`trace-cmplx ${cmplx.cls}`}>{cmplx.label} ({entry.score.toFixed(2)})</span>
+              <span className={`trace-cmplx ${cmplx.cls}`}>
+                {cmplx.label} ({entry.score.toFixed(2)})
+              </span>
             </div>
             <div className="trace-summary-row">
               <span className="trace-sum-label">Cost</span>
@@ -207,7 +227,9 @@ function TraceRow({ entry }: { entry: HistoryEntry }) {
             {isLocal && (
               <div className="trace-summary-row">
                 <span className="trace-sum-label">Saving</span>
-                <span className="trace-sum-value" style={{ color: "#10b981" }}>100% (fully local)</span>
+                <span className="trace-sum-value" style={{ color: "#10b981" }}>
+                  100% (fully local)
+                </span>
               </div>
             )}
           </div>
@@ -234,12 +256,31 @@ function DonutChart({ localPct }: { localPct: number }) {
   return (
     <svg width="90" height="90" viewBox="0 0 90 90">
       <circle cx="45" cy="45" r={r} fill="none" stroke="#272a30" strokeWidth="10" />
-      <circle cx="45" cy="45" r={r} fill="none" stroke="#eab308" strokeWidth="10"
-        strokeDasharray={circ} strokeDashoffset={localArc} strokeLinecap="round"
-        transform="rotate(-90 45 45)" style={{ transition: "stroke-dashoffset 0.6s ease" }} />
-      <circle cx="45" cy="45" r={r} fill="none" stroke="#10b981" strokeWidth="10"
-        strokeDasharray={`${localArc} ${circ - localArc}`} strokeLinecap="round"
-        transform="rotate(-90 45 45)" style={{ transition: "stroke-dasharray 0.6s ease" }} />
+      <circle
+        cx="45"
+        cy="45"
+        r={r}
+        fill="none"
+        stroke="#eab308"
+        strokeWidth="10"
+        strokeDasharray={circ}
+        strokeDashoffset={localArc}
+        strokeLinecap="round"
+        transform="rotate(-90 45 45)"
+        style={{ transition: "stroke-dashoffset 0.6s ease" }}
+      />
+      <circle
+        cx="45"
+        cy="45"
+        r={r}
+        fill="none"
+        stroke="#10b981"
+        strokeWidth="10"
+        strokeDasharray={`${localArc} ${circ - localArc}`}
+        strokeLinecap="round"
+        transform="rotate(-90 45 45)"
+        style={{ transition: "stroke-dasharray 0.6s ease" }}
+      />
       <text x="45" y="49" textAnchor="middle" fill="#f8fafc" fontSize="13" fontWeight="700">
         {localPct.toFixed(0)}%
       </text>
@@ -251,7 +292,8 @@ function DonutChart({ localPct }: { localPct: number }) {
 
 function Sparkline({ values, cap }: { values: number[]; cap: number }) {
   if (values.length < 2) return <div className="sparkline-placeholder">No data yet</div>;
-  const w = 260; const h = 56;
+  const w = 260;
+  const h = 56;
   const maxV = Math.max(cap, ...values, 0.001);
   const pts = values.map((v, i) => {
     const x = (i / (values.length - 1)) * w;
@@ -261,9 +303,24 @@ function Sparkline({ values, cap }: { values: number[]; cap: number }) {
   const capY = h - (cap / maxV) * (h - 8);
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: "visible" }}>
-      <line x1={0} y1={capY} x2={w} y2={capY} stroke="#ef4444" strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
-      <polyline fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round"
-        strokeLinejoin="round" points={pts.join(" ")} />
+      <line
+        x1={0}
+        y1={capY}
+        x2={w}
+        y2={capY}
+        stroke="#ef4444"
+        strokeWidth="1"
+        strokeDasharray="4 3"
+        opacity="0.5"
+      />
+      <polyline
+        fill="none"
+        stroke="#3b82f6"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={pts.join(" ")}
+      />
       {values.map((v, i) => {
         const x = (i / (values.length - 1)) * w;
         const y = h - (v / maxV) * (h - 8);
@@ -293,13 +350,22 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
         const data = await res.json();
         setHistory(data.entries ?? []);
       }
-    } catch { /* offline */ }
-    finally { setHistoryLoading(false); }
+    } catch {
+      /* offline */
+    } finally {
+      setHistoryLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE()}/v1/cost`).then((r) => r.json()).then(setStats).catch(() => {});
-    fetch(`${API_BASE()}/v1/health`).then((r) => r.json()).then(setHealth).catch(() => {});
+    fetch(`${API_BASE()}/v1/cost`)
+      .then((r) => r.json())
+      .then(setStats)
+      .catch(() => {});
+    fetch(`${API_BASE()}/v1/health`)
+      .then((r) => r.json())
+      .then(setHealth)
+      .catch(() => {});
     fetchHistory();
   }, [fetchHistory]);
 
@@ -315,11 +381,14 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
   const avoidedToday = todayLocal * 0.005;
   const effPct = todayTotal > 0 ? Math.min(99, Math.round(localPct)) : 0;
   const sparkData = [0, 0.001, 0.003, 0, 0.002, 0.004, todayCost];
-  const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="dashboard-root">
-
       {/* Intelligence Summary Banner */}
       <div className="intel-banner">
         <div className="intel-banner-date">{today}</div>
@@ -330,7 +399,9 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
           <div className="intel-divider" />
           <div className="intel-stat">
-            <span className="intel-num" style={{ color: "#10b981" }}>{localPct.toFixed(0)}%</span>
+            <span className="intel-num" style={{ color: "#10b981" }}>
+              {localPct.toFixed(0)}%
+            </span>
             <span className="intel-label">local</span>
           </div>
           <div className="intel-divider" />
@@ -340,7 +411,10 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
           <div className="intel-divider" />
           <div className="intel-stat">
-            <span className="intel-num" style={{ color: effPct > 0 ? "#10b981" : "var(--text-muted)" }}>
+            <span
+              className="intel-num"
+              style={{ color: effPct > 0 ? "#10b981" : "var(--text-muted)" }}
+            >
               {effPct > 0 ? `${effPct}%` : "—"}
             </span>
             <span className="intel-label">efficiency</span>
@@ -349,10 +423,18 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
         {(avoidedToday > 0.001 || dailyUsedPct > 0) && (
           <div className="intel-savings-line">
             <TrendingUp size={14} />
-            {avoidedToday > 0.001
-              ? <>Cloud-only would cost <strong>€{(todayCost + avoidedToday).toFixed(3)}</strong> — you saved <strong style={{ color: "#10b981" }}>€{avoidedToday.toFixed(3)}</strong> today</>
-              : <>Daily budget: <strong>€{dailyCap}</strong> — used <strong>{dailyUsedPct.toFixed(1)}%</strong></>
-            }
+            {avoidedToday > 0.001 ? (
+              <>
+                Cloud-only would cost <strong>€{(todayCost + avoidedToday).toFixed(3)}</strong> —
+                you saved <strong style={{ color: "#10b981" }}>€{avoidedToday.toFixed(3)}</strong>{" "}
+                today
+              </>
+            ) : (
+              <>
+                Daily budget: <strong>€{dailyCap}</strong> — used{" "}
+                <strong>{dailyUsedPct.toFixed(1)}%</strong>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -369,13 +451,19 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
             <div className="routing-split-legend">
               <div className="legend-row">
                 <span className="legend-dot legend-local" />
-                <span className="legend-label">Local — {todayLocal} quer{todayLocal === 1 ? "y" : "ies"}</span>
+                <span className="legend-label">
+                  Local — {todayLocal} quer{todayLocal === 1 ? "y" : "ies"}
+                </span>
               </div>
               <div className="legend-row">
                 <span className="legend-dot legend-cloud" />
-                <span className="legend-label">Cloud — {todayCloud} quer{todayCloud === 1 ? "y" : "ies"}</span>
+                <span className="legend-label">
+                  Cloud — {todayCloud} quer{todayCloud === 1 ? "y" : "ies"}
+                </span>
               </div>
-              {localPct > 0 && <div className="legend-trend">↑ {localPct.toFixed(0)}% local — zero cloud cost</div>}
+              {localPct > 0 && (
+                <div className="legend-trend">↑ {localPct.toFixed(0)}% local — zero cloud cost</div>
+              )}
             </div>
           </div>
         </div>
@@ -426,7 +514,9 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
         <div className="card health-mini-card">
           <div className="card-header">
             <h3>System Health</h3>
-            <button className="btn-ghost btn-xs" onClick={() => onNavigate?.("mesh")}>Go to Mesh →</button>
+            <button className="btn-ghost btn-xs" onClick={() => onNavigate?.("mesh")}>
+              Go to Mesh →
+            </button>
           </div>
           {health ? (
             <div className="health-mini-list">
@@ -435,9 +525,15 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
                 const isCloudP = p.tier === "cloud";
                 const latMs = p.latencyMs;
                 const dotCls = isOk
-                  ? isCloudP ? "dot-amber" : latMs > 200 ? "dot-amber" : "dot-green"
+                  ? isCloudP
+                    ? "dot-amber"
+                    : latMs > 200
+                      ? "dot-amber"
+                      : "dot-green"
                   : "dot-red";
-                const note = !isOk ? "Offline" : `${latMs}ms${isCloudP && latMs > 800 ? " — Slow" : ""}`;
+                const note = !isOk
+                  ? "Offline"
+                  : `${latMs}ms${isCloudP && latMs > 800 ? " — Slow" : ""}`;
                 return (
                   <div key={i} className="health-mini-row">
                     <span className={`status-dot ${dotCls}`} />
@@ -447,7 +543,9 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
                   </div>
                 );
               })}
-              <div className="health-mini-uptime">API uptime: {health.uptime ? fmtUptime(health.uptime) : "—"}</div>
+              <div className="health-mini-uptime">
+                API uptime: {health.uptime ? fmtUptime(health.uptime) : "—"}
+              </div>
             </div>
           ) : (
             <div className="health-mini-offline">
@@ -465,10 +563,14 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
           <div className="budget-pct-big">{dailyUsedPct.toFixed(0)}%</div>
           <div className="budget-bar-wrap" style={{ marginTop: 8 }}>
             <div className="budget-bar-bg">
-              <div className="budget-bar-fill" style={{
-                width: `${Math.min(100, dailyUsedPct)}%`,
-                background: dailyUsedPct > 80 ? "#ef4444" : dailyUsedPct > 60 ? "#eab308" : "#3b82f6",
-              }} />
+              <div
+                className="budget-bar-fill"
+                style={{
+                  width: `${Math.min(100, dailyUsedPct)}%`,
+                  background:
+                    dailyUsedPct > 80 ? "#ef4444" : dailyUsedPct > 60 ? "#eab308" : "#3b82f6",
+                }}
+              />
             </div>
           </div>
           <div className="subtext" style={{ marginTop: 8 }}>
@@ -476,7 +578,8 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
           {dailyUsedPct > 80 && (
             <div className="budget-alert">
-              <AlertTriangle size={13} /> Approaching daily limit — {(100 - dailyUsedPct).toFixed(0)}% remaining
+              <AlertTriangle size={13} /> Approaching daily limit —{" "}
+              {(100 - dailyUsedPct).toFixed(0)}% remaining
             </div>
           )}
         </div>
@@ -489,7 +592,8 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
           <div className="savings-big">€{monthlySavings.toFixed(2)}</div>
           <div className="subtext">vs cloud-only execution</div>
           <div className="subtext" style={{ marginTop: 8 }}>
-            {stats?.month.localPercent?.toFixed(0) ?? 0}% local · {stats?.month.queryCount ?? 0} queries
+            {stats?.month.localPercent?.toFixed(0) ?? 0}% local · {stats?.month.queryCount ?? 0}{" "}
+            queries
           </div>
           {monthlySavings === 0 && (
             <div className="savings-hint">Send your first message to start saving.</div>
@@ -502,24 +606,37 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
         <div className="chart-header">
           <h3>Recent Message Traces</h3>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button className="btn-ghost btn-xs" onClick={() => onNavigate?.("audit")}>View All</button>
-            <button className="btn-ghost btn-xs" onClick={fetchHistory} disabled={historyLoading} title="Refresh">
+            <button className="btn-ghost btn-xs" onClick={() => onNavigate?.("audit")}>
+              View All
+            </button>
+            <button
+              className="btn-ghost btn-xs"
+              onClick={fetchHistory}
+              disabled={historyLoading}
+              title="Refresh"
+            >
               <RefreshCw size={12} className={historyLoading ? "spin" : ""} /> Refresh
             </button>
           </div>
         </div>
         <div className="trace-list">
           {history.length === 0 && !historyLoading && (
-            <div className="route-empty">No traces yet — start the API and send a chat message.</div>
+            <div className="route-empty">
+              No traces yet — start the API and send a chat message.
+            </div>
           )}
           {historyLoading && history.length === 0 && (
             <div className="route-empty">
               <RefreshCw size={14} className="spin" style={{ marginRight: 8 }} /> Loading…
             </div>
           )}
-          {history.map((e, i) => <TraceRow key={i} entry={e} />)}
+          {history.map((e, i) => (
+            <TraceRow key={i} entry={e} />
+          ))}
         </div>
-        <div className="trace-list-footer">Click any row to expand the full pipeline waterfall →</div>
+        <div className="trace-list-footer">
+          Click any row to expand the full pipeline waterfall →
+        </div>
       </div>
     </div>
   );

@@ -184,7 +184,11 @@ export class PythonRunner extends EventEmitter {
     const epoch = line.match(/'epoch':\s*([\d.]+)/);
     if (epoch) {
       const pct = Math.min(100, Math.round(parseFloat(epoch[1]!) * 100));
-      this.emit("data", { type: "progress", percent: pct, message: line.trim() } satisfies RunnerEvent);
+      this.emit("data", {
+        type: "progress",
+        percent: pct,
+        message: line.trim(),
+      } satisfies RunnerEvent);
     }
   }
 }

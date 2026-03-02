@@ -38,7 +38,10 @@ export interface LifespanPrediction {
 }
 
 /** Linear regression: returns slope (y per x) and intercept, plus R² */
-function linearRegression(xs: number[], ys: number[]): { slope: number; intercept: number; rSquared: number } {
+function linearRegression(
+  xs: number[],
+  ys: number[],
+): { slope: number; intercept: number; rSquared: number } {
   const n = xs.length;
   if (n < 2) return { slope: 0, intercept: ys[0] ?? 100, rSquared: 0 };
 
@@ -75,9 +78,7 @@ function linearRegression(xs: number[], ys: number[]): { slope: number; intercep
  * The predictions are blended by their respective R² values.
  */
 export class LifespanPredictor {
-  constructor(
-    private readonly targetHealthPct: number = 80,
-  ) {}
+  constructor(private readonly targetHealthPct: number = 80) {}
 
   /**
    * Predict lifespan given a series of health records for a single node,
@@ -120,7 +121,7 @@ export class LifespanPredictor {
       const remainingCycles = cyclesToTarget - currentCycles;
       // Compute avg daily cycles from the window
       const totalCycles = (cyclesArr[cyclesArr.length - 1] ?? 0) - (cyclesArr[0] ?? 0);
-      const totalDays = (daysArr[daysArr.length - 1] ?? 1);
+      const totalDays = daysArr[daysArr.length - 1] ?? 1;
       const avgDailyCycles = totalDays > 0 ? totalCycles / totalDays : 0.5;
       cyclePrediction = avgDailyCycles > 0 ? remainingCycles / avgDailyCycles : null;
     }
@@ -181,7 +182,12 @@ export class LifespanPredictor {
       estimatedReplacementDate: null,
       daysRemaining: null,
       targetHealthPct: this.targetHealthPct,
-      degradationRate: { pctPer100Cycles: 0, pctPerDay: 0, rSquared: 0, sampleSize: 0 } as DegradationTrend,
+      degradationRate: {
+        pctPer100Cycles: 0,
+        pctPerDay: 0,
+        rSquared: 0,
+        sampleSize: 0,
+      } as DegradationTrend,
       recommendation: currentHealthPct >= 90 ? "healthy" : "monitor",
       generatedAt,
     };

@@ -21,7 +21,7 @@ export interface ExchangeSummary {
   totalTrades: number;
   totalLokaCreditVolume: number;
   totalApiCreditVolume: Record<string, number>; // provider → amount
-  tradesByDate: Record<string, number>;          // YYYY-MM-DD → count
+  tradesByDate: Record<string, number>; // YYYY-MM-DD → count
   lastTradeAt: string | null;
 }
 

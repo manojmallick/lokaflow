@@ -162,10 +162,7 @@ export class BatteryIntelligence extends EventEmitter {
     }
 
     // Enforce charge guardian
-    const chargeAction = await this.guardian.enforce(
-      { ...state, agent: this.agent },
-      this.policy,
-    );
+    const chargeAction = await this.guardian.enforce({ ...state, agent: this.agent }, this.policy);
 
     // Thermal zone
     const thermalZone = getThermalZone(state.temperatureCelsius);
@@ -185,7 +182,9 @@ function _buildWindowsStub(nodeId: string): BatteryAgent {
       return _neutralState(nodeId);
     },
     async setChargeLimit(): Promise<void> {
-      throw new Error("Charge control not supported on Windows via this agent. Use power/windows.ts.");
+      throw new Error(
+        "Charge control not supported on Windows via this agent. Use power/windows.ts.",
+      );
     },
     async getChargeLimit(): Promise<number | null> {
       return null;

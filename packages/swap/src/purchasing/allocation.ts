@@ -83,16 +83,26 @@ export class AllocationManager {
   }): ApiCreditAllocation {
     const id = randomUUID();
     const createdAt = new Date().toISOString();
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO api_credit_allocations
         (id, member_id, pool_id, provider, allocated_tokens, loka_credits_paid,
          price_per_mtoken, expires_at, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
-    `).run(
-      id, params.memberId, params.poolId, params.provider,
-      params.allocatedTokens, params.lokaCreditsPaid,
-      params.pricePerMToken, params.expiresAt, createdAt,
-    );
+    `,
+      )
+      .run(
+        id,
+        params.memberId,
+        params.poolId,
+        params.provider,
+        params.allocatedTokens,
+        params.lokaCreditsPaid,
+        params.pricePerMToken,
+        params.expiresAt,
+        createdAt,
+      );
     return this.getById(id)!;
   }
 
@@ -101,13 +111,17 @@ export class AllocationManager {
    * Throws if the member has no active allocation or has exceeded their quota.
    */
   debitUsage(memberId: string, provider: string, tokensUsed: number): void {
-    const alloc = this.db.prepare(`
+    const alloc = this.db
+      .prepare(
+        `
       SELECT id, allocated_tokens, used_tokens
       FROM api_credit_allocations
       WHERE member_id = ? AND provider = ? AND status = 'active'
         AND date(expires_at) >= date('now')
       ORDER BY expires_at ASC LIMIT 1
-    `).get(memberId, provider) as any;
+    `,
+      )
+      .get(memberId, provider) as any;
 
     if (!alloc) {
       throw new Error(`[LokaSwap] No active ${provider} allocation for member ${memberId}`);
@@ -117,42 +131,50 @@ export class AllocationManager {
     if (newUsed > alloc.allocated_tokens) {
       throw new Error(
         `[LokaSwap] Member ${memberId} exceeded ${provider} allocation ` +
-        `(${newUsed} > ${alloc.allocated_tokens} tokens)`,
+          `(${newUsed} > ${alloc.allocated_tokens} tokens)`,
       );
     }
 
     this.db.transaction(() => {
-      this.db.prepare(
-        `UPDATE api_credit_allocations SET used_tokens = ? WHERE id = ?`,
-      ).run(newUsed, alloc.id);
+      this.db
+        .prepare(`UPDATE api_credit_allocations SET used_tokens = ? WHERE id = ?`)
+        .run(newUsed, alloc.id);
 
       // Mark exhausted if fully consumed
       if (newUsed >= alloc.allocated_tokens) {
-        this.db.prepare(
-          `UPDATE api_credit_allocations SET status = 'exhausted' WHERE id = ?`,
-        ).run(alloc.id);
+        this.db
+          .prepare(`UPDATE api_credit_allocations SET status = 'exhausted' WHERE id = ?`)
+          .run(alloc.id);
       }
     })();
   }
 
   /** Get remaining token balance for a member and provider */
   getRemaining(memberId: string, provider: string): number {
-    const alloc = this.db.prepare(`
+    const alloc = this.db
+      .prepare(
+        `
       SELECT allocated_tokens, used_tokens
       FROM api_credit_allocations
       WHERE member_id = ? AND provider = ? AND status = 'active'
         AND date(expires_at) >= date('now')
       ORDER BY expires_at ASC LIMIT 1
-    `).get(memberId, provider) as any;
+    `,
+      )
+      .get(memberId, provider) as any;
     return alloc ? alloc.allocated_tokens - alloc.used_tokens : 0;
   }
 
   /** Full allocation summary for a member */
   getSummary(memberId: string): AllocationSummary {
-    const allocs = this.db.prepare(`
+    const allocs = this.db
+      .prepare(
+        `
       SELECT * FROM api_credit_allocations
       WHERE member_id = ? AND status IN ('active', 'exhausted')
-    `).all(memberId) as any[];
+    `,
+      )
+      .all(memberId) as any[];
 
     const byProvider: AllocationSummary["byProvider"] = {};
     let totalAllocated = 0;
@@ -182,11 +204,15 @@ export class AllocationManager {
 
   /** Expire stale allocations where date(expiry) < today */
   expireStale(): number {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       UPDATE api_credit_allocations
       SET status = 'expired'
       WHERE status = 'active' AND date(expires_at) < date('now')
-    `).run();
+    `,
+      )
+      .run();
     return result.changes;
   }
 

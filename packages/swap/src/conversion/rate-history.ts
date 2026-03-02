@@ -26,17 +26,26 @@ export interface RateChange {
  * to verify no rates were changed without community approval.
  */
 export class RateHistory {
-  constructor(private readonly engine: RateEngine, private readonly db: Database.Database) {}
+  constructor(
+    private readonly engine: RateEngine,
+    private readonly db: Database.Database,
+  ) {}
 
   /**
    * Get the full rate history for a provider, ordered oldest-first.
    */
   getHistory(provider: string): GovernedRate[] {
-    return (this.db.prepare(`
+    return (
+      this.db
+        .prepare(
+          `
       SELECT * FROM conversion_rates
       WHERE provider = ?
       ORDER BY effective_from ASC
-    `).all(provider) as any[]).map((row: any) => ({
+    `,
+        )
+        .all(provider) as any[]
+    ).map((row: any) => ({
       provider: row.provider,
       inputMultiplier: row.input_multiplier,
       outputMultiplier: row.output_multiplier,
@@ -91,7 +100,11 @@ export class RateHistory {
     for (const provider of providers) {
       const history = this.getHistory(provider);
       console.log(chalk.bold(`\n  ${provider}`));
-      console.log(chalk.dim(`  ${"Effective From".padEnd(16)} ${"Output/1M".padEnd(16)} ${"Change".padEnd(10)} Proposal`));
+      console.log(
+        chalk.dim(
+          `  ${"Effective From".padEnd(16)} ${"Output/1M".padEnd(16)} ${"Change".padEnd(10)} Proposal`,
+        ),
+      );
 
       for (const rate of history) {
         const isCurrent = !rate.effectiveTo;
@@ -103,7 +116,9 @@ export class RateHistory {
         const changes = this.getChanges(provider);
         const change = changes.find((c) => c.effectiveFrom === rate.effectiveFrom);
         const changePct = change
-          ? (change.outputChangePct >= 0 ? chalk.red(`+${change.outputChangePct}%`) : chalk.green(`${change.outputChangePct}%`))
+          ? change.outputChangePct >= 0
+            ? chalk.red(`+${change.outputChangePct}%`)
+            : chalk.green(`${change.outputChangePct}%`)
           : chalk.dim("—");
 
         const line = `  ${dateLabel} ${outputLabel} ${String(changePct).padEnd(12)} ${chalk.dim(proposalLabel)}`;

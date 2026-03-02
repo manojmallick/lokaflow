@@ -6,11 +6,11 @@ import { ApiProviderIntegration, ProviderBalance, ProviderRate } from "./base.js
 
 // Current Google AI pay-as-you-go rates (USD/1M tokens) — update quarterly
 const GOOGLE_RATES: Record<string, { input: number; output: number }> = {
-  "gemini-2.5-pro":        { input: 1.25, output: 10.00 },
-  "gemini-2.0-flash":      { input: 0.075, output: 0.30  },
+  "gemini-2.5-pro": { input: 1.25, output: 10.0 },
+  "gemini-2.0-flash": { input: 0.075, output: 0.3 },
   "gemini-2.0-flash-lite": { input: 0.0375, output: 0.15 },
-  "gemini-1.5-pro":        { input: 1.25,  output: 5.00  },
-  "default":               { input: 0.075, output: 0.30  },
+  "gemini-1.5-pro": { input: 1.25, output: 5.0 },
+  default: { input: 0.075, output: 0.3 },
 };
 
 /**

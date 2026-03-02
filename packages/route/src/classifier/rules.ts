@@ -35,7 +35,8 @@ const FORCE_LOCAL_TRIVIAL: Rule[] = [
     reason: "one-word confirmation",
   },
   {
-    pattern: /^(fix|correct|rewrite|clean up|improve grammar).{0,60}(sentence|paragraph|email|message|line)\b/i,
+    pattern:
+      /^(fix|correct|rewrite|clean up|improve grammar).{0,60}(sentence|paragraph|email|message|line)\b/i,
     tier: "local-trivial",
     reason: "simple text edit",
   },
@@ -70,27 +71,32 @@ const FORCE_LOCAL_TRIVIAL: Rule[] = [
 // These queries require frontier capabilities regardless of phrasing.
 const FORCE_CLOUD_FRONTIER: Rule[] = [
   {
-    pattern: /(DORA|SOX|Sarbanes.Oxley|MiFID|Basel\s+III|NIS2|OFAC|FATF).{0,150}(compliance|gap|assessment|review|audit|control|article|framework)/i,
+    pattern:
+      /(DORA|SOX|Sarbanes.Oxley|MiFID|Basel\s+III|NIS2|OFAC|FATF).{0,150}(compliance|gap|assessment|review|audit|control|article|framework)/i,
     tier: "cloud-frontier",
     reason: "regulatory compliance analysis",
   },
   {
-    pattern: /(penetration\s+test|pentest|threat\s+model|security\s+architecture\s+review|zero[\s-]day)/i,
+    pattern:
+      /(penetration\s+test|pentest|threat\s+model|security\s+architecture\s+review|zero[\s-]day)/i,
     tier: "cloud-frontier",
     reason: "security domain expertise required",
   },
   {
-    pattern: /(draft|write|review).{0,60}(contract|agreement|NDA|SLA|EULA|terms\s+of\s+service|merger|acquisition)/i,
+    pattern:
+      /(draft|write|review).{0,60}(contract|agreement|NDA|SLA|EULA|terms\s+of\s+service|merger|acquisition)/i,
     tier: "cloud-frontier",
     reason: "legal document drafting",
   },
   {
-    pattern: /(medical|clinical|diagnostic|treatment\s+plan|drug\s+interaction|differential\s+diagnosis).{0,150}(advice|recommend|review|analyse|analyze|remediat|vulnerabilit|CVE|plan|assess|consult)/i,
+    pattern:
+      /(medical|clinical|diagnostic|treatment\s+plan|drug\s+interaction|differential\s+diagnosis).{0,150}(advice|recommend|review|analyse|analyze|remediat|vulnerabilit|CVE|plan|assess|consult)/i,
     tier: "cloud-frontier",
     reason: "medical domain",
   },
   {
-    pattern: /\b(quantum\s+computing|quantum\s+circuit|quantum\s+annealing|photonic\s+computing|qubit|quantum\s+advantage|quantum\s+approach)/i,
+    pattern:
+      /\b(quantum\s+computing|quantum\s+circuit|quantum\s+annealing|photonic\s+computing|qubit|quantum\s+advantage|quantum\s+approach)/i,
     tier: "cloud-frontier",
     reason: "quantum computing domain",
   },
@@ -98,12 +104,14 @@ const FORCE_CLOUD_FRONTIER: Rule[] = [
 
 const FORCE_CLOUD_CAPABLE: Rule[] = [
   {
-    pattern: /(audit|security\s+review|risk\s+assessment).{0,100}(financial|system|codebase|infrastructure)/i,
+    pattern:
+      /(audit|security\s+review|risk\s+assessment).{0,100}(financial|system|codebase|infrastructure)/i,
     tier: "cloud-capable",
     reason: "auditing domain",
   },
   {
-    pattern: /(architect|design).{0,100}(system|microservice|database\s+schema|API|platform|infrastructure)/i,
+    pattern:
+      /(architect|design).{0,100}(system|microservice|database\s+schema|API|platform|infrastructure)/i,
     tier: "cloud-capable",
     reason: "system design task",
   },
@@ -113,7 +121,8 @@ const FORCE_CLOUD_CAPABLE: Rule[] = [
     reason: "long document analysis",
   },
   {
-    pattern: /\b(summarise|summarize)\b.{0,150}\b(\d+[\s-]page|legal\s+contract|legal\s+document|compliance\s+report|annual\s+report|key\s+obligations)/i,
+    pattern:
+      /\b(summarise|summarize)\b.{0,150}\b(\d+[\s-]page|legal\s+contract|legal\s+document|compliance\s+report|annual\s+report|key\s+obligations)/i,
     tier: "cloud-capable",
     reason: "long legal/compliance document summarisation",
   },
@@ -122,12 +131,14 @@ const FORCE_CLOUD_CAPABLE: Rule[] = [
 // ── Force-Local-Capable rules ─────────────────────────────────────────────────
 const FORCE_LOCAL_CAPABLE: Rule[] = [
   {
-    pattern: /\b(write|implement|create|build|generate)\b.{0,120}\b(function|method|class|tests?|unit\s+tests?|algorithm|script|module|component|interface)\b/i,
+    pattern:
+      /\b(write|implement|create|build|generate)\b.{0,120}\b(function|method|class|tests?|unit\s+tests?|algorithm|script|module|component|interface)\b/i,
     tier: "local-capable",
     reason: "programming task",
   },
   {
-    pattern: /\b(explain|describe|compare)\b.{0,100}\b(difference|TCP|UDP|HTTP|SQL|algorithm|protocol|pattern|REST|async|thread|stack|heap|SOLID|DRY|CAP\s+theorem)\b/i,
+    pattern:
+      /\b(explain|describe|compare)\b.{0,100}\b(difference|TCP|UDP|HTTP|SQL|algorithm|protocol|pattern|REST|async|thread|stack|heap|SOLID|DRY|CAP\s+theorem)\b/i,
     tier: "local-capable",
     reason: "technical concept explanation",
   },
@@ -135,7 +146,7 @@ const FORCE_LOCAL_CAPABLE: Rule[] = [
 
 /** Single compiled rule bank. */
 const ALL_RULES: Array<{ rules: Rule[] }> = [
-  { rules: FORCE_CLOUD_FRONTIER },  // highest priority — check first
+  { rules: FORCE_CLOUD_FRONTIER }, // highest priority — check first
   { rules: FORCE_CLOUD_CAPABLE },
   { rules: FORCE_LOCAL_CAPABLE },
   { rules: FORCE_LOCAL_TRIVIAL },
@@ -172,17 +183,32 @@ export class RuleEngine {
 
 function tierToMidScore(tier: RoutingTier): number {
   switch (tier) {
-    case "local-trivial": return 0.17;
-    case "local-capable": return 0.45;
-    case "cloud-mid":     return 0.62;
-    case "cloud-capable": return 0.77;
-    case "cloud-frontier": return 0.92;
+    case "local-trivial":
+      return 0.17;
+    case "local-capable":
+      return 0.45;
+    case "cloud-mid":
+      return 0.62;
+    case "cloud-capable":
+      return 0.77;
+    case "cloud-frontier":
+      return 0.92;
   }
 }
 
 const EMPTY_FEATURES = {
-  tokenCount: 0, attachmentCount: 0, questionDepth: 0, technicalTermDensity: 0,
-  multiPartDetected: false, imperativeComplexity: 0, regulatoryKeywords: false,
-  codeDetected: false, mathDetected: false, priorTurns: 0, systemPromptComplexity: 0,
-  outputFormatRequested: false, lengthRequested: false, historicalComplexityBaseline: 0.5,
+  tokenCount: 0,
+  attachmentCount: 0,
+  questionDepth: 0,
+  technicalTermDensity: 0,
+  multiPartDetected: false,
+  imperativeComplexity: 0,
+  regulatoryKeywords: false,
+  codeDetected: false,
+  mathDetected: false,
+  priorTurns: 0,
+  systemPromptComplexity: 0,
+  outputFormatRequested: false,
+  lengthRequested: false,
+  historicalComplexityBaseline: 0.5,
 };

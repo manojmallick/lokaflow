@@ -18,12 +18,12 @@ export interface SubscriptionPlan {
 /** Well-known SaaS subscription plans (as of H1 2026). */
 export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
   "claude-pro": {
-    monthlyUsd: 20.00,
-    queryLimit: 0,        // "unlimited" (rate-limited)
+    monthlyUsd: 20.0,
+    queryLimit: 0, // "unlimited" (rate-limited)
     label: "Anthropic Claude Pro",
   },
   "chatgpt-plus": {
-    monthlyUsd: 20.00,
+    monthlyUsd: 20.0,
     queryLimit: 0,
     label: "OpenAI ChatGPT Plus",
   },
@@ -33,13 +33,13 @@ export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
     label: "Google Gemini Advanced",
   },
   "copilot-individual": {
-    monthlyUsd: 10.00,
+    monthlyUsd: 10.0,
     queryLimit: 0,
     label: "GitHub Copilot Individual",
   },
   "cursor-pro": {
-    monthlyUsd: 20.00,
-    queryLimit: 500,      // 500 fast requests / month
+    monthlyUsd: 20.0,
+    queryLimit: 500, // 500 fast requests / month
     label: "Cursor Pro",
   },
 };
@@ -72,7 +72,9 @@ export function calculateSavingsAnalysis(
 ): SavingsAnalysis {
   const plan = SUBSCRIPTION_PLANS[subscriptionKey];
   if (!plan) {
-    throw new Error(`Unknown subscription plan: "${subscriptionKey}". Known: ${Object.keys(SUBSCRIPTION_PLANS).join(", ")}`);
+    throw new Error(
+      `Unknown subscription plan: "${subscriptionKey}". Known: ${Object.keys(SUBSCRIPTION_PLANS).join(", ")}`,
+    );
   }
 
   const subscriptionCostUsd = plan.monthlyUsd;
@@ -99,7 +101,7 @@ export function calculateSavingsAnalysis(
   }
 
   return {
-    actualSpendUsd:       actualCloudSpendUsd,
+    actualSpendUsd: actualCloudSpendUsd,
     subscriptionCostUsd,
     netSavedUsd,
     localDeflectionPercent: localPercent,

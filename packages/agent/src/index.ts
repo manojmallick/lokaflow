@@ -165,6 +165,7 @@ export class LokaAgent {
     let graph: TaskGraph | undefined;
     let decompositionTrace: DecompositionTrace;
     let nodeOrder: string[] = [];
+    let planTokens: { input: number; output: number } = { input: 0, output: 0 };
 
     if (isTrivial) {
       // No decomposition — build a single-node graph
@@ -208,7 +209,9 @@ export class LokaAgent {
       };
     } else {
       // ── Stage 3: TaskSplitter ─────────────────────────────────────────────
-      graph = await this.splitter.decompose(cleanPrompt, intent, complexity.index);
+      const splitResult = await this.splitter.decompose(cleanPrompt, intent, complexity.index);
+      graph = splitResult.graph;
+      planTokens = splitResult.planTokens;
       nodeOrder = graph.nodes.map((n) => n.id);
       decompositionTrace = {
         subtaskCount: graph.nodes.length,
@@ -273,6 +276,7 @@ export class LokaAgent {
       intent,
       partialTrace,
       nodeOrder,
+      planTokens,
     );
 
     const hasEscalations = [...nodeResults.values()].some((r) => r.escalated);
@@ -371,6 +375,8 @@ function buildErrorResponse(
       totalLatencyMs: Date.now() - start,
       totalInputTokens: 0,
       totalOutputTokens: 0,
+      plannerInputTokens: 0,
+      plannerOutputTokens: 0,
       nodesExecuted: 0,
       nodesEscalated: 0,
       estimatedCostEur: 0,

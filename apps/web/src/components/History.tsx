@@ -48,11 +48,15 @@ function highlight(text: string, query: string): React.ReactNode {
   const post = end < text.length ? "…" : "";
   return (
     <>
-      {pre}{text.slice(start, idx)}
-      <mark style={{ background: "rgba(251,191,36,.3)", color: "var(--text-main)", borderRadius: 2 }}>
+      {pre}
+      {text.slice(start, idx)}
+      <mark
+        style={{ background: "rgba(251,191,36,.3)", color: "var(--text-main)", borderRadius: 2 }}
+      >
         {text.slice(idx, idx + query.length)}
       </mark>
-      {text.slice(idx + query.length, end)}{post}
+      {text.slice(idx + query.length, end)}
+      {post}
     </>
   );
 }
@@ -119,10 +123,12 @@ export function History() {
   }, [query, tierFilter, sessions]);
 
   const totalTokens = useMemo(() => {
-    return sessions.flatMap((s) => s.messages).reduce((a, m) => {
-      const t = m.trace;
-      return a + (t ? t.inputTokens + t.outputTokens : 0);
-    }, 0);
+    return sessions
+      .flatMap((s) => s.messages)
+      .reduce((a, m) => {
+        const t = m.trace;
+        return a + (t ? t.inputTokens + t.outputTokens : 0);
+      }, 0);
   }, [sessions]);
 
   const totalCost = useMemo(() => {
@@ -148,10 +154,26 @@ export function History() {
           History Search
         </h1>
         <div className="history-meta">
-          <span><MessageSquare size={12} style={{ verticalAlign: "middle", marginRight: 3 }} />{sessions.length} sessions</span>
-          <span><Hash size={12} style={{ verticalAlign: "middle", marginRight: 3 }} />{totalTokens.toLocaleString()} tokens</span>
+          <span>
+            <MessageSquare size={12} style={{ verticalAlign: "middle", marginRight: 3 }} />
+            {sessions.length} sessions
+          </span>
+          <span>
+            <Hash size={12} style={{ verticalAlign: "middle", marginRight: 3 }} />
+            {totalTokens.toLocaleString()} tokens
+          </span>
           <span style={{ color: "#fbbf24" }}>{fmtEur(totalCost)} cloud spend</span>
-          <button className="btn-secondary" style={{ fontSize: 11, padding: "4px 10px", display: "flex", alignItems: "center", gap: 4 }} onClick={exportHistory}>
+          <button
+            className="btn-secondary"
+            style={{
+              fontSize: 11,
+              padding: "4px 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+            onClick={exportHistory}
+          >
             <Download size={13} /> Export
           </button>
         </div>
@@ -160,7 +182,16 @@ export function History() {
       {/* Search bar */}
       <div className="history-search-bar">
         <div style={{ position: "relative", flex: 1, maxWidth: 520 }}>
-          <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+          <Search
+            size={15}
+            style={{
+              position: "absolute",
+              left: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "var(--text-muted)",
+            }}
+          />
           <input
             className="history-search-input"
             value={query}
@@ -170,7 +201,16 @@ export function History() {
           />
           {query && (
             <button
-              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
+              style={{
+                position: "absolute",
+                right: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                color: "var(--text-muted)",
+                cursor: "pointer",
+              }}
               onClick={() => setQuery("")}
             >
               <X size={14} />
@@ -202,7 +242,9 @@ export function History() {
         ) : (
           <>
             <div className="history-results-count">
-              {query ? `${results.length} result${results.length !== 1 ? "s" : ""} for "${query}"` : `Showing ${results.length} recent queries`}
+              {query
+                ? `${results.length} result${results.length !== 1 ? "s" : ""} for "${query}"`
+                : `Showing ${results.length} recent queries`}
             </div>
             <div className="history-list">
               {results.map((r, i) => {
@@ -227,15 +269,15 @@ export function History() {
                       </span>
                     </div>
 
-                    <div className="history-item-prompt">
-                      {highlight(r.message.content, query)}
-                    </div>
+                    <div className="history-item-prompt">{highlight(r.message.content, query)}</div>
 
                     {isSelected && reply && (
                       <div className="history-item-reply">
                         <div className="history-reply-label">Response:</div>
                         <div className="history-reply-content">
-                          {reply.content.length > 300 ? reply.content.slice(0, 300) + "…" : reply.content}
+                          {reply.content.length > 300
+                            ? reply.content.slice(0, 300) + "…"
+                            : reply.content}
                         </div>
                       </div>
                     )}
@@ -243,13 +285,18 @@ export function History() {
                     <div className="history-item-meta">
                       {reply?.trace && (
                         <>
-                          <span className={`history-tier-badge ${reply.trace.tier === "local" ? "local" : "cloud"}`}>
+                          <span
+                            className={`history-tier-badge ${reply.trace.tier === "local" ? "local" : "cloud"}`}
+                          >
                             {reply.trace.tier === "local" ? "🖥 Local" : "☁ Cloud"}
                           </span>
                           <span>{reply.trace.model}</span>
                           <span>{reply.trace.latencyMs}ms</span>
                           <span>{fmtEur(reply.trace.costEur)}</span>
-                          <span>{(reply.trace.inputTokens + reply.trace.outputTokens).toLocaleString()} tok</span>
+                          <span>
+                            {(reply.trace.inputTokens + reply.trace.outputTokens).toLocaleString()}{" "}
+                            tok
+                          </span>
                         </>
                       )}
                     </div>

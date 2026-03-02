@@ -225,7 +225,15 @@ export function LogViewer(): JSX.Element {
             Routing Log
           </div>
           <div className={`lv-badge${connected ? "" : " disconnected"}`}>
-            {connected ? <><Wifi size={10} /> live</> : <><WifiOff size={10} /> offline</>}
+            {connected ? (
+              <>
+                <Wifi size={10} /> live
+              </>
+            ) : (
+              <>
+                <WifiOff size={10} /> offline
+              </>
+            )}
           </div>
 
           <div className="lv-search">
@@ -236,7 +244,11 @@ export function LogViewer(): JSX.Element {
               placeholder="Filter lines…"
             />
             {filter && (
-              <X size={12} style={{ cursor: "pointer", color: "#666" }} onClick={() => setFilter("")} />
+              <X
+                size={12}
+                style={{ cursor: "pointer", color: "#666" }}
+                onClick={() => setFilter("")}
+              />
             )}
           </div>
 
@@ -252,7 +264,15 @@ export function LogViewer(): JSX.Element {
           </select>
 
           <button className={`lv-btn${live ? " active" : ""}`} onClick={() => setLive((v) => !v)}>
-            {live ? <><Wifi size={12} /> Live</> : <><WifiOff size={12} /> Paused</>}
+            {live ? (
+              <>
+                <Wifi size={12} /> Live
+              </>
+            ) : (
+              <>
+                <WifiOff size={12} /> Paused
+              </>
+            )}
           </button>
 
           <button className="lv-btn" onClick={connect} title="Reconnect">
@@ -260,7 +280,15 @@ export function LogViewer(): JSX.Element {
           </button>
 
           <button className="lv-btn" onClick={copyAll}>
-            {copied ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy</>}
+            {copied ? (
+              <>
+                <Check size={12} /> Copied
+              </>
+            ) : (
+              <>
+                <Copy size={12} /> Copy
+              </>
+            )}
           </button>
 
           <button
@@ -280,7 +308,9 @@ export function LogViewer(): JSX.Element {
           {displayLines.length === 0 ? (
             <div className="lv-empty">
               <FileText size={32} />
-              <span>{filter ? "No lines match filter" : "No log entries yet — send a chat message"}</span>
+              <span>
+                {filter ? "No lines match filter" : "No log entries yet — send a chat message"}
+              </span>
             </div>
           ) : (
             displayLines.map((line, i) => (

@@ -9,23 +9,19 @@
 import Fastify, { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import chalk from "chalk";
 import { loadConfig } from "@lokaflow/core";
-import { QueryClassifier }      from "../classifier/classifier.js";
-import { PersonalisedLearner }  from "../classifier/learner.js";
-import { RouteDecisionEngine }  from "../router/router.js";
-import { buildPolicy }          from "../router/policy.js";
-import { SavingsTracker }       from "../tracker/savings-tracker.js";
-import { StreamRelay }          from "./stream-relay.js";
-import {
-  interceptRequest,
-  buildForwardBody,
-  buildRoutingHeaders,
-} from "./interceptor.js";
-import { normaliseResponse }    from "./openai-compat.js";
-import { randomUUID }           from "crypto";
+import { QueryClassifier } from "../classifier/classifier.js";
+import { PersonalisedLearner } from "../classifier/learner.js";
+import { RouteDecisionEngine } from "../router/router.js";
+import { buildPolicy } from "../router/policy.js";
+import { SavingsTracker } from "../tracker/savings-tracker.js";
+import { StreamRelay } from "./stream-relay.js";
+import { interceptRequest, buildForwardBody, buildRoutingHeaders } from "./interceptor.js";
+import { normaliseResponse } from "./openai-compat.js";
+import { randomUUID } from "crypto";
 
 export interface ProxyServerConfig {
-  port?:        number;
-  ollamaUrl?:   string;
+  port?: number;
+  ollamaUrl?: string;
   cloudApiKey?: string;
   /** Privacy sensitivity: 'conservative' | 'balanced' | 'aggressive' */
   sensitivity?: "conservative" | "balanced" | "aggressive";
@@ -43,15 +39,15 @@ export class ProxyServer {
   private streamRelay: StreamRelay;
 
   constructor(config: ProxyServerConfig = {}) {
-    this.port      = config.port      ?? 4041;
+    this.port = config.port ?? 4041;
     this.ollamaUrl = config.ollamaUrl ?? "http://localhost:11434";
     this.app = Fastify({ logger: false });
-    this.tracker     = new SavingsTracker();
+    this.tracker = new SavingsTracker();
     this.streamRelay = new StreamRelay({ tracker: this.tracker });
 
     try {
       const rawCfg = loadConfig();
-      const policy  = buildPolicy(rawCfg as any);
+      const policy = buildPolicy(rawCfg as any);
       const learner = new PersonalisedLearner();
       this.classifier = new QueryClassifier({
         sensitivity: config.sensitivity ?? "balanced",
@@ -59,14 +55,17 @@ export class ProxyServer {
       });
       this.engine = new RouteDecisionEngine({
         policy,
-        tracker:                this.tracker,
+        tracker: this.tracker,
         currentMonthlySpendEur: () => this.tracker.monthToDateSummary().actualCostUsd,
       });
     } catch {
       // Boot without config — use all defaults
       const learner = new PersonalisedLearner();
-      this.classifier = new QueryClassifier({ sensitivity: config.sensitivity ?? "balanced", learner });
-      this.engine     = new RouteDecisionEngine({});
+      this.classifier = new QueryClassifier({
+        sensitivity: config.sensitivity ?? "balanced",
+        learner,
+      });
+      this.engine = new RouteDecisionEngine({});
     }
 
     this.setupRoutes();
@@ -82,9 +81,7 @@ export class ProxyServer {
     this.app.get("/v1/models", async (_req, reply) => {
       return reply.send({
         object: "list",
-        data: [
-          { id: "lokaroute-auto", object: "model", created: 0, owned_by: "lokaflow" },
-        ],
+        data: [{ id: "lokaroute-auto", object: "model", created: 0, owned_by: "lokaflow" }],
       });
     });
 
@@ -97,7 +94,7 @@ export class ProxyServer {
       }
 
       // 1. Classify the query
-      const systemMsg = intercepted.messages.find(m => m.role === "system")?.content;
+      const systemMsg = intercepted.messages.find((m) => m.role === "system")?.content;
       const classification = this.classifier.classify(intercepted.query, {
         conversationLength: intercepted.messages.length,
         ...(systemMsg !== undefined && { systemPrompt: systemMsg }),
@@ -116,37 +113,43 @@ export class ProxyServer {
         if (intercepted.stream) {
           // Streaming path — relay SSE chunk by chunk
           const providerResp = await fetch(targetUrl, {
-            method:  "POST",
+            method: "POST",
             headers: {
-              "Content-Type":  "application/json",
-              "Authorization": `Bearer ${this.resolveApiKey(decision)}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${this.resolveApiKey(decision)}`,
             },
             body: JSON.stringify(forwardBody),
           });
 
           if (!providerResp.ok) {
             const errText = await providerResp.text();
-            console.error(chalk.red(`[LokaRoute] Provider error ${providerResp.status}: ${errText}`));
+            console.error(
+              chalk.red(`[LokaRoute] Provider error ${providerResp.status}: ${errText}`),
+            );
             return reply.status(providerResp.status).send({ error: { message: errText } });
           }
 
           await this.streamRelay.relay(
-            decision, providerResp, reply, intercepted.startTime, intercepted.query,
+            decision,
+            providerResp,
+            reply,
+            intercepted.startTime,
+            intercepted.query,
           );
         } else {
           // Non-streaming path
           const providerResp = await fetch(targetUrl, {
-            method:  "POST",
+            method: "POST",
             headers: {
-              "Content-Type":  "application/json",
-              "Authorization": `Bearer ${this.resolveApiKey(decision)}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${this.resolveApiKey(decision)}`,
             },
             body: JSON.stringify(forwardBody),
           });
 
-          const rawJson = await providerResp.json() as Record<string, unknown>;
+          const rawJson = (await providerResp.json()) as Record<string, unknown>;
           const canonical = normaliseResponse(rawJson, decision);
-          const headers   = buildRoutingHeaders(decision, Date.now() - intercepted.startTime);
+          const headers = buildRoutingHeaders(decision, Date.now() - intercepted.startTime);
 
           for (const [k, v] of Object.entries(headers)) {
             reply.header(k, v);
@@ -158,25 +161,27 @@ export class ProxyServer {
           const altCost = (tokens / 1000) * 0.015;
           const actualCost = isCloud ? altCost * 0.25 : 0;
           this.tracker.record({
-            id:                  randomUUID(),
-            timestamp:           new Date().toISOString(),
+            id: randomUUID(),
+            timestamp: new Date().toISOString(),
             queryTokensEstimate: canonical.usage.prompt_tokens,
-            tier:                decision.tier,
-            modelUsed:           decision.model,
-            actualCostUsd:       actualCost,
-            alternativeCostUsd:  altCost,
-            savedUsd:            altCost - actualCost,
-            latencyMs:           Date.now() - intercepted.startTime,
-            classifierScore:     classification.score,
-            localAvailable:      true,
-            reason:              classification.reason,
+            tier: decision.tier,
+            modelUsed: decision.model,
+            actualCostUsd: actualCost,
+            alternativeCostUsd: altCost,
+            savedUsd: altCost - actualCost,
+            latencyMs: Date.now() - intercepted.startTime,
+            classifierScore: classification.score,
+            localAvailable: true,
+            reason: classification.reason,
           });
 
           return reply.send(canonical);
         }
       } catch (err: any) {
         console.error(chalk.red(`[LokaRoute] Forward error: ${err.message}`));
-        return reply.status(502).send({ error: { message: `Proxy forward failed: ${err.message}` } });
+        return reply
+          .status(502)
+          .send({ error: { message: `Proxy forward failed: ${err.message}` } });
       }
     });
 
@@ -206,9 +211,7 @@ export class ProxyServer {
 
   private resolveApiKey(decision: { tier: string }): string {
     if (decision.tier.startsWith("local")) return "local";
-    return process.env["ANTHROPIC_API_KEY"] ??
-           process.env["OPENAI_API_KEY"] ??
-           "";
+    return process.env["ANTHROPIC_API_KEY"] ?? process.env["OPENAI_API_KEY"] ?? "";
   }
 
   async start(): Promise<void> {

@@ -41,7 +41,7 @@ export interface VotingRecord {
   vote: VoteChoice;
   weight: number; // reputation-weighted vote (default 1.0)
   castAt: string;
-reason?: string | undefined;
+  reason?: string | undefined;
 }
 
 export interface ProposalResult {
@@ -140,12 +140,19 @@ export class ProposalStore {
     return proposal;
   }
 
-  castVote(proposalId: string, memberId: string, vote: VoteChoice, opts?: { weight?: number; reason?: string }): VotingRecord {
+  castVote(
+    proposalId: string,
+    memberId: string,
+    vote: VoteChoice,
+    opts?: { weight?: number; reason?: string },
+  ): VotingRecord {
     // Verify proposal is still open
     const proposal = this.getProposal(proposalId);
     if (!proposal) throw new Error(`Proposal ${proposalId} not found`);
-    if (proposal.status !== "open") throw new Error(`Proposal ${proposalId} is not open for voting (${proposal.status})`);
-    if (new Date(proposal.expiresAt) < new Date()) throw new Error(`Proposal ${proposalId} has expired`);
+    if (proposal.status !== "open")
+      throw new Error(`Proposal ${proposalId} is not open for voting (${proposal.status})`);
+    if (new Date(proposal.expiresAt) < new Date())
+      throw new Error(`Proposal ${proposalId} has expired`);
 
     const record: VotingRecord = {
       id: randomUUID(),
@@ -164,7 +171,15 @@ export class ProposalStore {
          ON CONFLICT(proposal_id, member_id) DO UPDATE
          SET vote = excluded.vote, weight = excluded.weight, cast_at = excluded.cast_at, reason = excluded.reason`,
       )
-      .run(record.id, record.proposalId, record.memberId, record.vote, record.weight, record.castAt, record.reason ?? null);
+      .run(
+        record.id,
+        record.proposalId,
+        record.memberId,
+        record.vote,
+        record.weight,
+        record.castAt,
+        record.reason ?? null,
+      );
 
     return record;
   }
@@ -182,7 +197,10 @@ export class ProposalStore {
       )
       .all(proposalId) as Array<{ vote: string; totalWeight: number; voters: number }>;
 
-    let yesWeight = 0, noWeight = 0, abstainWeight = 0, totalVoters = 0;
+    let yesWeight = 0,
+      noWeight = 0,
+      abstainWeight = 0,
+      totalVoters = 0;
     for (const r of rows) {
       totalVoters += r.voters;
       if (r.vote === "yes") yesWeight = r.totalWeight;
@@ -192,7 +210,8 @@ export class ProposalStore {
 
     const quorumReached = totalVoters >= proposal.quorum;
     const activeWeight = yesWeight + noWeight; // abstain doesn't count
-    const passed = quorumReached && activeWeight > 0 && yesWeight / activeWeight >= proposal.passThreshold;
+    const passed =
+      quorumReached && activeWeight > 0 && yesWeight / activeWeight >= proposal.passThreshold;
 
     const newStatus: ProposalStatus = passed ? "passed" : "rejected";
     const settledAt = new Date().toISOString();
@@ -217,14 +236,20 @@ export class ProposalStore {
   // ── Read ───────────────────────────────────────────────────────────────
 
   getProposal(id: string): GovernanceProposal | undefined {
-    return this.db.prepare(`SELECT * FROM governance_proposals WHERE id = ?`).get(id) as GovernanceProposal | undefined;
+    return this.db.prepare(`SELECT * FROM governance_proposals WHERE id = ?`).get(id) as
+      | GovernanceProposal
+      | undefined;
   }
 
   listProposals(status?: ProposalStatus): GovernanceProposal[] {
     if (status) {
-      return this.db.prepare(`SELECT * FROM governance_proposals WHERE status = ? ORDER BY created_at DESC`).all(status) as GovernanceProposal[];
+      return this.db
+        .prepare(`SELECT * FROM governance_proposals WHERE status = ? ORDER BY created_at DESC`)
+        .all(status) as GovernanceProposal[];
     }
-    return this.db.prepare(`SELECT * FROM governance_proposals ORDER BY created_at DESC`).all() as GovernanceProposal[];
+    return this.db
+      .prepare(`SELECT * FROM governance_proposals ORDER BY created_at DESC`)
+      .all() as GovernanceProposal[];
   }
 
   getVotesForProposal(proposalId: string): VotingRecord[] {
@@ -244,7 +269,10 @@ export class ProposalStore {
       )
       .all(proposalId) as Array<{ vote: string; totalWeight: number; voters: number }>;
 
-    let yesWeight = 0, noWeight = 0, abstainWeight = 0, totalVoters = 0;
+    let yesWeight = 0,
+      noWeight = 0,
+      abstainWeight = 0,
+      totalVoters = 0;
     for (const r of rows) {
       totalVoters += r.voters;
       if (r.vote === "yes") yesWeight = r.totalWeight;
@@ -254,7 +282,8 @@ export class ProposalStore {
 
     const quorumReached = totalVoters >= proposal.quorum;
     const activeWeight = yesWeight + noWeight;
-    const passed = quorumReached && activeWeight > 0 && yesWeight / activeWeight >= proposal.passThreshold;
+    const passed =
+      quorumReached && activeWeight > 0 && yesWeight / activeWeight >= proposal.passThreshold;
 
     return { proposalId, yesWeight, noWeight, abstainWeight, totalVoters, quorumReached, passed };
   }

@@ -93,8 +93,8 @@ export function normaliseResponse(
   // Anthropic Claude path
   if (raw["type"] === "message" && Array.isArray(raw["content"])) {
     const content = (raw["content"] as Array<{ type: string; text: string }>)
-      .filter(c => c.type === "text")
-      .map(c => c.text)
+      .filter((c) => c.type === "text")
+      .map((c) => c.text)
       .join("");
     const usage = raw["usage"] as { input_tokens: number; output_tokens: number } | undefined;
     return {
@@ -104,9 +104,9 @@ export function normaliseResponse(
       model: decision.model,
       choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop" }],
       usage: {
-        prompt_tokens:     usage?.input_tokens ?? 0,
+        prompt_tokens: usage?.input_tokens ?? 0,
         completion_tokens: usage?.output_tokens ?? 0,
-        total_tokens:      (usage?.input_tokens ?? 0) + (usage?.output_tokens ?? 0),
+        total_tokens: (usage?.input_tokens ?? 0) + (usage?.output_tokens ?? 0),
       },
       _lokaroute: buildLokaMeta(decision),
     };
@@ -114,9 +114,13 @@ export function normaliseResponse(
 
   // Google Gemini path
   if (Array.isArray(raw["candidates"])) {
-    const candidates = raw["candidates"] as Array<{ content: { parts: Array<{ text: string }>; role: string } }>;
-    const content = candidates[0]?.content?.parts?.map(p => p.text).join("") ?? "";
-    const usage = raw["usageMetadata"] as { promptTokenCount?: number; candidatesTokenCount?: number } | undefined;
+    const candidates = raw["candidates"] as Array<{
+      content: { parts: Array<{ text: string }>; role: string };
+    }>;
+    const content = candidates[0]?.content?.parts?.map((p) => p.text).join("") ?? "";
+    const usage = raw["usageMetadata"] as
+      | { promptTokenCount?: number; candidatesTokenCount?: number }
+      | undefined;
     return {
       id: `chatcmpl-gemini-${Date.now()}`,
       object: "chat.completion",
@@ -124,9 +128,9 @@ export function normaliseResponse(
       model: decision.model,
       choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop" }],
       usage: {
-        prompt_tokens:     usage?.promptTokenCount ?? 0,
+        prompt_tokens: usage?.promptTokenCount ?? 0,
         completion_tokens: usage?.candidatesTokenCount ?? 0,
-        total_tokens:      (usage?.promptTokenCount ?? 0) + (usage?.candidatesTokenCount ?? 0),
+        total_tokens: (usage?.promptTokenCount ?? 0) + (usage?.candidatesTokenCount ?? 0),
       },
       _lokaroute: buildLokaMeta(decision),
     };
@@ -138,7 +142,13 @@ export function normaliseResponse(
     object: "chat.completion",
     created: Math.floor(Date.now() / 1000),
     model: decision.model,
-    choices: [{ index: 0, message: { role: "assistant", content: JSON.stringify(raw) }, finish_reason: "stop" }],
+    choices: [
+      {
+        index: 0,
+        message: { role: "assistant", content: JSON.stringify(raw) },
+        finish_reason: "stop",
+      },
+    ],
     usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     _lokaroute: buildLokaMeta(decision),
   };

@@ -11,17 +11,17 @@
 //   • lokaflow.showHistory, lokaflow.refreshHistory commands
 
 import * as vscode from "vscode";
-import * as http   from "http";
+import * as http from "http";
 
 // ── Proxy constants ───────────────────────────────────────────────────────────
 
-const PROXY_PORT     = 4041;
+const PROXY_PORT = 4041;
 const DASHBOARD_PORT = 4040;
 
 // ── Routing tier → display helpers ───────────────────────────────────────────
 
 interface RoutingMeta {
-  tier:  string;
+  tier: string;
   model: string;
   score: number;
   latencyMs: number;
@@ -36,8 +36,8 @@ function tierLabel(tier: string): string {
   const map: Record<string, string> = {
     "local-trivial": "LOCAL·trivial",
     "local-capable": "LOCAL·capable",
-    "cloud-mid":      "CLOUD·mid",
-    "cloud-capable":  "CLOUD·capable",
+    "cloud-mid": "CLOUD·mid",
+    "cloud-capable": "CLOUD·capable",
     "cloud-frontier": "CLOUD·frontier",
   };
   return map[tier] ?? tier.toUpperCase();
@@ -47,25 +47,25 @@ function tierLabel(tier: string): string {
 
 interface ApiResponse {
   content: string;
-  meta:    RoutingMeta;
+  meta: RoutingMeta;
 }
 
 async function callLokaFlowApi(prompt: string): Promise<ApiResponse> {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      model:    "lokaroute-auto",
+      model: "lokaroute-auto",
       messages: [{ role: "user", content: prompt }],
-      stream:   false,
+      stream: false,
     });
 
     const req = http.request(
       {
         hostname: "localhost",
-        port:     PROXY_PORT,
-        path:     "/v1/chat/completions",
-        method:   "POST",
+        port: PROXY_PORT,
+        path: "/v1/chat/completions",
+        method: "POST",
         headers: {
-          "Content-Type":   "application/json",
+          "Content-Type": "application/json",
           "Content-Length": Buffer.byteLength(body),
         },
       },
@@ -81,10 +81,10 @@ async function callLokaFlowApi(prompt: string): Promise<ApiResponse> {
             const parsed = JSON.parse(data);
             const content = parsed.choices?.[0]?.message?.content ?? "";
             const meta: RoutingMeta = {
-              tier:      res.headers["x-lokaroute-tier"]     as string ?? "unknown",
-              model:     res.headers["x-lokaroute-model"]    as string ?? "unknown",
-              score:    parseFloat(res.headers["x-lokaroute-score"]   as string ?? "0"),
-              latencyMs: parseInt(res.headers["x-lokaroute-latency-ms"] as string ?? "0", 10),
+              tier: (res.headers["x-lokaroute-tier"] as string) ?? "unknown",
+              model: (res.headers["x-lokaroute-model"] as string) ?? "unknown",
+              score: parseFloat((res.headers["x-lokaroute-score"] as string) ?? "0"),
+              latencyMs: parseInt((res.headers["x-lokaroute-latency-ms"] as string) ?? "0", 10),
             };
             resolve({ content, meta });
           } catch (e) {
@@ -111,15 +111,25 @@ async function fetchRoutingHistory(): Promise<HistoryEntry[]> {
           try {
             const json = JSON.parse(data);
             const daily = (json.daily ?? []) as Array<{
-              date: string; queries: number; localQueries: number; cloudQueries: number;
+              date: string;
+              queries: number;
+              localQueries: number;
+              cloudQueries: number;
             }>;
-            resolve(daily.slice(-7).reverse().map(d => ({
-              date:         d.date,
-              total:        d.queries,
-              local:        d.localQueries,
-              cloud:        d.cloudQueries,
-            })));
-          } catch { resolve([]); }
+            resolve(
+              daily
+                .slice(-7)
+                .reverse()
+                .map((d) => ({
+                  date: d.date,
+                  total: d.queries,
+                  local: d.localQueries,
+                  cloud: d.cloudQueries,
+                })),
+            );
+          } catch {
+            resolve([]);
+          }
         });
       },
     );
@@ -131,7 +141,7 @@ async function fetchRoutingHistory(): Promise<HistoryEntry[]> {
 // ── Routing History TreeDataProvider ─────────────────────────────────────────
 
 interface HistoryEntry {
-  date:  string;
+  date: string;
   total: number;
   local: number;
   cloud: number;
@@ -150,8 +160,10 @@ class RoutingHistoryItem extends vscode.TreeItem {
 }
 
 class RoutingHistoryProvider implements vscode.TreeDataProvider<RoutingHistoryItem> {
-  private _onDidChangeTreeData = new vscode.EventEmitter<RoutingHistoryItem | undefined | null | void>();
-  readonly onDidChangeTreeData  = this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData = new vscode.EventEmitter<
+    RoutingHistoryItem | undefined | null | void
+  >();
+  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private entries: HistoryEntry[] = [];
 
@@ -167,7 +179,7 @@ class RoutingHistoryProvider implements vscode.TreeDataProvider<RoutingHistoryIt
   async getChildren(element?: RoutingHistoryItem): Promise<RoutingHistoryItem[]> {
     if (element) {
       // Child rows: local / cloud breakdown
-      const entry = this.entries.find(e => e.date === (element as any)._date);
+      const entry = this.entries.find((e) => e.date === (element as any)._date);
       if (!entry) return [];
       return [
         new RoutingHistoryItem(
@@ -217,15 +229,15 @@ export function activate(context: vscode.ExtensionContext): void {
   // ── Status bar item ─────────────────────────────────────────────────────────
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBar.command = "lokaflow.showHistory";
-  statusBar.text    = "$(circuit-board) LokaRoute";
+  statusBar.text = "$(circuit-board) LokaRoute";
   statusBar.tooltip = "LokaFlow™ routing active — click for history";
   statusBar.show();
   context.subscriptions.push(statusBar);
 
   function updateStatusBar(meta: RoutingMeta): void {
-    const icon  = tierIcon(meta.tier);
+    const icon = tierIcon(meta.tier);
     const label = tierLabel(meta.tier);
-    statusBar.text    = `${icon} ${label}`;
+    statusBar.text = `${icon} ${label}`;
     statusBar.tooltip = `Model: ${meta.model}\nScore: ${meta.score.toFixed(3)}\nLatency: ${meta.latencyMs}ms\nClick for routing history`;
     statusBar.backgroundColor = meta.tier.startsWith("cloud")
       ? new vscode.ThemeColor("statusBarItem.warningBackground")
@@ -236,7 +248,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const historyProvider = new RoutingHistoryProvider();
   const treeView = vscode.window.createTreeView("lokaflow.history", {
     treeDataProvider: historyProvider,
-    showCollapseAll:  true,
+    showCollapseAll: true,
   });
   context.subscriptions.push(treeView);
 
@@ -248,13 +260,17 @@ export function activate(context: vscode.ExtensionContext): void {
   // Command: Chat
   const chatDisposable = vscode.commands.registerCommand("lokaflow.chat", async () => {
     const userInput = await vscode.window.showInputBox({
-      prompt:      "Ask LokaFlow",
+      prompt: "Ask LokaFlow",
       placeHolder: "E.g., How do I write a web server in Go?",
     });
     if (!userInput) return;
 
     await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: "LokaFlow routing…", cancellable: false },
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "LokaFlow routing…",
+        cancellable: false,
+      },
       async () => {
         try {
           const { content, meta } = await callLokaFlowApi(userInput);
@@ -262,7 +278,7 @@ export function activate(context: vscode.ExtensionContext): void {
           historyProvider.refresh();
 
           const doc = await vscode.workspace.openTextDocument({
-            content:  `## User\n${userInput}\n\n## LokaFlow [${tierLabel(meta.tier)} · ${meta.model}]\n${content}`,
+            content: `## User\n${userInput}\n\n## LokaFlow [${tierLabel(meta.tier)} · ${meta.model}]\n${content}`,
             language: "markdown",
           });
           await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside);
@@ -278,13 +294,23 @@ export function activate(context: vscode.ExtensionContext): void {
   // Command: Explain Code
   const explainDisposable = vscode.commands.registerCommand("lokaflow.explainCode", async () => {
     const editor = vscode.window.activeTextEditor;
-    if (!editor) { vscode.window.showInformationMessage("No active editor."); return; }
+    if (!editor) {
+      vscode.window.showInformationMessage("No active editor.");
+      return;
+    }
 
     const text = editor.document.getText(editor.selection);
-    if (!text) { vscode.window.showInformationMessage("Please select some code to explain."); return; }
+    if (!text) {
+      vscode.window.showInformationMessage("Please select some code to explain.");
+      return;
+    }
 
     await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: "LokaFlow (routing…)", cancellable: false },
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "LokaFlow (routing…)",
+        cancellable: false,
+      },
       async () => {
         try {
           const prompt = `Please explain the following code snippet concisely:\n\n\`\`\`\n${text}\n\`\`\``;
@@ -293,7 +319,7 @@ export function activate(context: vscode.ExtensionContext): void {
           historyProvider.refresh();
 
           const doc = await vscode.workspace.openTextDocument({
-            content:  `## Code Explanation [${tierLabel(meta.tier)} · ${meta.model}]\n\n${content}`,
+            content: `## Code Explanation [${tierLabel(meta.tier)} · ${meta.model}]\n\n${content}`,
             language: "markdown",
           });
           await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside);
@@ -305,15 +331,21 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   // Command: Show History (opens sidebar)
-  const showHistoryDisposable = vscode.commands.registerCommand("lokaflow.showHistory", async () => {
-    await vscode.commands.executeCommand("lokaflow.history.focus");
-    historyProvider.refresh();
-  });
+  const showHistoryDisposable = vscode.commands.registerCommand(
+    "lokaflow.showHistory",
+    async () => {
+      await vscode.commands.executeCommand("lokaflow.history.focus");
+      historyProvider.refresh();
+    },
+  );
 
   // Command: Refresh History
-  const refreshHistoryDisposable = vscode.commands.registerCommand("lokaflow.refreshHistory", () => {
-    historyProvider.refresh();
-  });
+  const refreshHistoryDisposable = vscode.commands.registerCommand(
+    "lokaflow.refreshHistory",
+    () => {
+      historyProvider.refresh();
+    },
+  );
 
   // Command: Open Dashboard
   const openDashboardDisposable = vscode.commands.registerCommand("lokaflow.openDashboard", () => {
@@ -330,4 +362,3 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {}
-

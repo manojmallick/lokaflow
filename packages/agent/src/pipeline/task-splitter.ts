@@ -43,12 +43,18 @@ export class TaskSplitter {
     task: string,
     intent: IntentProfile,
     complexityIndex: number,
-  ): Promise<TaskGraph> {
+  ): Promise<{ graph: TaskGraph; planTokens: { input: number; output: number } }> {
     const graphId = crypto.randomUUID();
-    const graph = await this.decomposer.decompose(task, intent, complexityIndex, graphId, 0);
+    const { graph, planTokens } = await this.decomposer.decompose(
+      task,
+      intent,
+      complexityIndex,
+      graphId,
+      0,
+    );
     this.enforceSubtaskLimits(graph);
     this.assignModels(graph);
-    return graph;
+    return { graph, planTokens };
   }
 
   /**
@@ -88,7 +94,7 @@ export class TaskSplitter {
     // Try re-decomposing this node
     let subGraph: TaskGraph;
     try {
-      subGraph = await this.decomposer.decompose(
+      const result = await this.decomposer.decompose(
         node.description,
         {
           primaryGoal: node.description,
@@ -103,6 +109,7 @@ export class TaskSplitter {
         node.graphId,
         depth,
       );
+      subGraph = result.graph;
     } catch {
       // Decompose failed — assign best available
       node.assignedModel = this.matcher.bestForTaskType(node.taskType, true);

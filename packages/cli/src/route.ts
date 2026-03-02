@@ -64,7 +64,7 @@ const startCmd = new Command("start")
       });
 
       await server.start();
-      console.log(chalk.green(`\n  ✓ Proxy listening on http://localhost:${port}`));;
+      console.log(chalk.green(`\n  ✓ Proxy listening on http://localhost:${port}`));
       console.log(chalk.dim("    Configure OpenAI base_url → http://localhost:4041/v1\n"));
 
       if (opts.dashboard !== false) {
@@ -163,7 +163,9 @@ const classifyCmd = new Command("classify")
 
       console.log(chalk.bold.blue("\n  LokaRoute™ Query Classification"));
       console.log(chalk.dim("  ─────────────────────────────────────────────"));
-      console.log(`  Query     : ${chalk.cyan(`"${query.substring(0, 80)}${query.length > 80 ? "…" : ""}"`)} `);
+      console.log(
+        `  Query     : ${chalk.cyan(`"${query.substring(0, 80)}${query.length > 80 ? "…" : ""}"`)} `,
+      );
       console.log(`  Tier      : ${chalk.bold(result.tier)}`);
       console.log(`  Score     : ${chalk.cyan(result.score.toFixed(4))}`);
       console.log(`  Reason    : ${chalk.dim(result.reason)}`);
@@ -206,7 +208,11 @@ const breakdownCmd = new Command("breakdown")
       console.log(chalk.dim("  ─────────────────────────────────────────────"));
 
       if (tiers.length === 0) {
-        console.log(chalk.yellow("  No routing records found yet. Start the proxy with `lokaflow route start`.\n"));
+        console.log(
+          chalk.yellow(
+            "  No routing records found yet. Start the proxy with `lokaflow route start`.\n",
+          ),
+        );
         return;
       }
 
@@ -217,8 +223,11 @@ const breakdownCmd = new Command("breakdown")
         const pct = total > 0 ? t.count / total : 0;
         const filled = Math.round(pct * barWidth);
         const bar = "█".repeat(filled) + "░".repeat(barWidth - filled);
-        const tierColour =
-          t.tier.startsWith("LOCAL") ? chalk.green : t.tier.startsWith("CLOUD") ? chalk.yellow : chalk.dim;
+        const tierColour = t.tier.startsWith("LOCAL")
+          ? chalk.green
+          : t.tier.startsWith("CLOUD")
+            ? chalk.yellow
+            : chalk.dim;
         console.log(
           `  ${tierColour(t.tier.padEnd(18))} ${chalk.dim(bar)}  ${t.count.toString().padStart(6)}q  ${formatPct(pct)}  score ${t.avgScore.toFixed(3)}`,
         );

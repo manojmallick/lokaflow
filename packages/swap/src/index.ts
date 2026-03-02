@@ -11,17 +11,23 @@ export { ExchangeHistory } from "./exchange/history.js";
 export type { TradeHistoryRecord, ExchangeSummary } from "./exchange/history.js";
 
 // Purchasing
-export {
-  DemandAggregator,
-} from "./purchasing/demand-aggregator.js";
+export { DemandAggregator } from "./purchasing/demand-aggregator.js";
 export type { MemberDemandPledge, AggregateDemand } from "./purchasing/demand-aggregator.js";
 export { NegotiationTracker } from "./purchasing/negotiation-tracker.js";
-export type { Negotiation, NegotiationRound, NegotiationStatus } from "./purchasing/negotiation-tracker.js";
+export type {
+  Negotiation,
+  NegotiationRound,
+  NegotiationStatus,
+} from "./purchasing/negotiation-tracker.js";
 export { AllocationManager } from "./purchasing/allocation.js";
 export type { ApiCreditAllocation, AllocationSummary } from "./purchasing/allocation.js";
 
 // Providers
-export type { ApiProviderIntegration, ProviderBalance, ProviderRate } from "./purchasing/providers/base.js";
+export type {
+  ApiProviderIntegration,
+  ProviderBalance,
+  ProviderRate,
+} from "./purchasing/providers/base.js";
 export { AnthropicProvider } from "./purchasing/providers/anthropic.js";
 export { OpenAIProvider } from "./purchasing/providers/openai.js";
 export { GoogleProvider } from "./purchasing/providers/google.js";
@@ -60,4 +66,3 @@ export type {
   SwapOrder,
   SwapMatch,
 } from "./types/index.js";
-

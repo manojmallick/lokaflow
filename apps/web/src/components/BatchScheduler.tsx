@@ -1,11 +1,24 @@
 import { useState } from "react";
-import { Calendar, CheckCircle2, ChevronDown, ChevronRight, Clock, Edit2, Folder, Loader2, Plus, Trash2, X, Zap } from "lucide-react";
+import {
+  Calendar,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Edit2,
+  Folder,
+  Loader2,
+  Plus,
+  Trash2,
+  X,
+  Zap,
+} from "lucide-react";
 
 interface BatchJob {
   id: string;
   name: string;
   templateTitle: string;
-  schedule: string;    // cron-like description
+  schedule: string; // cron-like description
   nextRun: string;
   lastStatus: "ok" | "running" | "error" | "pending";
   lastRunDate?: string;
@@ -136,12 +149,24 @@ export function BatchScheduler() {
     setJobs((prev) => [job, ...prev]);
     setShowWizard(false);
     setWizardStep(0);
-    setForm({ name: "", template: "", inputSource: "", outputDest: "", schedule: "daily", scheduleTime: "09:00" });
+    setForm({
+      name: "",
+      template: "",
+      inputSource: "",
+      outputDest: "",
+      schedule: "daily",
+      scheduleTime: "09:00",
+    });
   }
 
   function statusBadge(s: BatchJob["lastStatus"]) {
     if (s === "ok") return <span style={{ color: "#4ade80", fontSize: 11 }}>✅ Success</span>;
-    if (s === "running") return <span style={{ color: "#60a5fa", fontSize: 11 }}><Loader2 size={11} className="spin" style={{ verticalAlign: "middle" }} /> Running</span>;
+    if (s === "running")
+      return (
+        <span style={{ color: "#60a5fa", fontSize: 11 }}>
+          <Loader2 size={11} className="spin" style={{ verticalAlign: "middle" }} /> Running
+        </span>
+      );
     if (s === "error") return <span style={{ color: "#f87171", fontSize: 11 }}>❌ Error</span>;
     return <span style={{ color: "var(--text-muted)", fontSize: 11 }}>Pending</span>;
   }
@@ -155,7 +180,9 @@ export function BatchScheduler() {
             <Calendar size={20} style={{ marginRight: 8, verticalAlign: "middle" }} />
             Batch &amp; Scheduler
           </h1>
-          <p className="subtitle">Automate recurring AI tasks — all processed locally when possible.</p>
+          <p className="subtitle">
+            Automate recurring AI tasks — all processed locally when possible.
+          </p>
         </div>
         <button
           className="btn-primary"
@@ -184,10 +211,27 @@ export function BatchScheduler() {
                   Processing: <em>{q.currentFile}</em> → {q.model}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ flex: 1, height: 6, background: "rgba(255,255,255,.08)", borderRadius: 99 }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: "#3b82f6", borderRadius: 99, transition: "width .4s" }} />
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 6,
+                      background: "rgba(255,255,255,.08)",
+                      borderRadius: 99,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${pct}%`,
+                        height: "100%",
+                        background: "#3b82f6",
+                        borderRadius: 99,
+                        transition: "width .4s",
+                      }}
+                    />
                   </div>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)", minWidth: 60 }}>{q.done}/{q.total} ({pct}%)</span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", minWidth: 60 }}>
+                    {q.done}/{q.total} ({pct}%)
+                  </span>
                 </div>
               </div>
             );
@@ -209,10 +253,18 @@ export function BatchScheduler() {
                   className="batch-job-header"
                   onClick={() => setExpandedJob(isExpanded ? null : job.id)}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}
+                  >
                     {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: job.enabled ? "var(--text-main)" : "var(--text-muted)" }}>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: job.enabled ? "var(--text-main)" : "var(--text-muted)",
+                        }}
+                      >
                         {job.name}
                       </div>
                       <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
@@ -237,7 +289,10 @@ export function BatchScheduler() {
                     </label>
                     <button
                       className="prompt-icon-btn"
-                      onClick={(e) => { e.stopPropagation(); deleteJob(job.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteJob(job.id);
+                      }}
                       title="Delete"
                     >
                       <Trash2 size={13} />
@@ -254,32 +309,63 @@ export function BatchScheduler() {
                       </div>
                       <div className="batch-detail-row">
                         <span className="bd-lbl">Input source</span>
-                        <span className="bd-val" style={{ fontFamily: "monospace" }}>{job.inputSource}</span>
+                        <span className="bd-val" style={{ fontFamily: "monospace" }}>
+                          {job.inputSource}
+                        </span>
                       </div>
                       <div className="batch-detail-row">
                         <span className="bd-lbl">Output destination</span>
-                        <span className="bd-val" style={{ fontFamily: "monospace" }}>{job.outputDest}</span>
+                        <span className="bd-val" style={{ fontFamily: "monospace" }}>
+                          {job.outputDest}
+                        </span>
                       </div>
                       {job.lastRunDate && (
                         <>
                           <div className="batch-detail-row">
                             <span className="bd-lbl">Last run</span>
-                            <span className="bd-val">{job.lastRunDate} — {job.lastRunDuration} · {job.lastRunDocs} docs</span>
+                            <span className="bd-val">
+                              {job.lastRunDate} — {job.lastRunDuration} · {job.lastRunDocs} docs
+                            </span>
                           </div>
                           <div className="batch-detail-row">
                             <span className="bd-lbl">Last run cost</span>
-                            <span className="bd-val" style={{ color: job.lastRunCost === 0 ? "#4ade80" : "var(--text-main)" }}>
-                              {job.lastRunCost === 0 ? "€0.00 (100% local)" : `€${job.lastRunCost?.toFixed(3)}`}
+                            <span
+                              className="bd-val"
+                              style={{
+                                color: job.lastRunCost === 0 ? "#4ade80" : "var(--text-main)",
+                              }}
+                            >
+                              {job.lastRunCost === 0
+                                ? "€0.00 (100% local)"
+                                : `€${job.lastRunCost?.toFixed(3)}`}
                             </span>
                           </div>
                         </>
                       )}
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <button className="btn-primary" style={{ fontSize: 12, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+                      <button
+                        className="btn-primary"
+                        style={{
+                          fontSize: 12,
+                          padding: "5px 12px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 5,
+                        }}
+                      >
                         <Zap size={13} /> Run Now
                       </button>
-                      <button className="btn-secondary" style={{ fontSize: 12, padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+                      <button
+                        className="btn-secondary"
+                        style={{
+                          fontSize: 12,
+                          padding: "5px 12px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 5,
+                        }}
+                      >
                         <Edit2 size={13} /> Edit
                       </button>
                     </div>
@@ -297,7 +383,9 @@ export function BatchScheduler() {
           <div className="prompt-modal" style={{ width: 520 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <h2>New Batch Job</h2>
-              <button className="prompt-icon-btn" onClick={() => setShowWizard(false)}><X size={18} /></button>
+              <button className="prompt-icon-btn" onClick={() => setShowWizard(false)}>
+                <X size={18} />
+              </button>
             </div>
 
             {/* Step indicator */}
@@ -316,7 +404,8 @@ export function BatchScheduler() {
               ))}
             </div>
             <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-              Step {wizardStep + 1} of {WIZARD_STEPS.length}: <strong style={{ color: "var(--text-main)" }}>{WIZARD_STEPS[wizardStep]}</strong>
+              Step {wizardStep + 1} of {WIZARD_STEPS.length}:{" "}
+              <strong style={{ color: "var(--text-main)" }}>{WIZARD_STEPS[wizardStep]}</strong>
             </div>
 
             {/* Step content */}
@@ -324,14 +413,28 @@ export function BatchScheduler() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <label style={{ fontSize: 11, color: "var(--text-muted)" }}>Job name</label>
                 <input
-                  style={{ background: "var(--bg-dark)", border: "1px solid var(--border-color)", borderRadius: 6, color: "var(--text-main)", fontSize: 13, padding: "7px 10px" }}
+                  style={{
+                    background: "var(--bg-dark)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 6,
+                    color: "var(--text-main)",
+                    fontSize: 13,
+                    padding: "7px 10px",
+                  }}
                   placeholder="e.g. Daily DORA Check"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 />
                 <label style={{ fontSize: 11, color: "var(--text-muted)" }}>Prompt template</label>
                 <select
-                  style={{ background: "var(--bg-dark)", border: "1px solid var(--border-color)", borderRadius: 6, color: "var(--text-main)", fontSize: 13, padding: "7px 10px" }}
+                  style={{
+                    background: "var(--bg-dark)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 6,
+                    color: "var(--text-main)",
+                    fontSize: 13,
+                    padding: "7px 10px",
+                  }}
                   value={form.template}
                   onChange={(e) => setForm((f) => ({ ...f, template: e.target.value }))}
                 >
@@ -349,13 +452,24 @@ export function BatchScheduler() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <label style={{ fontSize: 11, color: "var(--text-muted)" }}>Input source</label>
                 <input
-                  style={{ background: "var(--bg-dark)", border: "1px solid var(--border-color)", borderRadius: 6, color: "var(--text-main)", fontSize: 13, padding: "7px 10px", fontFamily: "monospace" }}
+                  style={{
+                    background: "var(--bg-dark)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 6,
+                    color: "var(--text-main)",
+                    fontSize: 13,
+                    padding: "7px 10px",
+                    fontFamily: "monospace",
+                  }}
                   placeholder="/path/to/folder/ or git diff HEAD~7"
                   value={form.inputSource}
                   onChange={(e) => setForm((f) => ({ ...f, inputSource: e.target.value }))}
                 />
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button className="btn-secondary" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+                  <button
+                    className="btn-secondary"
+                    style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}
+                  >
                     <Folder size={13} /> Browse folder
                   </button>
                 </div>
@@ -364,9 +478,18 @@ export function BatchScheduler() {
 
             {wizardStep === 2 && (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <label style={{ fontSize: 11, color: "var(--text-muted)" }}>Output destination</label>
+                <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  Output destination
+                </label>
                 <select
-                  style={{ background: "var(--bg-dark)", border: "1px solid var(--border-color)", borderRadius: 6, color: "var(--text-main)", fontSize: 13, padding: "7px 10px" }}
+                  style={{
+                    background: "var(--bg-dark)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 6,
+                    color: "var(--text-main)",
+                    fontSize: 13,
+                    padding: "7px 10px",
+                  }}
                   onChange={(e) => setForm((f) => ({ ...f, outputDest: e.target.value }))}
                 >
                   <option value="">Select destination…</option>
@@ -377,7 +500,15 @@ export function BatchScheduler() {
                 </select>
                 {form.outputDest === "/output/" || !form.outputDest ? (
                   <input
-                    style={{ background: "var(--bg-dark)", border: "1px solid var(--border-color)", borderRadius: 6, color: "var(--text-main)", fontSize: 13, padding: "7px 10px", fontFamily: "monospace" }}
+                    style={{
+                      background: "var(--bg-dark)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: 6,
+                      color: "var(--text-main)",
+                      fontSize: 13,
+                      padding: "7px 10px",
+                      fontFamily: "monospace",
+                    }}
                     placeholder="/reports/"
                     value={form.outputDest}
                     onChange={(e) => setForm((f) => ({ ...f, outputDest: e.target.value }))}
@@ -390,7 +521,14 @@ export function BatchScheduler() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <label style={{ fontSize: 11, color: "var(--text-muted)" }}>Recurrence</label>
                 <select
-                  style={{ background: "var(--bg-dark)", border: "1px solid var(--border-color)", borderRadius: 6, color: "var(--text-main)", fontSize: 13, padding: "7px 10px" }}
+                  style={{
+                    background: "var(--bg-dark)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 6,
+                    color: "var(--text-main)",
+                    fontSize: 13,
+                    padding: "7px 10px",
+                  }}
                   value={form.schedule}
                   onChange={(e) => setForm((f) => ({ ...f, schedule: e.target.value }))}
                 >
@@ -402,25 +540,51 @@ export function BatchScheduler() {
                 <label style={{ fontSize: 11, color: "var(--text-muted)" }}>Time</label>
                 <input
                   type="time"
-                  style={{ background: "var(--bg-dark)", border: "1px solid var(--border-color)", borderRadius: 6, color: "var(--text-main)", fontSize: 13, padding: "7px 10px" }}
+                  style={{
+                    background: "var(--bg-dark)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 6,
+                    color: "var(--text-main)",
+                    fontSize: 13,
+                    padding: "7px 10px",
+                  }}
                   value={form.scheduleTime}
                   onChange={(e) => setForm((f) => ({ ...f, scheduleTime: e.target.value }))}
                 />
-                <div style={{ fontSize: 12, color: "var(--text-muted)", padding: 8, background: "rgba(59,130,246,.08)", borderRadius: 6, border: "1px solid rgba(59,130,246,.2)" }}>
-                  <CheckCircle2 size={12} style={{ color: "#4ade80", verticalAlign: "middle", marginRight: 4 }} />
-                  Will run {form.schedule} at {form.scheduleTime} · Uses routing rules to prefer local models
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-muted)",
+                    padding: 8,
+                    background: "rgba(59,130,246,.08)",
+                    borderRadius: 6,
+                    border: "1px solid rgba(59,130,246,.2)",
+                  }}
+                >
+                  <CheckCircle2
+                    size={12}
+                    style={{ color: "#4ade80", verticalAlign: "middle", marginRight: 4 }}
+                  />
+                  Will run {form.schedule} at {form.scheduleTime} · Uses routing rules to prefer
+                  local models
                 </div>
               </div>
             )}
 
             <div className="prompt-modal-footer">
               {wizardStep > 0 && (
-                <button className="btn-secondary" onClick={() => setWizardStep((s) => s - 1)}>Back</button>
+                <button className="btn-secondary" onClick={() => setWizardStep((s) => s - 1)}>
+                  Back
+                </button>
               )}
               {wizardStep < WIZARD_STEPS.length - 1 ? (
-                <button className="btn-primary" onClick={() => setWizardStep((s) => s + 1)}>Next →</button>
+                <button className="btn-primary" onClick={() => setWizardStep((s) => s + 1)}>
+                  Next →
+                </button>
               ) : (
-                <button className="btn-primary" onClick={createJob}>Create Job</button>
+                <button className="btn-primary" onClick={createJob}>
+                  Create Job
+                </button>
               )}
             </div>
           </div>

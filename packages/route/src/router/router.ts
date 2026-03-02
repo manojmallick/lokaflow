@@ -36,11 +36,34 @@ export class RouteDecisionEngine {
     // Merge user overrides over defaults
     const defaults = DEFAULT_TIER_MODELS;
     this.tierModels = {
-      "local-trivial":  { preferred: opts.tierModels?.["local-trivial"]?.preferred  ?? defaults["local-trivial"].preferred,  fallback: opts.tierModels?.["local-trivial"]?.fallback  ?? defaults["local-trivial"].fallback  },
-      "local-capable":  { preferred: opts.tierModels?.["local-capable"]?.preferred  ?? defaults["local-capable"].preferred,  fallback: opts.tierModels?.["local-capable"]?.fallback  ?? defaults["local-capable"].fallback  },
-      "cloud-mid":      { preferred: opts.tierModels?.["cloud-mid"]?.preferred      ?? defaults["cloud-mid"].preferred,      fallback: opts.tierModels?.["cloud-mid"]?.fallback      ?? defaults["cloud-mid"].fallback      },
-      "cloud-capable":  { preferred: opts.tierModels?.["cloud-capable"]?.preferred  ?? defaults["cloud-capable"].preferred,  fallback: opts.tierModels?.["cloud-capable"]?.fallback  ?? defaults["cloud-capable"].fallback  },
-      "cloud-frontier": { preferred: opts.tierModels?.["cloud-frontier"]?.preferred ?? defaults["cloud-frontier"].preferred, fallback: opts.tierModels?.["cloud-frontier"]?.fallback ?? defaults["cloud-frontier"].fallback },
+      "local-trivial": {
+        preferred:
+          opts.tierModels?.["local-trivial"]?.preferred ?? defaults["local-trivial"].preferred,
+        fallback:
+          opts.tierModels?.["local-trivial"]?.fallback ?? defaults["local-trivial"].fallback,
+      },
+      "local-capable": {
+        preferred:
+          opts.tierModels?.["local-capable"]?.preferred ?? defaults["local-capable"].preferred,
+        fallback:
+          opts.tierModels?.["local-capable"]?.fallback ?? defaults["local-capable"].fallback,
+      },
+      "cloud-mid": {
+        preferred: opts.tierModels?.["cloud-mid"]?.preferred ?? defaults["cloud-mid"].preferred,
+        fallback: opts.tierModels?.["cloud-mid"]?.fallback ?? defaults["cloud-mid"].fallback,
+      },
+      "cloud-capable": {
+        preferred:
+          opts.tierModels?.["cloud-capable"]?.preferred ?? defaults["cloud-capable"].preferred,
+        fallback:
+          opts.tierModels?.["cloud-capable"]?.fallback ?? defaults["cloud-capable"].fallback,
+      },
+      "cloud-frontier": {
+        preferred:
+          opts.tierModels?.["cloud-frontier"]?.preferred ?? defaults["cloud-frontier"].preferred,
+        fallback:
+          opts.tierModels?.["cloud-frontier"]?.fallback ?? defaults["cloud-frontier"].fallback,
+      },
     };
   }
 

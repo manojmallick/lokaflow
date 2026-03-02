@@ -93,10 +93,14 @@ export class PoolManager {
     const defaultExpiry =
       expiresAt ?? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO purchase_pools (id, provider, total_credits, price_per_mtoken, status, expires_at, created_at)
       VALUES (?, ?, ?, ?, 'open', ?, ?)
-    `).run(id, provider, totalCredits, pricePerMToken, defaultExpiry, createdAt);
+    `,
+      )
+      .run(id, provider, totalCredits, pricePerMToken, defaultExpiry, createdAt);
 
     return id;
   }
@@ -105,27 +109,34 @@ export class PoolManager {
    * Record a member funding into a pool (paying LokaCredits for an API credit allocation).
    * Updates the pool status to 'full' if total_credits are now committed.
    */
-  addFunding(poolId: string, memberId: string, lokaCreditsPaid: number, apiCreditsAllocated: number): PoolFundingRecord {
+  addFunding(
+    poolId: string,
+    memberId: string,
+    lokaCreditsPaid: number,
+    apiCreditsAllocated: number,
+  ): PoolFundingRecord {
     const now = new Date().toISOString();
 
     this.db.transaction(() => {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO pool_funding (pool_id, member_id, loka_credits_paid, api_credits_alloc, funded_at)
         VALUES (?, ?, ?, ?, ?)
-      `).run(poolId, memberId, lokaCreditsPaid, apiCreditsAllocated, now);
+      `,
+        )
+        .run(poolId, memberId, lokaCreditsPaid, apiCreditsAllocated, now);
 
       // Update pool status if fully subscribed
-      const pool = this.db.prepare(
-        `SELECT total_credits FROM purchase_pools WHERE id = ?`,
-      ).get(poolId) as any;
-      const committed = this.db.prepare(
-        `SELECT SUM(api_credits_alloc) as total FROM pool_funding WHERE pool_id = ?`,
-      ).get(poolId) as any;
+      const pool = this.db
+        .prepare(`SELECT total_credits FROM purchase_pools WHERE id = ?`)
+        .get(poolId) as any;
+      const committed = this.db
+        .prepare(`SELECT SUM(api_credits_alloc) as total FROM pool_funding WHERE pool_id = ?`)
+        .get(poolId) as any;
 
       if (pool && committed && committed.total >= pool.total_credits) {
-        this.db.prepare(
-          `UPDATE purchase_pools SET status = 'full' WHERE id = ?`,
-        ).run(poolId);
+        this.db.prepare(`UPDATE purchase_pools SET status = 'full' WHERE id = ?`).run(poolId);
       }
 
       // Wire into PoolUsageTracker
@@ -137,17 +148,23 @@ export class PoolManager {
 
   /** Close a pool after cooperative purchase has been executed */
   closePool(poolId: string, purchasedCredits: number): void {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE purchase_pools
       SET status = 'closed', purchased_credits = ?
       WHERE id = ?
-    `).run(purchasedCredits, poolId);
+    `,
+      )
+      .run(purchasedCredits, poolId);
   }
 
   /** Get all currently open pools for a provider */
   getOpenPools(provider?: string): PoolStatus[] {
     const rows = provider
-      ? (this.db.prepare(`SELECT * FROM purchase_pools WHERE provider = ? AND status = 'open'`).all(provider) as any[])
+      ? (this.db
+          .prepare(`SELECT * FROM purchase_pools WHERE provider = ? AND status = 'open'`)
+          .all(provider) as any[])
       : (this.db.prepare(`SELECT * FROM purchase_pools WHERE status = 'open'`).all() as any[]);
     return rows.map((r) => this._buildStatus(r));
   }
@@ -155,26 +172,36 @@ export class PoolManager {
   /** Get all pools (any status) for a provider */
   getAllPools(provider?: string): PoolStatus[] {
     const rows = provider
-      ? (this.db.prepare(`SELECT * FROM purchase_pools WHERE provider = ? ORDER BY created_at DESC`).all(provider) as any[])
+      ? (this.db
+          .prepare(`SELECT * FROM purchase_pools WHERE provider = ? ORDER BY created_at DESC`)
+          .all(provider) as any[])
       : (this.db.prepare(`SELECT * FROM purchase_pools ORDER BY created_at DESC`).all() as any[]);
     return rows.map((r) => this._buildStatus(r));
   }
 
   /** Mark expired pools */
   expireStale(): number {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       UPDATE purchase_pools
       SET status = 'expired'
       WHERE status IN ('open', 'full', 'closed')
         AND expires_at IS NOT NULL
         AND date(expires_at) < date('now')
-    `).run();
+    `,
+      )
+      .run();
     return result.changes;
   }
 
   /** List all funders for a pool */
   getFunding(poolId: string): PoolFundingRecord[] {
-    return (this.db.prepare(`SELECT * FROM pool_funding WHERE pool_id = ? ORDER BY funded_at ASC`).all(poolId) as any[]).map((r) => ({
+    return (
+      this.db
+        .prepare(`SELECT * FROM pool_funding WHERE pool_id = ? ORDER BY funded_at ASC`)
+        .all(poolId) as any[]
+    ).map((r) => ({
       poolId: r.pool_id,
       memberId: r.member_id,
       lokaCreditsPaid: r.loka_credits_paid,
@@ -184,17 +211,19 @@ export class PoolManager {
   }
 
   private _buildStatus(row: any): PoolStatus {
-    const memberCount = (this.db.prepare(
-      `SELECT COUNT(*) as cnt FROM pool_funding WHERE pool_id = ?`,
-    ).get(row.id) as any)?.cnt ?? 0;
+    const memberCount =
+      (
+        this.db
+          .prepare(`SELECT COUNT(*) as cnt FROM pool_funding WHERE pool_id = ?`)
+          .get(row.id) as any
+      )?.cnt ?? 0;
 
-    const usedRow = this.db.prepare(
-      `SELECT SUM(total_used) as used FROM api_pools WHERE id = ?`,
-    ).get(row.id) as any;
+    const usedRow = this.db
+      .prepare(`SELECT SUM(total_used) as used FROM api_pools WHERE id = ?`)
+      .get(row.id) as any;
     const totalUsed = usedRow?.used ?? 0;
-    const utilizationPct = row.total_credits > 0
-      ? Math.min(100, (totalUsed / row.total_credits) * 100)
-      : 0;
+    const utilizationPct =
+      row.total_credits > 0 ? Math.min(100, (totalUsed / row.total_credits) * 100) : 0;
     const isExpired = row.expires_at ? new Date(row.expires_at) < new Date() : false;
 
     return {
@@ -204,7 +233,8 @@ export class PoolManager {
         totalCredits: row.total_credits,
         pricePerMToken: row.price_per_mtoken,
         fundedBy: [],
-        expiresAt: row.expires_at ?? new Date(Date.now() + 365 * 86_400_000).toISOString().slice(0, 10),
+        expiresAt:
+          row.expires_at ?? new Date(Date.now() + 365 * 86_400_000).toISOString().slice(0, 10),
         status: row.status,
         totalUsed,
         totalRemaining: Math.max(0, row.total_credits - totalUsed),

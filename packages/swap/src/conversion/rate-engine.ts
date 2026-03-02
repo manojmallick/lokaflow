@@ -62,7 +62,8 @@ export class RateEngine {
 
   /** Insert genesis rates if no rates exist yet */
   private _seedDefaultRates(): void {
-    const count = (this.db.prepare(`SELECT COUNT(*) as cnt FROM conversion_rates`).get() as any)?.cnt ?? 0;
+    const count =
+      (this.db.prepare(`SELECT COUNT(*) as cnt FROM conversion_rates`).get() as any)?.cnt ?? 0;
     if (count > 0) return;
 
     const now = new Date().toISOString();
@@ -84,13 +85,17 @@ export class RateEngine {
    * Returns null if no rate is configured.
    */
   getCurrentRate(provider: string): GovernedRate | null {
-    const row = this.db.prepare(`
+    const row = this.db
+      .prepare(
+        `
       SELECT * FROM conversion_rates
       WHERE provider = ?
         AND effective_from <= date('now')
         AND (effective_to IS NULL OR date(effective_to) > date('now'))
       ORDER BY effective_from DESC LIMIT 1
-    `).get(provider) as any;
+    `,
+      )
+      .get(provider) as any;
     return row ? this._rowToRate(row) : null;
   }
 
@@ -98,8 +103,12 @@ export class RateEngine {
    * Get all current rates (one per provider).
    */
   getAllCurrentRates(): GovernedRate[] {
-    const providers = (this.db.prepare(`SELECT DISTINCT provider FROM conversion_rates`).all() as any[]).map((r) => r.provider);
-    return providers.map((p) => this.getCurrentRate(p)).filter((r): r is GovernedRate => r !== null);
+    const providers = (
+      this.db.prepare(`SELECT DISTINCT provider FROM conversion_rates`).all() as any[]
+    ).map((r) => r.provider);
+    return providers
+      .map((p) => this.getCurrentRate(p))
+      .filter((r): r is GovernedRate => r !== null);
   }
 
   /**
@@ -123,18 +132,26 @@ export class RateEngine {
     const effectFrom = effectiveFrom ?? now.slice(0, 10);
 
     // Expire existing active rate
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE conversion_rates
       SET effective_to = ?
       WHERE provider = ? AND effective_to IS NULL
-    `).run(effectFrom, provider);
+    `,
+      )
+      .run(effectFrom, provider);
 
     // Insert new rate
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO conversion_rates
         (provider, input_multiplier, output_multiplier, proposal_id, effective_from, approved_by, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(provider, inputMultiplier, outputMultiplier, proposalId, effectFrom, proposalId, now);
+    `,
+      )
+      .run(provider, inputMultiplier, outputMultiplier, proposalId, effectFrom, proposalId, now);
 
     return this.getCurrentRate(provider)!;
   }

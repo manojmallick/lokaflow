@@ -311,6 +311,22 @@ const CODE_EXT_MAP: Record<string, string> = {
   c: "c",
 };
 
+// ─── nodeToText ───────────────────────────────────────────────────────────────
+// rehypeHighlight wraps code tokens in <span> React elements, so
+// `children` inside <pre><code> is a tree of ReactElements, not a plain string.
+// String(reactElement) → "[object Object]". This helper walks the tree and
+// concatenates all text leaf nodes, returning the original source code.
+function nodeToText(node: unknown): string {
+  if (typeof node === "string") return node;
+  if (typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(nodeToText).join("");
+  if (node !== null && typeof node === "object") {
+    const el = node as { props?: { children?: unknown } };
+    if (el.props?.children !== undefined) return nodeToText(el.props.children);
+  }
+  return "";
+}
+
 // ─── ExplainButton ────────────────────────────────────────────────────────────
 
 function ExplainButton({
@@ -379,7 +395,9 @@ function MessageContent({
       components={{
         pre({ children, ...props }) {
           const codeEl = (children as React.ReactElement)?.props;
-          const codeText = codeEl?.children ?? "";
+          // rehypeHighlight transforms code into a React element tree of <span>
+          // nodes — nodeToText() recursively extracts the raw source text.
+          const codeText = nodeToText(codeEl?.children ?? "").trimEnd();
           const lang = (codeEl?.className ?? "").replace("language-", "");
           const ext = CODE_EXT_MAP[lang] ?? "txt";
           return (
@@ -387,19 +405,15 @@ function MessageContent({
               <div className="code-block-header">
                 <span className="code-lang">{lang || "code"}</span>
                 <div className="code-block-actions">
-                  {onExplain && (
-                    <ExplainButton code={String(codeText).trimEnd()} onExplain={onExplain} />
-                  )}
+                  {onExplain && <ExplainButton code={codeText} onExplain={onExplain} />}
                   <button
                     className="copy-btn"
                     title="Download as file"
-                    onClick={() =>
-                      downloadBlob(String(codeText).trimEnd(), `snippet.${ext}`, "text/plain")
-                    }
+                    onClick={() => downloadBlob(codeText, `snippet.${ext}`, "text/plain")}
                   >
                     <Download size={13} /> Download
                   </button>
-                  <CopyButton text={String(codeText).trimEnd()} />
+                  <CopyButton text={codeText} />
                 </div>
               </div>
               <pre {...props}>{children}</pre>
@@ -514,7 +528,10 @@ function classifyLine(line: string): TraceStep {
     return { kind: "agent_quality", raw, status: "warn" };
   if (l.startsWith("[AGENT]") && l.includes("QualityGate"))
     return { kind: "agent_quality", raw, status: "ok" };
-  if (l.startsWith("[AGENT]") && (l.includes("Telemetry") || l.includes("Savings") || l.includes("Nodes:")))
+  if (
+    l.startsWith("[AGENT]") &&
+    (l.includes("Telemetry") || l.includes("Savings") || l.includes("Nodes:"))
+  )
     return { kind: "agent_telemetry", raw, status: "info" };
   if (l.startsWith("[AGENT]") && (l.includes("escalated") || l.includes("error")))
     return { kind: "agent", raw, status: "warn" };

@@ -114,11 +114,10 @@ export class LinuxBatteryAgent implements BatteryAgent {
     const eFullDesign = energyFullDesignStr ? parseInt(energyFullDesignStr, 10) || eFull : eFull;
     const v = voltageNow > 0 ? voltageNow : 3.7;
 
-    const currentCapacityMah = eFull > 0 ? Math.round((eFull / 1000) / v) : 3000;
-    const designCapacityMah = eFullDesign > 0 ? Math.round((eFullDesign / 1000) / v) : 3300;
-    const healthPct = designCapacityMah > 0
-      ? Math.min(100, (currentCapacityMah / designCapacityMah) * 100)
-      : 95;
+    const currentCapacityMah = eFull > 0 ? Math.round(eFull / 1000 / v) : 3000;
+    const designCapacityMah = eFullDesign > 0 ? Math.round(eFullDesign / 1000 / v) : 3300;
+    const healthPct =
+      designCapacityMah > 0 ? Math.min(100, (currentCapacityMah / designCapacityMah) * 100) : 95;
 
     // temp is in tenths of °C (e.g. 298 = 29.8°C)
     const temperatureCelsius = tempStr ? parseInt(tempStr, 10) / 10 : 30;

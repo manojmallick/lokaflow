@@ -14,7 +14,7 @@ export interface SettlementRecord {
   id: string;
   buyerId: string;
   sellerId: string;
-  asset: string;       // JSON-serialised ExchangeAsset
+  asset: string; // JSON-serialised ExchangeAsset
   creditAmount: number;
   settledAt: string;
   transactionHash?: string; // optional future on-chain proof
@@ -98,7 +98,7 @@ export interface MemberDemandPledge {
   model: string;
   estimatedMonthlyTokens: number;
   currentLocalCapacity: number; // tokens/s available for cooperative sharing
-  willingToPay: number;         // max lokacredits per 1M output tokens
+  willingToPay: number; // max lokacredits per 1M output tokens
   pledgedAt: string;
   validUntil: string;
 }
@@ -141,8 +141,8 @@ export type SwapStatus = "pending" | "matched" | "settled" | "failed" | "expired
 export interface SwapOrder {
   id: string;
   memberId: string;
-  offerAsset: string;       // JSON ExchangeAsset
-  requestAsset: string;     // JSON ExchangeAsset
+  offerAsset: string; // JSON ExchangeAsset
+  requestAsset: string; // JSON ExchangeAsset
   status: SwapStatus;
   createdAt: string;
   matchedAt?: string;

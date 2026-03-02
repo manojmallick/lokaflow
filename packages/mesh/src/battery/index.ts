@@ -13,7 +13,12 @@ export { BatteryAgent, BatteryState, calculateStressScore } from "./agents/base.
 
 // Guardians
 export { ChargeGuardian } from "./guardian/charge-guardian.js";
-export type { BatteryPolicy, ChargeAction, ChargeActionType, ScheduleOverride } from "./guardian/charge-guardian.js";
+export type {
+  BatteryPolicy,
+  ChargeAction,
+  ChargeActionType,
+  ScheduleOverride,
+} from "./guardian/charge-guardian.js";
 export { ThermalGuard, getThermalZone } from "./guardian/thermal-guard.js";
 export type { ThermalZone, WorkloadProfile } from "./guardian/thermal-guard.js";
 
@@ -37,4 +42,3 @@ export type { HealthRecord } from "./store/cluster-battery-store.js";
 export { BatteryReport } from "./report/battery-report.js";
 export { renderSparkline, renderBarChart, renderStressGauge } from "./report/chart.js";
 export type { ChartDataPoint, ChartOptions } from "./report/chart.js";
-

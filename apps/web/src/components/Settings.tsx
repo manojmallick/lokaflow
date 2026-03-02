@@ -52,7 +52,14 @@ interface CategoryRule {
 }
 
 type TestState = "idle" | "testing" | "ok" | "fail";
-type Tab = "connection" | "routing" | "keys" | "budget" | "privacy" | "notifications" | "appearance";
+type Tab =
+  | "connection"
+  | "routing"
+  | "keys"
+  | "budget"
+  | "privacy"
+  | "notifications"
+  | "appearance";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "connection", label: "Connection", icon: <Wifi size={14} /> },
@@ -65,9 +72,21 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 ];
 
 const DEFAULT_RULES: CategoryRule[] = [
-  { id: "r1", category: "Coding", strategy: "always-local", threshold: 0.75, preferredModel: "qwen2.5-coder:7b" },
-  { id: "r2", category: "Document AI", strategy: "always-local", threshold: 0.70, preferredModel: "qwen2.5:7b" },
-  { id: "r3", category: "Compliance", strategy: "smart", threshold: 0.60, preferredModel: "auto" },
+  {
+    id: "r1",
+    category: "Coding",
+    strategy: "always-local",
+    threshold: 0.75,
+    preferredModel: "qwen2.5-coder:7b",
+  },
+  {
+    id: "r2",
+    category: "Document AI",
+    strategy: "always-local",
+    threshold: 0.7,
+    preferredModel: "qwen2.5:7b",
+  },
+  { id: "r3", category: "Compliance", strategy: "smart", threshold: 0.6, preferredModel: "auto" },
   { id: "r4", category: "Creative", strategy: "smart", threshold: 0.55, preferredModel: "auto" },
 ];
 
@@ -100,7 +119,9 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
   }
 
   // Connection
-  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem("lf_api_url") || "http://127.0.0.1:4141");
+  const [apiUrl, setApiUrl] = useState(
+    () => localStorage.getItem("lf_api_url") || "http://127.0.0.1:4141",
+  );
   const [model, setModel] = useState(() => localStorage.getItem("lf_model") || "auto");
   const [saved, setSaved] = useState(false);
   const [testState, setTestState] = useState<TestState>("idle");
@@ -123,7 +144,9 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
 
   // API Keys
   const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem("lf_key_gemini") || "");
-  const [anthropicKey, setAnthropicKey] = useState(() => localStorage.getItem("lf_key_anthropic") || "");
+  const [anthropicKey, setAnthropicKey] = useState(
+    () => localStorage.getItem("lf_key_anthropic") || "",
+  );
   const [openaiKey, setOpenaiKey] = useState(() => localStorage.getItem("lf_key_openai") || "");
   const [showKey, setShowKey] = useState<Record<string, boolean>>({});
 
@@ -155,7 +178,10 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
   useEffect(() => {
     fetch(`${apiUrl}/v1/cost`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data) => { setCost(data); setCostError(false); })
+      .then((data) => {
+        setCost(data);
+        setCostError(false);
+      })
       .catch(() => setCostError(true));
   }, [apiUrl]);
 
@@ -176,7 +202,9 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
       const data = await res.json();
       if (data.status === "ok") {
         setTestState("ok");
-        setTestMsg(`Connected — LokaFlow v${data.version}, ${data.providers?.length ?? 0} providers.`);
+        setTestMsg(
+          `Connected — LokaFlow v${data.version}, ${data.providers?.length ?? 0} providers.`,
+        );
       } else throw new Error();
     } catch {
       setTestState("fail");
@@ -192,14 +220,23 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
     if (!simulatePrompt.trim()) return;
     const words = simulatePrompt.toLowerCase().split(/\s+/);
     const hasPii = piiKeywords.some((k) => words.includes(k.toLowerCase()));
-    const complexWords = ["analyse", "compare", "evaluate", "assess", "review", "compliance", "gap"];
+    const complexWords = [
+      "analyse",
+      "compare",
+      "evaluate",
+      "assess",
+      "review",
+      "compliance",
+      "gap",
+    ];
     const complexCount = words.filter((w) => complexWords.some((c) => w.includes(c))).length;
     const score = Math.min(0.95, 0.2 + complexCount * 0.15 + simulatePrompt.length / 2000);
-    const label = score < 0.3 ? "Simple" : score < 0.6 ? "Moderate" : score < 0.8 ? "Complex" : "Expert";
+    const label =
+      score < 0.3 ? "Simple" : score < 0.6 ? "Moderate" : score < 0.8 ? "Complex" : "Expert";
     const tier = hasPii ? "local (PII guard)" : score <= globalThreshold ? "local" : "cloud";
     const estCost = tier === "local" || hasPii ? "€0.00" : `~€${(score * 0.005).toFixed(4)}`;
     setSimulateResult(
-      `Complexity: ${score.toFixed(2)} (${label})\nPII detected: ${hasPii ? "Yes — forced local" : "No"}\nDecision: → ${tier}\nModel: ${tier.includes("local") ? MODEL_OPTIONS[4]?.label : "gemini-2.0-flash"}\nEstimated cost: ${estCost}`
+      `Complexity: ${score.toFixed(2)} (${label})\nPII detected: ${hasPii ? "Yes — forced local" : "No"}\nDecision: → ${tier}\nModel: ${tier.includes("local") ? MODEL_OPTIONS[4]?.label : "gemini-2.0-flash"}\nEstimated cost: ${estCost}`,
     );
   }
 
@@ -239,22 +276,38 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
       {/* ── Connection ──────────────────────────────────────────────────── */}
       {tab === "connection" && (
         <section className="settings-section">
-          <h2 className="settings-section-title"><Wifi size={15} /> API Connection</h2>
+          <h2 className="settings-section-title">
+            <Wifi size={15} /> API Connection
+          </h2>
           <div className="settings-field">
             <label htmlFor="apiUrl">API Base URL</label>
-            <input id="apiUrl" className="settings-input" type="text" value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)} placeholder="http://localhost:4141" />
+            <input
+              id="apiUrl"
+              className="settings-input"
+              type="text"
+              value={apiUrl}
+              onChange={(e) => setApiUrl(e.target.value)}
+              placeholder="http://localhost:4141"
+            />
             <span className="settings-hint">Default: http://localhost:4141</span>
           </div>
           <div className="settings-field">
             <label htmlFor="model">Default Model</label>
-            <select id="model" className="settings-input settings-select" value={model}
-              onChange={(e) => setModel(e.target.value)}>
+            <select
+              id="model"
+              className="settings-input settings-select"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            >
               {MODEL_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
               ))}
             </select>
-            <span className="settings-hint">"Auto" lets the router pick based on complexity and budget.</span>
+            <span className="settings-hint">
+              "Auto" lets the router pick based on complexity and budget.
+            </span>
           </div>
           <div className="settings-actions">
             <button className="btn-test" onClick={handleTest} disabled={testState === "testing"}>
@@ -276,13 +329,21 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
       {/* ── Routing Rules ──────────────────────────────────────────────── */}
       {tab === "routing" && (
         <section className="settings-section">
-          <h2 className="settings-section-title"><Zap size={15} /> Routing Rules</h2>
+          <h2 className="settings-section-title">
+            <Zap size={15} /> Routing Rules
+          </h2>
 
           <div className="routing-global-section">
             <h3 className="settings-sub-title">Global Default</h3>
             <div className="settings-field">
-              <label>Complexity threshold: <strong>{globalThreshold.toFixed(2)}</strong></label>
-              <input type="range" min="0.1" max="0.9" step="0.05"
+              <label>
+                Complexity threshold: <strong>{globalThreshold.toFixed(2)}</strong>
+              </label>
+              <input
+                type="range"
+                min="0.1"
+                max="0.9"
+                step="0.05"
                 value={globalThreshold}
                 onChange={(e) => setGlobalThreshold(parseFloat(e.target.value))}
                 className="settings-range"
@@ -309,9 +370,15 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
                   <select
                     className="rr-select"
                     value={rule.strategy}
-                    onChange={(e) => setCategoryRules(categoryRules.map((r) =>
-                      r.id === rule.id ? { ...r, strategy: e.target.value as CategoryRule["strategy"] } : r
-                    ))}
+                    onChange={(e) =>
+                      setCategoryRules(
+                        categoryRules.map((r) =>
+                          r.id === rule.id
+                            ? { ...r, strategy: e.target.value as CategoryRule["strategy"] }
+                            : r,
+                        ),
+                      )
+                    }
                   >
                     <option value="always-local">Always local</option>
                     <option value="smart">Smart route</option>
@@ -319,11 +386,18 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
                   </select>
                   {rule.strategy === "smart" && (
                     <input
-                      type="number" min="0.1" max="0.9" step="0.05"
+                      type="number"
+                      min="0.1"
+                      max="0.9"
+                      step="0.05"
                       value={rule.threshold}
-                      onChange={(e) => setCategoryRules(categoryRules.map((r) =>
-                        r.id === rule.id ? { ...r, threshold: parseFloat(e.target.value) } : r
-                      ))}
+                      onChange={(e) =>
+                        setCategoryRules(
+                          categoryRules.map((r) =>
+                            r.id === rule.id ? { ...r, threshold: parseFloat(e.target.value) } : r,
+                          ),
+                        )
+                      }
                       className="rr-threshold-input"
                     />
                   )}
@@ -341,9 +415,18 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
             </div>
             <button
               className="btn-ghost btn-sm"
-              onClick={() => setCategoryRules([...categoryRules, {
-                id: `r${Date.now()}`, category: "Custom", strategy: "smart", threshold: 0.55, preferredModel: "auto"
-              }])}
+              onClick={() =>
+                setCategoryRules([
+                  ...categoryRules,
+                  {
+                    id: `r${Date.now()}`,
+                    category: "Custom",
+                    strategy: "smart",
+                    threshold: 0.55,
+                    preferredModel: "auto",
+                  },
+                ])
+              }
             >
               <Plus size={13} /> Add category rule
             </button>
@@ -358,7 +441,9 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
               {piiKeywords.map((k) => (
                 <span key={k} className="keyword-chip">
                   {k}
-                  <button onClick={() => setPiiKeywords(piiKeywords.filter((x) => x !== k))}>×</button>
+                  <button onClick={() => setPiiKeywords(piiKeywords.filter((x) => x !== k))}>
+                    ×
+                  </button>
                 </span>
               ))}
             </div>
@@ -370,7 +455,9 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
                 onChange={(e) => setNewKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addKeyword()}
               />
-              <button className="btn-add" onClick={addKeyword}><Plus size={13} /> Add</button>
+              <button className="btn-add" onClick={addKeyword}>
+                <Plus size={13} /> Add
+              </button>
             </div>
           </div>
 
@@ -391,9 +478,7 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
             <button className="btn-save" style={{ marginTop: 8 }} onClick={simulateRouting}>
               Simulate Routing →
             </button>
-            {simulateResult && (
-              <pre className="simulate-result">{simulateResult}</pre>
-            )}
+            {simulateResult && <pre className="simulate-result">{simulateResult}</pre>}
           </div>
         </section>
       )}
@@ -401,16 +486,37 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
       {/* ── API Keys ───────────────────────────────────────────────────── */}
       {tab === "keys" && (
         <section className="settings-section">
-          <h2 className="settings-section-title"><Key size={15} /> API Keys</h2>
+          <h2 className="settings-section-title">
+            <Key size={15} /> API Keys
+          </h2>
           <p className="settings-hint" style={{ marginBottom: 20 }}>
-            Cloud provider keys — stored in your browser's localStorage, never sent to LokaFlow servers.
+            Cloud provider keys — stored in your browser's localStorage, never sent to LokaFlow
+            servers.
           </p>
 
           <div className="api-keys-list">
             {[
-              { id: "gemini", label: "Google Gemini", placeholder: "AIza…", value: geminiKey, setter: setGeminiKey },
-              { id: "anthropic", label: "Anthropic Claude", placeholder: "sk-ant-…", value: anthropicKey, setter: setAnthropicKey },
-              { id: "openai", label: "OpenAI", placeholder: "sk-…", value: openaiKey, setter: setOpenaiKey },
+              {
+                id: "gemini",
+                label: "Google Gemini",
+                placeholder: "AIza…",
+                value: geminiKey,
+                setter: setGeminiKey,
+              },
+              {
+                id: "anthropic",
+                label: "Anthropic Claude",
+                placeholder: "sk-ant-…",
+                value: anthropicKey,
+                setter: setAnthropicKey,
+              },
+              {
+                id: "openai",
+                label: "OpenAI",
+                placeholder: "sk-…",
+                value: openaiKey,
+                setter: setOpenaiKey,
+              },
             ].map(({ id, label, placeholder, value, setter }) => (
               <div key={id} className="api-key-row">
                 <div className="api-key-label">{label}</div>
@@ -422,7 +528,10 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
                     value={value}
                     onChange={(e) => setter(e.target.value)}
                   />
-                  <button className="btn-ghost btn-sm" onClick={() => setShowKey((s) => ({ ...s, [id]: !s[id] }))}>
+                  <button
+                    className="btn-ghost btn-sm"
+                    onClick={() => setShowKey((s) => ({ ...s, [id]: !s[id] }))}
+                  >
                     {showKey[id] ? "Hide" : "Show"}
                   </button>
                   <button className="btn-save btn-sm" onClick={() => saveApiKey(id, value)}>
@@ -431,7 +540,9 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
                 </div>
                 <div className="api-key-status">
                   {value ? (
-                    <span className="key-set"><CheckCircle size={13} /> Key saved</span>
+                    <span className="key-set">
+                      <CheckCircle size={13} /> Key saved
+                    </span>
                   ) : (
                     <span className="key-unset">Not configured</span>
                   )}
@@ -457,69 +568,110 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
       {/* ── Budget ─────────────────────────────────────────────────────── */}
       {tab === "budget" && (
         <section className="settings-section">
-          <h2 className="settings-section-title"><DollarSign size={15} /> Budget &amp; Limits</h2>
+          <h2 className="settings-section-title">
+            <DollarSign size={15} /> Budget &amp; Limits
+          </h2>
 
           <div className="budget-limits-grid">
             <div className="budget-limit-row">
               <label>Daily cap</label>
               <div className="budget-limit-inputs">
                 <span>€</span>
-                <input className="settings-input settings-input-sm" type="number" min="0" step="0.5"
-                  value={dailyCap} onChange={(e) => setDailyCap(e.target.value)} />
-                <span className="settings-hint">Alert at {alertPct}% → €{(parseFloat(dailyCap || "2") * parseFloat(alertPct) / 100).toFixed(2)}</span>
+                <input
+                  className="settings-input settings-input-sm"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={dailyCap}
+                  onChange={(e) => setDailyCap(e.target.value)}
+                />
+                <span className="settings-hint">
+                  Alert at {alertPct}% → €
+                  {((parseFloat(dailyCap || "2") * parseFloat(alertPct)) / 100).toFixed(2)}
+                </span>
               </div>
             </div>
             <div className="budget-limit-row">
               <label>Monthly cap</label>
               <div className="budget-limit-inputs">
                 <span>€</span>
-                <input className="settings-input settings-input-sm" type="number" min="0" step="1"
-                  value={monthlyCap} onChange={(e) => setMonthlyCap(e.target.value)} />
+                <input
+                  className="settings-input settings-input-sm"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={monthlyCap}
+                  onChange={(e) => setMonthlyCap(e.target.value)}
+                />
               </div>
             </div>
             <div className="budget-limit-row">
               <label>Alert threshold</label>
               <div className="budget-limit-inputs">
-                <select className="settings-input settings-select settings-select-sm"
-                  value={alertPct} onChange={(e) => setAlertPct(e.target.value)}>
+                <select
+                  className="settings-input settings-select settings-select-sm"
+                  value={alertPct}
+                  onChange={(e) => setAlertPct(e.target.value)}
+                >
                   {["50", "70", "80", "90"].map((v) => (
-                    <option key={v} value={v}>{v}%</option>
+                    <option key={v} value={v}>
+                      {v}%
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
           </div>
 
-          <h3 className="settings-sub-title" style={{ marginTop: 24 }}>Current Usage</h3>
-          {costError && <p className="settings-cost-error">Could not load cost data — API may be offline.</p>}
+          <h3 className="settings-sub-title" style={{ marginTop: 24 }}>
+            Current Usage
+          </h3>
+          {costError && (
+            <p className="settings-cost-error">Could not load cost data — API may be offline.</p>
+          )}
           {cost && (
             <div className="cost-grid">
               <div className="cost-card">
                 <div className="cost-card-title">Today</div>
                 <div className="cost-main">€{cost.today.totalEur.toFixed(4)}</div>
-                <div className="cost-meta">{cost.today.queryCount} queries · {cost.today.localQueries} local / {cost.today.cloudQueries} cloud</div>
+                <div className="cost-meta">
+                  {cost.today.queryCount} queries · {cost.today.localQueries} local /{" "}
+                  {cost.today.cloudQueries} cloud
+                </div>
                 <div className="budget-bar-wrap">
                   <div className="budget-bar-bg">
-                    <div className="budget-bar-fill" style={{
-                      width: `${used(cost.today.totalEur, cost.limits.dailyLimitEur)}%`,
-                      background: cost.limits.dailyUsedPercent > 80 ? "#ef4444" : "#3b82f6",
-                    }} />
+                    <div
+                      className="budget-bar-fill"
+                      style={{
+                        width: `${used(cost.today.totalEur, cost.limits.dailyLimitEur)}%`,
+                        background: cost.limits.dailyUsedPercent > 80 ? "#ef4444" : "#3b82f6",
+                      }}
+                    />
                   </div>
-                  <span className="budget-pct">{cost.limits.dailyUsedPercent.toFixed(0)}% of €{cost.limits.dailyLimitEur}</span>
+                  <span className="budget-pct">
+                    {cost.limits.dailyUsedPercent.toFixed(0)}% of €{cost.limits.dailyLimitEur}
+                  </span>
                 </div>
               </div>
               <div className="cost-card">
                 <div className="cost-card-title">This Month</div>
                 <div className="cost-main">€{cost.month.totalEur.toFixed(4)}</div>
-                <div className="cost-meta">{cost.month.queryCount} queries · {cost.month.localPercent.toFixed(0)}% local</div>
+                <div className="cost-meta">
+                  {cost.month.queryCount} queries · {cost.month.localPercent.toFixed(0)}% local
+                </div>
                 <div className="budget-bar-wrap">
                   <div className="budget-bar-bg">
-                    <div className="budget-bar-fill" style={{
-                      width: `${used(cost.month.totalEur, cost.limits.monthlyLimitEur)}%`,
-                      background: cost.limits.monthlyUsedPercent > 80 ? "#ef4444" : "#3b82f6",
-                    }} />
+                    <div
+                      className="budget-bar-fill"
+                      style={{
+                        width: `${used(cost.month.totalEur, cost.limits.monthlyLimitEur)}%`,
+                        background: cost.limits.monthlyUsedPercent > 80 ? "#ef4444" : "#3b82f6",
+                      }}
+                    />
                   </div>
-                  <span className="budget-pct">{cost.limits.monthlyUsedPercent.toFixed(0)}% of €{cost.limits.monthlyLimitEur}</span>
+                  <span className="budget-pct">
+                    {cost.limits.monthlyUsedPercent.toFixed(0)}% of €{cost.limits.monthlyLimitEur}
+                  </span>
                 </div>
               </div>
               <div className="cost-card savings-card">
@@ -535,15 +687,31 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
       {/* ── Privacy ────────────────────────────────────────────────────── */}
       {tab === "privacy" && (
         <section className="settings-section">
-          <h2 className="settings-section-title"><Shield size={15} /> Privacy Controls</h2>
+          <h2 className="settings-section-title">
+            <Shield size={15} /> Privacy Controls
+          </h2>
 
           <div className="settings-group">
             <h3 className="settings-sub-title">PII Scanner</h3>
             <div className="settings-toggle-row">
-              <label><input type="checkbox" checked={scanPii} onChange={(e) => setScanPii(e.target.checked)} /> Scan all prompts for PII before routing</label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={scanPii}
+                  onChange={(e) => setScanPii(e.target.checked)}
+                />{" "}
+                Scan all prompts for PII before routing
+              </label>
             </div>
             <div className="settings-toggle-row">
-              <label><input type="checkbox" checked={blockCloudPii} onChange={(e) => setBlockCloudPii(e.target.checked)} /> Block cloud routing if PII is detected</label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={blockCloudPii}
+                  onChange={(e) => setBlockCloudPii(e.target.checked)}
+                />{" "}
+                Block cloud routing if PII is detected
+              </label>
             </div>
           </div>
 
@@ -551,12 +719,17 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
             <h3 className="settings-sub-title">Telemetry</h3>
             <div className="settings-toggle-row">
               <label>
-                <input type="checkbox" checked={telemetry} onChange={(e) => setTelemetry(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={telemetry}
+                  onChange={(e) => setTelemetry(e.target.checked)}
+                />
                 Share anonymous usage statistics with LokaFlow team
               </label>
             </div>
             <p className="settings-hint" style={{ marginTop: 6, marginLeft: 24 }}>
-              Includes: model assignments · token counts · latency · routing decisions<br />
+              Includes: model assignments · token counts · latency · routing decisions
+              <br />
               Never includes: prompt content · file content · personal data · API keys
             </p>
           </div>
@@ -565,7 +738,11 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
             <h3 className="settings-sub-title">Data Retention</h3>
             <div className="settings-field">
               <label>Chat history retention</label>
-              <select className="settings-input settings-select" value={retention} onChange={(e) => setRetention(e.target.value)}>
+              <select
+                className="settings-input settings-select"
+                value={retention}
+                onChange={(e) => setRetention(e.target.value)}
+              >
                 <option value="30">30 days</option>
                 <option value="90">90 days</option>
                 <option value="180">180 days</option>
@@ -574,7 +751,13 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
               </select>
             </div>
             <div className="settings-actions" style={{ marginTop: 8 }}>
-              <button className="btn-ghost" onClick={() => { if (confirm("Clear all chat history? This cannot be undone.")) localStorage.removeItem("lf_chat_sessions"); }}>
+              <button
+                className="btn-ghost"
+                onClick={() => {
+                  if (confirm("Clear all chat history? This cannot be undone."))
+                    localStorage.removeItem("lf_chat_sessions");
+                }}
+              >
                 <Trash2 size={13} /> Clear all chat history
               </button>
             </div>
@@ -584,13 +767,18 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
             <h3 className="settings-sub-title">Local-Only Mode</h3>
             <div className="settings-toggle-row">
               <label>
-                <input type="checkbox" checked={localOnlyMode} onChange={(e) => setLocalOnlyMode(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={localOnlyMode}
+                  onChange={(e) => setLocalOnlyMode(e.target.checked)}
+                />
                 Force ALL queries to local models — never make cloud API calls
               </label>
             </div>
             {localOnlyMode && (
               <div className="privacy-warning">
-                <AlertTriangle size={14} /> Maximum privacy — nothing leaves your machine. Quality may be lower for complex tasks.
+                <AlertTriangle size={14} /> Maximum privacy — nothing leaves your machine. Quality
+                may be lower for complex tasks.
               </div>
             )}
           </div>
@@ -600,17 +788,54 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
       {/* ── Notifications ──────────────────────────────────────────────── */}
       {tab === "notifications" && (
         <section className="settings-section">
-          <h2 className="settings-section-title"><Bell size={15} /> Notifications</h2>
+          <h2 className="settings-section-title">
+            <Bell size={15} /> Notifications
+          </h2>
 
           <div className="notif-list">
             {[
-              { label: "Budget alerts", desc: "When spending hits 80% of daily cap", val: notifBudget, setter: setNotifBudget },
-              { label: "Budget exceeded", desc: "When cap is reached (blocks further cloud queries)", val: notifBudgetExceeded, setter: setNotifBudgetExceeded },
-              { label: "Node offline", desc: "When a mesh node goes offline", val: notifNodeOffline, setter: setNotifNodeOffline },
-              { label: "Model unavailable", desc: "When a local model fails to load", val: notifModelUnavail, setter: setNotifModelUnavail },
-              { label: "New model available", desc: "Weekly digest when a better local model is released", val: notifNewModel, setter: setNotifNewModel },
-              { label: "Batch job complete", desc: "When a scheduled batch finishes (with results summary)", val: notifBatch, setter: setNotifBatch },
-              { label: "PII detected", desc: "When PII is found in a prompt and cloud is blocked", val: notifPii, setter: setNotifPii },
+              {
+                label: "Budget alerts",
+                desc: "When spending hits 80% of daily cap",
+                val: notifBudget,
+                setter: setNotifBudget,
+              },
+              {
+                label: "Budget exceeded",
+                desc: "When cap is reached (blocks further cloud queries)",
+                val: notifBudgetExceeded,
+                setter: setNotifBudgetExceeded,
+              },
+              {
+                label: "Node offline",
+                desc: "When a mesh node goes offline",
+                val: notifNodeOffline,
+                setter: setNotifNodeOffline,
+              },
+              {
+                label: "Model unavailable",
+                desc: "When a local model fails to load",
+                val: notifModelUnavail,
+                setter: setNotifModelUnavail,
+              },
+              {
+                label: "New model available",
+                desc: "Weekly digest when a better local model is released",
+                val: notifNewModel,
+                setter: setNotifNewModel,
+              },
+              {
+                label: "Batch job complete",
+                desc: "When a scheduled batch finishes (with results summary)",
+                val: notifBatch,
+                setter: setNotifBatch,
+              },
+              {
+                label: "PII detected",
+                desc: "When PII is found in a prompt and cloud is blocked",
+                val: notifPii,
+                setter: setNotifPii,
+              },
             ].map(({ label, desc, val, setter }) => (
               <div key={label} className="notif-row">
                 <input type="checkbox" checked={val} onChange={(e) => setter(e.target.checked)} />
@@ -636,30 +861,70 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
       {/* ── Appearance ─────────────────────────────────────────────────── */}
       {tab === "appearance" && (
         <section className="settings-section">
-          <h2 className="settings-section-title"><Palette size={15} /> Appearance</h2>
+          <h2 className="settings-section-title">
+            <Palette size={15} /> Appearance
+          </h2>
 
           <div className="appearance-group">
             <h3 className="settings-sub-title">Theme</h3>
             <div className="radio-group">
-              <label><input type="radio" name="theme" defaultChecked /> Dark (default)</label>
-              <label><input type="radio" name="theme" /> System</label>
+              <label>
+                <input type="radio" name="theme" defaultChecked /> Dark (default)
+              </label>
+              <label>
+                <input type="radio" name="theme" /> System
+              </label>
             </div>
-            <p className="settings-hint">Light mode is not planned — dark is intentional for readability.</p>
+            <p className="settings-hint">
+              Light mode is not planned — dark is intentional for readability.
+            </p>
           </div>
 
           <div className="appearance-group" style={{ marginTop: 20 }}>
             <h3 className="settings-sub-title">Density</h3>
             <div className="radio-group">
-              <label><input type="radio" name="density" checked={density === "comfortable"} onChange={() => setDensity("comfortable")} /> Comfortable (default)</label>
-              <label><input type="radio" name="density" checked={density === "compact"} onChange={() => setDensity("compact")} /> Compact (smaller rows, tighter spacing)</label>
+              <label>
+                <input
+                  type="radio"
+                  name="density"
+                  checked={density === "comfortable"}
+                  onChange={() => setDensity("comfortable")}
+                />{" "}
+                Comfortable (default)
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="density"
+                  checked={density === "compact"}
+                  onChange={() => setDensity("compact")}
+                />{" "}
+                Compact (smaller rows, tighter spacing)
+              </label>
             </div>
           </div>
 
           <div className="appearance-group" style={{ marginTop: 20 }}>
             <h3 className="settings-sub-title">Font Size</h3>
             <div className="radio-group">
-              <label><input type="radio" name="fontSize" checked={fontSize === "14"} onChange={() => setFontSize("14")} /> Default (14px)</label>
-              <label><input type="radio" name="fontSize" checked={fontSize === "16"} onChange={() => setFontSize("16")} /> Large (16px)</label>
+              <label>
+                <input
+                  type="radio"
+                  name="fontSize"
+                  checked={fontSize === "14"}
+                  onChange={() => setFontSize("14")}
+                />{" "}
+                Default (14px)
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="fontSize"
+                  checked={fontSize === "16"}
+                  onChange={() => setFontSize("16")}
+                />{" "}
+                Large (16px)
+              </label>
             </div>
           </div>
 
@@ -667,15 +932,33 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
             <h3 className="settings-sub-title">Chat Display</h3>
             <div className="notif-list">
               {[
-                { label: "Show model badge on every AI message", val: showModelBadge, setter: setShowModelBadge },
-                { label: "Show token count per message", val: showTokenCount, setter: setShowTokenCount },
+                {
+                  label: "Show model badge on every AI message",
+                  val: showModelBadge,
+                  setter: setShowModelBadge,
+                },
+                {
+                  label: "Show token count per message",
+                  val: showTokenCount,
+                  setter: setShowTokenCount,
+                },
                 { label: "Show cost per message", val: showCostPerMsg, setter: setShowCostPerMsg },
-                { label: "Show routing tier badge (local / cloud / specialist)", val: showRoutingBadge, setter: setShowRoutingBadge },
-                { label: "Show complexity score (developer mode)", val: showComplexity, setter: setShowComplexity },
+                {
+                  label: "Show routing tier badge (local / cloud / specialist)",
+                  val: showRoutingBadge,
+                  setter: setShowRoutingBadge,
+                },
+                {
+                  label: "Show complexity score (developer mode)",
+                  val: showComplexity,
+                  setter: setShowComplexity,
+                },
               ].map(({ label, val, setter }) => (
                 <div key={label} className="notif-row">
                   <input type="checkbox" checked={val} onChange={(e) => setter(e.target.checked)} />
-                  <div className="notif-text"><span className="notif-label">{label}</span></div>
+                  <div className="notif-text">
+                    <span className="notif-label">{label}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -685,13 +968,34 @@ export function Settings({ initialTab, onTabChange }: SettingsProps = {}) {
 
       {/* About — always at bottom */}
       <section className="settings-section settings-about">
-        <h2 className="settings-section-title"><Info size={15} /> About LokaFlow™</h2>
+        <h2 className="settings-section-title">
+          <Info size={15} /> About LokaFlow™
+        </h2>
         <div className="about-grid">
-          <div className="about-row"><span>Product</span><span>LokaFlow™</span></div>
-          <div className="about-row"><span>Owner</span><span>LearnHubPlay BV</span></div>
-          <div className="about-row"><span>License</span><span>BUSL 1.1 — free for personal use</span></div>
-          <div className="about-row"><span>Website</span><a href="https://lokaflow.com" target="_blank" rel="noreferrer">lokaflow.com</a></div>
-          <div className="about-row"><span>Sponsors</span><a href="https://github.com/sponsors/lokaflow" target="_blank" rel="noreferrer">github.com/sponsors/lokaflow</a></div>
+          <div className="about-row">
+            <span>Product</span>
+            <span>LokaFlow™</span>
+          </div>
+          <div className="about-row">
+            <span>Owner</span>
+            <span>LearnHubPlay BV</span>
+          </div>
+          <div className="about-row">
+            <span>License</span>
+            <span>BUSL 1.1 — free for personal use</span>
+          </div>
+          <div className="about-row">
+            <span>Website</span>
+            <a href="https://lokaflow.com" target="_blank" rel="noreferrer">
+              lokaflow.com
+            </a>
+          </div>
+          <div className="about-row">
+            <span>Sponsors</span>
+            <a href="https://github.com/sponsors/lokaflow" target="_blank" rel="noreferrer">
+              github.com/sponsors/lokaflow
+            </a>
+          </div>
         </div>
       </section>
     </div>

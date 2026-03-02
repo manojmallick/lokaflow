@@ -14,7 +14,7 @@ const execAsync = promisify(exec);
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface WindowsBatteryStatus {
-  level: number;          // 0–100
+  level: number; // 0–100
   isCharging: boolean;
   isPresent: boolean;
   estimatedMinutes?: number;
@@ -33,9 +33,15 @@ export interface WindowsPowerScheme {
  * Send a Wake-on-LAN magic packet on Windows using native socket.
  * Falls back to `netsh` / ncat if raw socket fails.
  */
-export async function windowsWakeOnLan(mac: string, broadcastIp = "255.255.255.255"): Promise<void> {
+export async function windowsWakeOnLan(
+  mac: string,
+  broadcastIp = "255.255.255.255",
+): Promise<void> {
   // Build magic packet (6x FF + 16x MAC)
-  const macBytes = mac.replace(/[:-]/g, "").match(/.{2}/g)!.map((h) => parseInt(h, 16));
+  const macBytes = mac
+    .replace(/[:-]/g, "")
+    .match(/.{2}/g)!
+    .map((h) => parseInt(h, 16));
   if (macBytes.length !== 6) throw new Error(`Invalid MAC address: ${mac}`);
 
   const packet = Buffer.alloc(102);

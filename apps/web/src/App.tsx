@@ -23,17 +23,55 @@ import { BatchScheduler } from "./components/BatchScheduler";
 import { Playground } from "./components/Playground";
 import { LogViewer } from "./components/LogViewer";
 
-type View = "dashboard" | "chat" | "mesh" | "settings" | "prompts" | "audit" | "playground" | "history" | "batch" | "logs";
-type SettingsTab = "connection" | "routing" | "keys" | "budget" | "privacy" | "notifications" | "appearance";
+type View =
+  | "dashboard"
+  | "chat"
+  | "mesh"
+  | "settings"
+  | "prompts"
+  | "audit"
+  | "playground"
+  | "history"
+  | "batch"
+  | "logs";
+type SettingsTab =
+  | "connection"
+  | "routing"
+  | "keys"
+  | "budget"
+  | "privacy"
+  | "notifications"
+  | "appearance";
 
-const VALID_VIEWS: View[] = ["dashboard", "chat", "mesh", "settings", "prompts", "audit", "playground", "history", "batch", "logs"];
-const VALID_SETTINGS_TABS: SettingsTab[] = ["connection", "routing", "keys", "budget", "privacy", "notifications", "appearance"];
+const VALID_VIEWS: View[] = [
+  "dashboard",
+  "chat",
+  "mesh",
+  "settings",
+  "prompts",
+  "audit",
+  "playground",
+  "history",
+  "batch",
+  "logs",
+];
+const VALID_SETTINGS_TABS: SettingsTab[] = [
+  "connection",
+  "routing",
+  "keys",
+  "budget",
+  "privacy",
+  "notifications",
+  "appearance",
+];
 
 function parseHash(): { view: View; settingsTab?: SettingsTab } {
   const raw = window.location.hash.slice(1); // e.g. "settings/routing"
   const [viewPart, subPart] = raw.split("/");
   const view: View = VALID_VIEWS.includes(viewPart as View) ? (viewPart as View) : "dashboard";
-  const settingsTab = VALID_SETTINGS_TABS.includes(subPart as SettingsTab) ? (subPart as SettingsTab) : undefined;
+  const settingsTab = VALID_SETTINGS_TABS.includes(subPart as SettingsTab)
+    ? (subPart as SettingsTab)
+    : undefined;
   return { view, settingsTab };
 }
 
@@ -68,7 +106,9 @@ function NavLink({
 
 function App(): JSX.Element {
   const [view, setView] = useState<View>(getViewFromHash);
-  const [settingsTab, setSettingsTab] = useState<SettingsTab | undefined>(() => parseHash().settingsTab);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | undefined>(
+    () => parseHash().settingsTab,
+  );
 
   useEffect(() => {
     const handler = () => {
@@ -135,13 +175,34 @@ function App(): JSX.Element {
           <Chat />
         </div>
         {view === "dashboard" && <Dashboard onNavigate={(v) => navigate(v as View)} />}
-        {view === "mesh" && <div className="content-padded"><MeshCluster /></div>}
-        {view === "settings" && <SettingsView initialTab={settingsTab} onTabChange={(t) => navigate("settings", t as SettingsTab)} />}
+        {view === "mesh" && (
+          <div className="content-padded">
+            <MeshCluster />
+          </div>
+        )}
+        {view === "settings" && (
+          <SettingsView
+            initialTab={settingsTab}
+            onTabChange={(t) => navigate("settings", t as SettingsTab)}
+          />
+        )}
         {view === "prompts" && <PromptLibrary />}
         {view === "audit" && <LokaAudit />}
-        {view === "history" && <div className="content-padded"><History /></div>}
-        {view === "batch" && <div className="content-padded"><BatchScheduler /></div>}
-        {view === "playground" && <div className="content-padded"><Playground /></div>}
+        {view === "history" && (
+          <div className="content-padded">
+            <History />
+          </div>
+        )}
+        {view === "batch" && (
+          <div className="content-padded">
+            <BatchScheduler />
+          </div>
+        )}
+        {view === "playground" && (
+          <div className="content-padded">
+            <Playground />
+          </div>
+        )}
         {view === "logs" && <LogViewer />}
       </main>
     </div>
@@ -149,4 +210,3 @@ function App(): JSX.Element {
 }
 
 export default App;
-

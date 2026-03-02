@@ -14,7 +14,7 @@ import { join } from "path";
 import { calculateSavingsAnalysis, SUBSCRIPTION_PLANS } from "./subscription-model.js";
 
 export interface DailyTotal {
-  date: string;           // YYYY-MM-DD
+  date: string; // YYYY-MM-DD
   queries: number;
   localQueries: number;
   cloudQueries: number;
@@ -62,7 +62,7 @@ export class SavingsReport {
 
   monthlyReport(year?: number, month?: number): ReportData {
     const now = new Date();
-    const y = year  ?? now.getFullYear();
+    const y = year ?? now.getFullYear();
     const m = month ?? now.getMonth() + 1;
     const label = `${y}-${String(m).padStart(2, "0")}`;
     return this.buildReportForMonth(label);
@@ -100,30 +100,30 @@ export class SavingsReport {
   // ── Private helpers ───────────────────────────────────────────────────────
 
   private buildReport(period: string, days: number): ReportData {
-    const daily   = this.queryDailyTotals(days);
-    const tiers   = this.queryTierBreakdown(days);
+    const daily = this.queryDailyTotals(days);
+    const tiers = this.queryTierBreakdown(days);
     const summary = this.queryRangeSummary(days);
 
     return {
       period,
-      dailyTotals:    daily,
-      tierBreakdown:  tiers,
-      totalQueries:   summary.totalQueries,
-      localQueries:   summary.localQueries,
-      cloudQueries:   summary.cloudQueries,
-      totalSavedUsd:  summary.totalSavedUsd,
-      actualCostUsd:  summary.actualCostUsd,
+      dailyTotals: daily,
+      tierBreakdown: tiers,
+      totalQueries: summary.totalQueries,
+      localQueries: summary.localQueries,
+      cloudQueries: summary.cloudQueries,
+      totalSavedUsd: summary.totalSavedUsd,
+      actualCostUsd: summary.actualCostUsd,
     };
   }
 
   private buildReportForMonth(yearMonth: string): ReportData {
-    const daily  = this.queryDailyTotalsForMonth(yearMonth);
-    const tiers  = this.queryTierBreakdownForMonth(yearMonth);
+    const daily = this.queryDailyTotalsForMonth(yearMonth);
+    const tiers = this.queryTierBreakdownForMonth(yearMonth);
     const summary = this.queryMonthSummary(yearMonth);
 
     return {
-      period:        yearMonth,
-      dailyTotals:   daily,
+      period: yearMonth,
+      dailyTotals: daily,
       tierBreakdown: tiers,
       ...summary,
     };
@@ -143,7 +143,7 @@ export class SavingsReport {
       GROUP BY DATE(timestamp)
       ORDER BY date ASC
     `);
-    return (stmt.all(`-${days} days`) as DailyTotal[]);
+    return stmt.all(`-${days} days`) as DailyTotal[];
   }
 
   private queryDailyTotalsForMonth(yearMonth: string): DailyTotal[] {
@@ -160,11 +160,15 @@ export class SavingsReport {
       GROUP BY DATE(timestamp)
       ORDER BY date ASC
     `);
-    return (stmt.all(yearMonth) as DailyTotal[]);
+    return stmt.all(yearMonth) as DailyTotal[];
   }
 
   private queryTierBreakdown(days: number): TierBreakdown[] {
-    const total = (this.db.prepare(`SELECT COUNT(*) as n FROM routing_log WHERE timestamp >= datetime('now', ?)`).get(`-${days} days`) as any).n as number;
+    const total = (
+      this.db
+        .prepare(`SELECT COUNT(*) as n FROM routing_log WHERE timestamp >= datetime('now', ?)`)
+        .get(`-${days} days`) as any
+    ).n as number;
     const stmt = this.db.prepare(`
       SELECT
         tier,
@@ -176,21 +180,33 @@ export class SavingsReport {
       GROUP BY tier
       ORDER BY count DESC
     `);
-    const rows = stmt.all(`-${days} days`) as Array<{ tier: string; count: number; avgScore: number; avgLatencyMs: number }>;
-    return rows.map(r => ({
+    const rows = stmt.all(`-${days} days`) as Array<{
+      tier: string;
+      count: number;
+      avgScore: number;
+      avgLatencyMs: number;
+    }>;
+    return rows.map((r) => ({
       ...r,
       percent: total > 0 ? (r.count / total) * 100 : 0,
     }));
   }
 
   private queryTierBreakdownForMonth(yearMonth: string): TierBreakdown[] {
-    const total = (this.db.prepare(`SELECT COUNT(*) as n FROM routing_log WHERE strftime('%Y-%m', timestamp) = ?`).get(yearMonth) as any).n as number;
+    const total = (
+      this.db
+        .prepare(`SELECT COUNT(*) as n FROM routing_log WHERE strftime('%Y-%m', timestamp) = ?`)
+        .get(yearMonth) as any
+    ).n as number;
     const stmt = this.db.prepare(`
       SELECT tier, COUNT(*) as count, AVG(classifier_score) as avgScore, AVG(latency_ms) as avgLatencyMs
       FROM routing_log WHERE strftime('%Y-%m', timestamp) = ?
       GROUP BY tier ORDER BY count DESC
     `);
-    return (stmt.all(yearMonth) as any[]).map(r => ({ ...r, percent: total > 0 ? (r.count / total) * 100 : 0 }));
+    return (stmt.all(yearMonth) as any[]).map((r) => ({
+      ...r,
+      percent: total > 0 ? (r.count / total) * 100 : 0,
+    }));
   }
 
   private queryRangeSummary(days: number) {
@@ -203,7 +219,13 @@ export class SavingsReport {
         COALESCE(SUM(actual_cost_usd), 0) as actualCostUsd
       FROM routing_log WHERE timestamp >= datetime('now', ?)
     `);
-    return stmt.get(`-${days} days`) as { totalQueries: number; localQueries: number; cloudQueries: number; totalSavedUsd: number; actualCostUsd: number };
+    return stmt.get(`-${days} days`) as {
+      totalQueries: number;
+      localQueries: number;
+      cloudQueries: number;
+      totalSavedUsd: number;
+      actualCostUsd: number;
+    };
   }
 
   private queryMonthSummary(yearMonth: string) {
@@ -215,7 +237,13 @@ export class SavingsReport {
         COALESCE(SUM(actual_cost_usd), 0) as actualCostUsd
       FROM routing_log WHERE strftime('%Y-%m', timestamp) = ?
     `);
-    return stmt.get(yearMonth) as { totalQueries: number; localQueries: number; cloudQueries: number; totalSavedUsd: number; actualCostUsd: number };
+    return stmt.get(yearMonth) as {
+      totalQueries: number;
+      localQueries: number;
+      cloudQueries: number;
+      totalSavedUsd: number;
+      actualCostUsd: number;
+    };
   }
 
   private printReport(data: ReportData, subscriptionKey: string, label: string): void {
@@ -231,21 +259,31 @@ export class SavingsReport {
     console.log(chalk.dim("─".repeat(58)));
 
     console.log(`  ${chalk.bold("Total queries")}:  ${data.totalQueries}`);
-    console.log(`  ${chalk.green("Local")} queries:  ${data.localQueries} (${((data.localQueries / Math.max(data.totalQueries, 1)) * 100).toFixed(1)}%)`);
+    console.log(
+      `  ${chalk.green("Local")} queries:  ${data.localQueries} (${((data.localQueries / Math.max(data.totalQueries, 1)) * 100).toFixed(1)}%)`,
+    );
     console.log(`  ${chalk.yellow("Cloud")} queries:  ${data.cloudQueries}`);
     console.log(`  Actual spend:   ${chalk.yellow("$" + data.actualCostUsd.toFixed(4))}`);
-    console.log(`  ${plan ? plan.label + " sub cost" : "Subscription"}:  $${plan?.monthlyUsd.toFixed(2) ?? "—"}`);
-    console.log(`  ${chalk.green("Net saved")}:      ${chalk.bold.green("$" + analysis.netSavedUsd.toFixed(2))}`);
+    console.log(
+      `  ${plan ? plan.label + " sub cost" : "Subscription"}:  $${plan?.monthlyUsd.toFixed(2) ?? "—"}`,
+    );
+    console.log(
+      `  ${chalk.green("Net saved")}:      ${chalk.bold.green("$" + analysis.netSavedUsd.toFixed(2))}`,
+    );
 
     console.log(chalk.dim("\n  Tier Distribution:"));
     for (const t of data.tierBreakdown) {
       const bar = "█".repeat(Math.round(t.percent / 5));
       const tierColor = t.tier.startsWith("local") ? chalk.green : chalk.yellow;
-      console.log(`    ${tierColor(t.tier.padEnd(18))} ${bar.padEnd(20)} ${t.percent.toFixed(1)}%  (avg ${t.avgLatencyMs.toFixed(0)}ms)`);
+      console.log(
+        `    ${tierColor(t.tier.padEnd(18))} ${bar.padEnd(20)} ${t.percent.toFixed(1)}%  (avg ${t.avgLatencyMs.toFixed(0)}ms)`,
+      );
     }
 
     console.log(chalk.dim("\n  Recommendation:"));
-    console.log(`    ${analysis.keepSubscription ? chalk.yellow("⚠") : chalk.green("✓")}  ${analysis.recommendation}`);
+    console.log(
+      `    ${analysis.keepSubscription ? chalk.yellow("⚠") : chalk.green("✓")}  ${analysis.recommendation}`,
+    );
     console.log();
   }
 }

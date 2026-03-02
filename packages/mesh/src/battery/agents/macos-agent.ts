@@ -9,7 +9,11 @@ import { BatteryAgent, BatteryState, calculateStressScore } from "./base.js";
 const exec = promisify(execCb);
 
 /** Parse a single value from `pmset -g batt` output */
-function parsePmset(output: string): { isCharging: boolean; isPluggedIn: boolean; percent: number } {
+function parsePmset(output: string): {
+  isCharging: boolean;
+  isPluggedIn: boolean;
+  percent: number;
+} {
   const percentMatch = output.match(/(\d+)%/);
   const percent = percentMatch ? parseInt(percentMatch[1]!, 10) : 50;
   const isCharging = /AC Power/.test(output) && /charging/.test(output);
@@ -65,11 +69,13 @@ export class MacOSBatteryAgent implements BatteryAgent {
   constructor(nodeId: string) {
     this.nodeId = nodeId;
     // Lazy check — don't block construction
-    exec("which battery").then(() => {
-      this.supportsChargeControl = true;
-    }).catch(() => {
-      this.supportsChargeControl = false;
-    });
+    exec("which battery")
+      .then(() => {
+        this.supportsChargeControl = true;
+      })
+      .catch(() => {
+        this.supportsChargeControl = false;
+      });
   }
 
   async readState(): Promise<BatteryState> {
@@ -86,21 +92,23 @@ export class MacOSBatteryAgent implements BatteryAgent {
 
     const currentCapacityMah = io.maxCapacity > 0 ? io.maxCapacity : 4000;
     const designCapacityMah = io.designCapacity > 0 ? io.designCapacity : 4500;
-    const healthPct = designCapacityMah > 0
-      ? Math.min(100, (currentCapacityMah / designCapacityMah) * 100)
-      : 95;
+    const healthPct =
+      designCapacityMah > 0 ? Math.min(100, (currentCapacityMah / designCapacityMah) * 100) : 95;
 
-    const temperatureCelsius = io.temperature > 100
-      ? io.temperature / 100  // IOKit units (0.01°C)
-      : io.temperature;       // Already in °C
+    const temperatureCelsius =
+      io.temperature > 100
+        ? io.temperature / 100 // IOKit units (0.01°C)
+        : io.temperature; // Already in °C
 
-    const powerDrawWatts = io.voltage > 0 && io.amperage !== 0
-      ? Math.abs((io.voltage * io.amperage) / 1_000_000)
-      : undefined;
+    const powerDrawWatts =
+      io.voltage > 0 && io.amperage !== 0
+        ? Math.abs((io.voltage * io.amperage) / 1_000_000)
+        : undefined;
     const partial = {
-      percentCharge: io.currentCapacity > 0 && io.maxCapacity > 0
-        ? Math.round((io.currentCapacity / io.maxCapacity) * 100)
-        : pmset.percent,
+      percentCharge:
+        io.currentCapacity > 0 && io.maxCapacity > 0
+          ? Math.round((io.currentCapacity / io.maxCapacity) * 100)
+          : pmset.percent,
       isCharging: io.isCharging || pmset.isCharging,
       isPluggedIn: io.externalConnected || pmset.isPluggedIn,
       temperatureCelsius: temperatureCelsius || 28,

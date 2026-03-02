@@ -68,7 +68,9 @@ function LatencyBar({ ms, tier, status }: { ms: number; tier: string; status: st
       <div className="latency-bar-bg">
         <div className="latency-bar-fill" style={{ width: `${pct}%`, background: color }} />
       </div>
-      <span className="latency-value" style={{ color }}>{ms}ms</span>
+      <span className="latency-value" style={{ color }}>
+        {ms}ms
+      </span>
     </div>
   );
 }
@@ -76,7 +78,14 @@ function LatencyBar({ ms, tier, status }: { ms: number; tier: string; status: st
 function MiniBar({ pct, color = "var(--accent)" }: { pct: number; color?: string }) {
   return (
     <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,.08)", borderRadius: 99 }}>
-      <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: color, borderRadius: 99 }} />
+      <div
+        style={{
+          width: `${Math.min(100, pct)}%`,
+          height: "100%",
+          background: color,
+          borderRadius: 99,
+        }}
+      />
     </div>
   );
 }
@@ -119,8 +128,13 @@ export function MeshCluster() {
   const avgLatency =
     health && health.providers.length > 0
       ? Math.round(
-          health.providers.filter((p) => p.status === "ok" && p.latencyMs > 0).reduce((a, p) => a + p.latencyMs, 0) /
-            Math.max(1, health.providers.filter((p) => p.status === "ok" && p.latencyMs > 0).length),
+          health.providers
+            .filter((p) => p.status === "ok" && p.latencyMs > 0)
+            .reduce((a, p) => a + p.latencyMs, 0) /
+            Math.max(
+              1,
+              health.providers.filter((p) => p.status === "ok" && p.latencyMs > 0).length,
+            ),
         )
       : null;
 
@@ -145,7 +159,11 @@ export function MeshCluster() {
           >
             {modelState}
           </span>
-          {isExpanded ? <ChevronDown size={13} style={{ color: "var(--text-muted)" }} /> : <ChevronRight size={13} style={{ color: "var(--text-muted)" }} />}
+          {isExpanded ? (
+            <ChevronDown size={13} style={{ color: "var(--text-muted)" }} />
+          ) : (
+            <ChevronRight size={13} style={{ color: "var(--text-muted)" }} />
+          )}
         </div>
 
         <div className="provider-card-bottom">
@@ -158,7 +176,9 @@ export function MeshCluster() {
         {p.models && p.models.length > 0 && (
           <div className="provider-models">
             {p.models.map((m) => (
-              <span key={m} className="model-chip" title={m}>{m}</span>
+              <span key={m} className="model-chip" title={m}>
+                {m}
+              </span>
             ))}
           </div>
         )}
@@ -189,13 +209,17 @@ export function MeshCluster() {
             </div>
             <div className="node-card-expanded-row">
               <span className="nce-lbl">Model state</span>
-              <span className={`model-state-badge ${modelState === "warm" ? "model-warm" : "model-cold"}`}>
+              <span
+                className={`model-state-badge ${modelState === "warm" ? "model-warm" : "model-cold"}`}
+              >
                 {modelState === "warm" ? "🟢 Warm" : "🔵 Cold"}
               </span>
             </div>
             <div className="node-card-expanded-row">
               <span className="nce-lbl">Tier</span>
-              <span className="nce-val" style={{ textTransform: "capitalize" }}>{p.tier}</span>
+              <span className="nce-val" style={{ textTransform: "capitalize" }}>
+                {p.tier}
+              </span>
             </div>
           </div>
         )}
@@ -236,7 +260,10 @@ export function MeshCluster() {
           {/* Cluster overview */}
           <div className="mesh-cluster-summary">
             <div className="mesh-summary-item">
-              <div className="mesh-summary-val" style={{ color: onlineCount > 0 ? "#4ade80" : "#f87171" }}>
+              <div
+                className="mesh-summary-val"
+                style={{ color: onlineCount > 0 ? "#4ade80" : "#f87171" }}
+              >
                 {onlineCount} / {health.providers.length}
               </div>
               <div className="mesh-summary-lbl">Online</div>
@@ -247,18 +274,27 @@ export function MeshCluster() {
             </div>
             {avgLatency != null && (
               <div className="mesh-summary-item">
-                <div className="mesh-summary-val" style={{ color: avgLatency < 100 ? "#4ade80" : avgLatency < 300 ? "#fbbf24" : "#f87171" }}>
+                <div
+                  className="mesh-summary-val"
+                  style={{
+                    color: avgLatency < 100 ? "#4ade80" : avgLatency < 300 ? "#fbbf24" : "#f87171",
+                  }}
+                >
                   {avgLatency}ms
                 </div>
                 <div className="mesh-summary-lbl">Avg Latency</div>
               </div>
             )}
             <div className="mesh-summary-item">
-              <div className="mesh-summary-val">{localProviders.filter((p) => p.status === "ok").length}</div>
+              <div className="mesh-summary-val">
+                {localProviders.filter((p) => p.status === "ok").length}
+              </div>
               <div className="mesh-summary-lbl">Local Nodes</div>
             </div>
             <div className="mesh-summary-item">
-              <div className="mesh-summary-val">{cloudProviders.filter((p) => p.status === "ok").length}</div>
+              <div className="mesh-summary-val">
+                {cloudProviders.filter((p) => p.status === "ok").length}
+              </div>
               <div className="mesh-summary-lbl">Cloud Nodes</div>
             </div>
             <div className="mesh-summary-item">
@@ -269,9 +305,24 @@ export function MeshCluster() {
 
           {/* Provider tiers */}
           {[
-            { label: "Local Models", icon: <Cpu size={15} />, providers: localProviders, color: "#4ade80" },
-            { label: "Specialist Models", icon: <Zap size={15} />, providers: specialistProviders, color: "#a78bfa" },
-            { label: "Cloud Models", icon: <Cloud size={15} />, providers: cloudProviders, color: "#fbbf24" },
+            {
+              label: "Local Models",
+              icon: <Cpu size={15} />,
+              providers: localProviders,
+              color: "#4ade80",
+            },
+            {
+              label: "Specialist Models",
+              icon: <Zap size={15} />,
+              providers: specialistProviders,
+              color: "#a78bfa",
+            },
+            {
+              label: "Cloud Models",
+              icon: <Cloud size={15} />,
+              providers: cloudProviders,
+              color: "#fbbf24",
+            },
           ].map(
             (group) =>
               group.providers.length > 0 && (

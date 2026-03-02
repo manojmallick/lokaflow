@@ -1,15 +1,21 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# ── Pre-push: heavy checks (build → typecheck → test) ────────────────────────
-# Runs before every `git push`. Catches type errors and test failures that are
-# too expensive to run on every commit but must pass before reaching remote.
+# ── Pre-push: lint → format → typecheck → test ───────────────────────────────
+# Runs before every `git push`. Enforces code quality gates so only
+# clean, well-formatted, type-safe, passing code reaches the remote.
 
-echo "⏳  pre-push: build → typecheck → test…"
+echo "⏳  pre-push: lint → format → typecheck → test…"
 
-echo "  → Building workspace packages…"
-pnpm run build || {
-  echo "  ❌  Build failed — push aborted."
+echo "  → Checking ESLint…"
+pnpm run lint || {
+  echo "  ❌  Lint failed — fix errors above, then push again."
+  exit 1
+}
+
+echo "  → Checking Prettier formatting…"
+pnpm run format:check || {
+  echo "  ❌  Formatting issues found. Run 'pnpm format' to auto-fix, then commit and push again."
   exit 1
 }
 

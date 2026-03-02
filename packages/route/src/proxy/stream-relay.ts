@@ -45,9 +45,9 @@ export class StreamRelay {
 
     // Send SSE headers immediately to minimise time-to-first-byte
     reply.raw.writeHead(200, {
-      "Content-Type":  "text/event-stream",
+      "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
-      "Connection":    "keep-alive",
+      Connection: "keep-alive",
       "X-Accel-Buffering": "no",
       ...headers,
     });
@@ -88,7 +88,9 @@ export class StreamRelay {
               const json = JSON.parse(line.slice(5).trim());
               const delta = json?.choices?.[0]?.delta?.content ?? "";
               tokenCount += Math.ceil(delta.split(/\s+/).length * 1.3);
-            } catch { /* non-JSON chunk, skip */ }
+            } catch {
+              /* non-JSON chunk, skip */
+            }
           }
         }
       }
@@ -107,18 +109,18 @@ export class StreamRelay {
       const actualCostUsd = isCloud ? alternativeCostUsd * 0.25 : 0; // cloud-mid ≈ 25% of frontier
 
       const record: RouteRecord = {
-        id:                   randomUUID(),
-        timestamp:            new Date().toISOString(),
-        queryTokensEstimate:  queryTokens,
-        tier:                 decision.tier,
-        modelUsed:            decision.model,
+        id: randomUUID(),
+        timestamp: new Date().toISOString(),
+        queryTokensEstimate: queryTokens,
+        tier: decision.tier,
+        modelUsed: decision.model,
         actualCostUsd,
         alternativeCostUsd,
-        savedUsd:             alternativeCostUsd - actualCostUsd,
+        savedUsd: alternativeCostUsd - actualCostUsd,
         latencyMs,
-        classifierScore:      decision.classification.score,
-        localAvailable:       true,
-        reason:               decision.classification.reason,
+        classifierScore: decision.classification.score,
+        localAvailable: true,
+        reason: decision.classification.reason,
       };
       this.opts.tracker.record(record);
     }

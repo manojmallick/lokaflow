@@ -6,7 +6,11 @@ export { CooperativeRouter, NoAvailableNodesError } from "./routing/cooperative-
 export { CommonsRegistry, NodeSelector } from "./registry/registry.js";
 export { CreditLedger, InsufficientCreditsError } from "./credits/ledger.js";
 export type { CreditTransaction, LedgerAuditResult } from "./types/credits.js";
-export type { CooperativeInferenceRequest, NodeCapacityReport, ThermalZone } from "./types/routing.js";
+export type {
+  CooperativeInferenceRequest,
+  NodeCapacityReport,
+  ThermalZone,
+} from "./types/routing.js";
 
 // ── Governance ─────────────────────────────────────────────────────────────
 export { ProposalStore } from "./governance/proposals.js";

@@ -21,9 +21,9 @@ export interface ClassifierOptions {
 }
 
 const SENSITIVITY_DELTA: Record<NonNullable<ClassifierOptions["sensitivity"]>, number> = {
-  conservative:  0.05,  // nudge scores up → more cloud routing
-  balanced:      0.00,
-  aggressive:   -0.05,  // nudge scores down → more local routing
+  conservative: 0.05, // nudge scores up → more cloud routing
+  balanced: 0.0,
+  aggressive: -0.05, // nudge scores down → more local routing
 };
 
 export class QueryClassifier {
@@ -73,9 +73,10 @@ export class QueryClassifier {
     // ── 2. Rule engine (regex pre-filter) ────────────────────────────────────
     const ruleResult = this.rules.match(query);
     if (ruleResult) {
-      const adjScore = Math.max(0, Math.min(
-        ruleResult.score + SENSITIVITY_DELTA[this.sensitivity], 1,
-      ));
+      const adjScore = Math.max(
+        0,
+        Math.min(ruleResult.score + SENSITIVITY_DELTA[this.sensitivity], 1),
+      );
       return { ...ruleResult, score: adjScore, tier: scoreToTier(adjScore), piiDetected };
     }
 
@@ -108,14 +109,14 @@ function buildReason(
   f: ReturnType<FeatureExtractor["extract"]>,
 ): string {
   const drivers: string[] = [];
-  if (f.regulatoryKeywords)   drivers.push("regulatory domain");
+  if (f.regulatoryKeywords) drivers.push("regulatory domain");
   if (f.imperativeComplexity >= 0.65) drivers.push("complex task verb");
   if (f.questionDepth >= 0.7) drivers.push("deep analytical question");
-  if (f.multiPartDetected)    drivers.push("multi-part request");
+  if (f.multiPartDetected) drivers.push("multi-part request");
   if (f.technicalTermDensity >= 0.5) drivers.push("high technical density");
   if (f.outputFormatRequested) drivers.push("structured output required");
-  if (f.lengthRequested)      drivers.push("long/detailed output requested");
-  if (f.codeDetected)         drivers.push("code present");
+  if (f.lengthRequested) drivers.push("long/detailed output requested");
+  if (f.codeDetected) drivers.push("code present");
   const driverStr = drivers.length ? drivers.join(", ") : "baseline heuristics";
   return `score ${score.toFixed(2)} → ${tier} (${driverStr})`;
 }

@@ -37,9 +37,9 @@ export function buildPolicy(raw: Record<string, unknown> = {}): RoutingPolicy {
   }
 
   return {
-    forceLocal:             Boolean(raw["forceLocal"] ?? false),
-    monthlyCloudBudgetEur:  Number(raw["monthlyCloudBudgetEur"] ?? 10.0),
-    optimiseFor:            ((raw["optimiseFor"] as string) ?? "balanced") as RoutingPolicy["optimiseFor"],
+    forceLocal: Boolean(raw["forceLocal"] ?? false),
+    monthlyCloudBudgetEur: Number(raw["monthlyCloudBudgetEur"] ?? 10.0),
+    optimiseFor: ((raw["optimiseFor"] as string) ?? "balanced") as RoutingPolicy["optimiseFor"],
     overrides,
   };
 }
@@ -55,9 +55,8 @@ export function matchPolicyOverride(
   if (policy.forceLocal) return { tier: "local-capable", reason: "forceLocal: true" };
 
   for (const override of policy.overrides) {
-    const pattern = typeof override.pattern === "string"
-      ? new RegExp(override.pattern, "i")
-      : override.pattern;
+    const pattern =
+      typeof override.pattern === "string" ? new RegExp(override.pattern, "i") : override.pattern;
     if (pattern.test(query)) {
       return { tier: override.forceTier, reason: override.reason };
     }

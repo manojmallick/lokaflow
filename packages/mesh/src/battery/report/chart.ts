@@ -80,10 +80,7 @@ export function renderSparkline(
  *     Jan  Feb  Mar  Apr  May  Jun  Jul  Aug  Sep  Oct  Nov
  * ```
  */
-export function renderBarChart(
-  points: ChartDataPoint[],
-  opts: ChartOptions = {},
-): string {
+export function renderBarChart(points: ChartDataPoint[], opts: ChartOptions = {}): string {
   if (points.length === 0) return chalk.dim("  (no data)\n");
 
   const width = opts.width ?? 60;
@@ -137,9 +134,7 @@ export function renderBarChart(
   // X-axis labels — sample evenly
   const labelCount = Math.min(points.length, Math.floor(width / 5));
   const step = Math.max(1, Math.floor(points.length / labelCount));
-  const xLabels = points
-    .filter((_, i) => i % step === 0)
-    .map((p) => p.label.slice(0, 5).padEnd(6));
+  const xLabels = points.filter((_, i) => i % step === 0).map((p) => p.label.slice(0, 5).padEnd(6));
 
   lines.push("     " + chalk.dim(xLabels.join("")));
 
@@ -159,11 +154,22 @@ export function renderStressGauge(stressScore: number, barWidth = 20): string {
 
   let colour: ChalkInstance;
   let label: string;
-  if (stressScore <= 20) { colour = chalk.green;   label = "🟢 Optimal"; }
-  else if (stressScore <= 40) { colour = chalk.yellow;  label = "🟡 Normal"; }
-  else if (stressScore <= 60) { colour = chalk.hex("#FFA500"); label = "🟠 Elevated"; }
-  else if (stressScore <= 80) { colour = chalk.red;     label = "🔴 High"; }
-  else                        { colour = chalk.bgRed.white; label = "🚨 Critical"; }
+  if (stressScore <= 20) {
+    colour = chalk.green;
+    label = "🟢 Optimal";
+  } else if (stressScore <= 40) {
+    colour = chalk.yellow;
+    label = "🟡 Normal";
+  } else if (stressScore <= 60) {
+    colour = chalk.hex("#FFA500");
+    label = "🟠 Elevated";
+  } else if (stressScore <= 80) {
+    colour = chalk.red;
+    label = "🔴 High";
+  } else {
+    colour = chalk.bgRed.white;
+    label = "🚨 Critical";
+  }
 
   const bar = colour("█".repeat(filled)) + chalk.dim("░".repeat(empty));
   return `Stress [${bar}] ${chalk.bold(String(stressScore))}  ${label}`;

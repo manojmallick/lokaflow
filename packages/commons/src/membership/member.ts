@@ -26,17 +26,17 @@ export interface MemberProfile {
   joinedAt: string;
   lastSeenAt: string;
   computeOffered: boolean; // Whether this member shares compute
-  creditsBalance: number;  // Snapshot — authoritative value is in CreditLedger
+  creditsBalance: number; // Snapshot — authoritative value is in CreditLedger
   reputationScore: number; // 0–1000
 }
 
 export interface ReputationScore {
   memberId: string;
   score: number; // 0–1000 (higher is more trustworthy)
-  uptimeContribution: number;   // 0–100
-  qualityContribution: number;  // 0–100: positive feedback rate
-  cooperationIndex: number;     // 0–100: ratio of requests served vs refused
-  disputeRatio: number;         // 0–1: (disputes raised) / (total interactions)
+  uptimeContribution: number; // 0–100
+  qualityContribution: number; // 0–100: positive feedback rate
+  cooperationIndex: number; // 0–100: ratio of requests served vs refused
+  disputeRatio: number; // 0–1: (disputes raised) / (total interactions)
   updatedAt: string;
 }
 
@@ -115,7 +115,12 @@ export class MemberRegistry {
 
   // ── Write ──────────────────────────────────────────────────────────────
 
-  register(input: Omit<MemberProfile, "id" | "joinedAt" | "lastSeenAt" | "creditsBalance" | "reputationScore">): MemberProfile {
+  register(
+    input: Omit<
+      MemberProfile,
+      "id" | "joinedAt" | "lastSeenAt" | "creditsBalance" | "reputationScore"
+    >,
+  ): MemberProfile {
     const id = randomUUID();
     const now = new Date().toISOString();
     const profile: MemberProfile = {
@@ -127,34 +132,70 @@ export class MemberRegistry {
       reputationScore: 500,
     };
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO members
         (id, display_name, public_key_hash, role, status, region, joined_at, last_seen_at, compute_offered, credits_balance, reputation_score)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id, profile.displayName, profile.publicKeyHash, profile.role, profile.status,
-      profile.region, profile.joinedAt, profile.lastSeenAt,
-      profile.computeOffered ? 1 : 0, profile.creditsBalance, profile.reputationScore,
-    );
+    `,
+      )
+      .run(
+        id,
+        profile.displayName,
+        profile.publicKeyHash,
+        profile.role,
+        profile.status,
+        profile.region,
+        profile.joinedAt,
+        profile.lastSeenAt,
+        profile.computeOffered ? 1 : 0,
+        profile.creditsBalance,
+        profile.reputationScore,
+      );
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO member_reputation (member_id, score, updated_at)
       VALUES (?, 500.0, ?)
-    `).run(id, now);
+    `,
+      )
+      .run(id, now);
 
     this.recordActivity(id, "joined");
     return profile;
   }
 
-  updateProfile(id: string, updates: Partial<Pick<MemberProfile, "displayName" | "region" | "computeOffered" | "status" | "role">>): void {
+  updateProfile(
+    id: string,
+    updates: Partial<
+      Pick<MemberProfile, "displayName" | "region" | "computeOffered" | "status" | "role">
+    >,
+  ): void {
     const fields: string[] = [];
     const values: unknown[] = [];
 
-    if (updates.displayName !== undefined) { fields.push("display_name = ?"); values.push(updates.displayName); }
-    if (updates.region !== undefined) { fields.push("region = ?"); values.push(updates.region); }
-    if (updates.computeOffered !== undefined) { fields.push("compute_offered = ?"); values.push(updates.computeOffered ? 1 : 0); }
-    if (updates.status !== undefined) { fields.push("status = ?"); values.push(updates.status); }
-    if (updates.role !== undefined) { fields.push("role = ?"); values.push(updates.role); }
+    if (updates.displayName !== undefined) {
+      fields.push("display_name = ?");
+      values.push(updates.displayName);
+    }
+    if (updates.region !== undefined) {
+      fields.push("region = ?");
+      values.push(updates.region);
+    }
+    if (updates.computeOffered !== undefined) {
+      fields.push("compute_offered = ?");
+      values.push(updates.computeOffered ? 1 : 0);
+    }
+    if (updates.status !== undefined) {
+      fields.push("status = ?");
+      values.push(updates.status);
+    }
+    if (updates.role !== undefined) {
+      fields.push("role = ?");
+      values.push(updates.role);
+    }
 
     if (fields.length === 0) return;
     fields.push("last_seen_at = ?");
@@ -165,31 +206,43 @@ export class MemberRegistry {
   }
 
   touch(id: string): void {
-    this.db.prepare(`UPDATE members SET last_seen_at = ? WHERE id = ?`).run(new Date().toISOString(), id);
+    this.db
+      .prepare(`UPDATE members SET last_seen_at = ? WHERE id = ?`)
+      .run(new Date().toISOString(), id);
   }
 
   updateCreditSnapshot(id: string, balance: number): void {
     this.db.prepare(`UPDATE members SET credits_balance = ? WHERE id = ?`).run(balance, id);
   }
 
-  updateReputation(memberId: string, data: Partial<Omit<ReputationScore, "memberId" | "updatedAt">>): void {
+  updateReputation(
+    memberId: string,
+    data: Partial<Omit<ReputationScore, "memberId" | "updatedAt">>,
+  ): void {
     const existing = this.getReputation(memberId);
     if (!existing) return;
 
-    const merged: ReputationScore = { ...existing, ...data, memberId, updatedAt: new Date().toISOString() };
+    const merged: ReputationScore = {
+      ...existing,
+      ...data,
+      memberId,
+      updatedAt: new Date().toISOString(),
+    };
     // Composite score: weighted average
     merged.score = Math.min(
       1000,
       Math.max(
         0,
         merged.uptimeContribution * 3 +
-        merged.qualityContribution * 4 +
-        merged.cooperationIndex * 3 -
-        merged.disputeRatio * 200,
+          merged.qualityContribution * 4 +
+          merged.cooperationIndex * 3 -
+          merged.disputeRatio * 200,
       ),
     );
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO member_reputation
         (member_id, score, uptime_contribution, quality_contribution, cooperation_index, dispute_ratio, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -200,56 +253,107 @@ export class MemberRegistry {
         cooperation_index = excluded.cooperation_index,
         dispute_ratio = excluded.dispute_ratio,
         updated_at = excluded.updated_at
-    `).run(
-      merged.memberId, merged.score, merged.uptimeContribution,
-      merged.qualityContribution, merged.cooperationIndex, merged.disputeRatio, merged.updatedAt,
-    );
+    `,
+      )
+      .run(
+        merged.memberId,
+        merged.score,
+        merged.uptimeContribution,
+        merged.qualityContribution,
+        merged.cooperationIndex,
+        merged.disputeRatio,
+        merged.updatedAt,
+      );
 
-    this.db.prepare(`UPDATE members SET reputation_score = ? WHERE id = ?`).run(merged.score, memberId);
+    this.db
+      .prepare(`UPDATE members SET reputation_score = ? WHERE id = ?`)
+      .run(merged.score, memberId);
   }
 
-  recordActivity(memberId: string, type: MemberActivity["type"], opts?: { amount?: number; reference?: string }): void {
-    this.db.prepare(`
+  recordActivity(
+    memberId: string,
+    type: MemberActivity["type"],
+    opts?: { amount?: number; reference?: string },
+  ): void {
+    this.db
+      .prepare(
+        `
       INSERT INTO member_activity (id, member_id, type, amount, reference, recorded_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(randomUUID(), memberId, type, opts?.amount ?? null, opts?.reference ?? null, new Date().toISOString());
+    `,
+      )
+      .run(
+        randomUUID(),
+        memberId,
+        type,
+        opts?.amount ?? null,
+        opts?.reference ?? null,
+        new Date().toISOString(),
+      );
   }
 
   // ── Read ───────────────────────────────────────────────────────────────
 
   getMember(id: string): MemberProfile | undefined {
-    return this.db.prepare(`SELECT * FROM members WHERE id = ?`).get(id) as MemberProfile | undefined;
+    return this.db.prepare(`SELECT * FROM members WHERE id = ?`).get(id) as
+      | MemberProfile
+      | undefined;
   }
 
   getMemberByKey(publicKeyHash: string): MemberProfile | undefined {
-    return this.db.prepare(`SELECT * FROM members WHERE public_key_hash = ?`).get(publicKeyHash) as MemberProfile | undefined;
+    return this.db.prepare(`SELECT * FROM members WHERE public_key_hash = ?`).get(publicKeyHash) as
+      | MemberProfile
+      | undefined;
   }
 
-  listMembers(opts?: { status?: MemberStatus; role?: MemberRole; region?: string }): MemberProfile[] {
+  listMembers(opts?: {
+    status?: MemberStatus;
+    role?: MemberRole;
+    region?: string;
+  }): MemberProfile[] {
     const conditions: string[] = [];
     const values: unknown[] = [];
 
-    if (opts?.status) { conditions.push("status = ?"); values.push(opts.status); }
-    if (opts?.role) { conditions.push("role = ?"); values.push(opts.role); }
-    if (opts?.region) { conditions.push("region = ?"); values.push(opts.region); }
+    if (opts?.status) {
+      conditions.push("status = ?");
+      values.push(opts.status);
+    }
+    if (opts?.role) {
+      conditions.push("role = ?");
+      values.push(opts.role);
+    }
+    if (opts?.region) {
+      conditions.push("region = ?");
+      values.push(opts.region);
+    }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    return this.db.prepare(`SELECT * FROM members ${where} ORDER BY reputation_score DESC`).all(...values) as MemberProfile[];
+    return this.db
+      .prepare(`SELECT * FROM members ${where} ORDER BY reputation_score DESC`)
+      .all(...values) as MemberProfile[];
   }
 
   getReputation(memberId: string): ReputationScore | undefined {
-    return this.db.prepare(`SELECT * FROM member_reputation WHERE member_id = ?`).get(memberId) as ReputationScore | undefined;
+    return this.db.prepare(`SELECT * FROM member_reputation WHERE member_id = ?`).get(memberId) as
+      | ReputationScore
+      | undefined;
   }
 
   getActivityFeed(memberId: string, limit = 50): MemberActivity[] {
-    return this.db.prepare(
-      `SELECT * FROM member_activity WHERE member_id = ? ORDER BY recorded_at DESC LIMIT ?`,
-    ).all(memberId, limit) as MemberActivity[];
+    return this.db
+      .prepare(
+        `SELECT * FROM member_activity WHERE member_id = ? ORDER BY recorded_at DESC LIMIT ?`,
+      )
+      .all(memberId, limit) as MemberActivity[];
   }
 
   count(status?: MemberStatus): number {
     if (status) {
-      return (this.db.prepare(`SELECT COUNT(*) as n FROM members WHERE status = ?`).get(status) as { n: number }).n;
+      return (
+        this.db.prepare(`SELECT COUNT(*) as n FROM members WHERE status = ?`).get(status) as {
+          n: number;
+        }
+      ).n;
     }
     return (this.db.prepare(`SELECT COUNT(*) as n FROM members`).get() as { n: number }).n;
   }

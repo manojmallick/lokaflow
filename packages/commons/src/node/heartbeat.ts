@@ -21,9 +21,9 @@ export interface NodeHeartbeat {
   timestamp: string;
   /** Estimated throughput in tokens/sec for the node's primary model */
   tokensPerSecond: number;
-  cpuLoad: number;       // 0.0–1.0
+  cpuLoad: number; // 0.0–1.0
   memUsedGib: number;
-  batteryLevel: number;  // 0–100, -1 = desktop/AC
+  batteryLevel: number; // 0–100, -1 = desktop/AC
   isCharging: boolean;
   modelsAvailable: string[];
   region: string;
@@ -39,7 +39,10 @@ export interface NodePresence {
   latestBeat: NodeHeartbeat;
 }
 
-export type HeartbeatEvent = { type: "heartbeat"; beat: NodeHeartbeat } | { type: "offline"; nodeId: string } | { type: "recovered"; nodeId: string };
+export type HeartbeatEvent =
+  | { type: "heartbeat"; beat: NodeHeartbeat }
+  | { type: "offline"; nodeId: string }
+  | { type: "recovered"; nodeId: string };
 
 // ── HeartbeatStore ─────────────────────────────────────────────────────────
 
@@ -92,21 +95,36 @@ export class HeartbeatStore {
   record(beat: Omit<NodeHeartbeat, "id">): NodeHeartbeat {
     const full: NodeHeartbeat = { id: randomUUID(), ...beat };
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO node_heartbeats
         (id, node_id, member_id, timestamp, tokens_per_second, cpu_load,
          mem_used_gib, battery_level, is_charging, models_available, region, version)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      full.id, full.nodeId, full.memberId, full.timestamp,
-      full.tokensPerSecond, full.cpuLoad, full.memUsedGib, full.batteryLevel,
-      full.isCharging ? 1 : 0, JSON.stringify(full.modelsAvailable), full.region, full.version,
-    );
+    `,
+      )
+      .run(
+        full.id,
+        full.nodeId,
+        full.memberId,
+        full.timestamp,
+        full.tokensPerSecond,
+        full.cpuLoad,
+        full.memUsedGib,
+        full.batteryLevel,
+        full.isCharging ? 1 : 0,
+        JSON.stringify(full.modelsAvailable),
+        full.region,
+        full.version,
+      );
 
     // Update presence
     const existing = this.getPresence(full.nodeId);
     const wasOffline = existing?.status === "offline";
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO node_presence (node_id, member_id, last_seen, missed_beats, status, latest_beat_id)
       VALUES (?, ?, ?, 0, 'alive', ?)
       ON CONFLICT(node_id) DO UPDATE SET
@@ -114,7 +132,9 @@ export class HeartbeatStore {
         missed_beats = 0,
         status = 'alive',
         latest_beat_id = excluded.latest_beat_id
-    `).run(full.nodeId, full.memberId, full.timestamp, full.id);
+    `,
+      )
+      .run(full.nodeId, full.memberId, full.timestamp, full.id);
 
     return full;
   }
@@ -124,18 +144,34 @@ export class HeartbeatStore {
     const cutoffDegraded = new Date(Date.now() - thresholdMs).toISOString();
     const cutoffOffline = new Date(Date.now() - thresholdMs * 3).toISOString();
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE node_presence SET status = 'offline', missed_beats = missed_beats + 1
       WHERE status != 'offline' AND last_seen < ?
-    `).run(cutoffOffline);
+    `,
+      )
+      .run(cutoffOffline);
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE node_presence SET status = 'degraded', missed_beats = missed_beats + 1
       WHERE status = 'alive' AND last_seen < ? AND last_seen >= ?
-    `).run(cutoffDegraded, cutoffOffline);
+    `,
+      )
+      .run(cutoffDegraded, cutoffOffline);
 
-    const degraded = (this.db.prepare(`SELECT node_id FROM node_presence WHERE status = 'degraded'`).all() as { node_id: string }[]).map((r) => r.node_id);
-    const offline = (this.db.prepare(`SELECT node_id FROM node_presence WHERE status = 'offline'`).all() as { node_id: string }[]).map((r) => r.node_id);
+    const degraded = (
+      this.db.prepare(`SELECT node_id FROM node_presence WHERE status = 'degraded'`).all() as {
+        node_id: string;
+      }[]
+    ).map((r) => r.node_id);
+    const offline = (
+      this.db.prepare(`SELECT node_id FROM node_presence WHERE status = 'offline'`).all() as {
+        node_id: string;
+      }[]
+    ).map((r) => r.node_id);
 
     return { degraded, offline };
   }
@@ -143,20 +179,26 @@ export class HeartbeatStore {
   // ── Read ───────────────────────────────────────────────────────────────
 
   getPresence(nodeId: string): NodePresence | undefined {
-    const row = this.db.prepare(`
+    const row = this.db
+      .prepare(
+        `
       SELECT p.*, h.node_id, h.member_id, h.timestamp, h.tokens_per_second, h.cpu_load,
              h.mem_used_gib, h.battery_level, h.is_charging, h.models_available, h.region, h.version
       FROM node_presence p
       JOIN node_heartbeats h ON h.id = p.latest_beat_id
       WHERE p.node_id = ?
-    `).get(nodeId) as any;
+    `,
+      )
+      .get(nodeId) as any;
 
     if (!row) return undefined;
     return this.mapPresence(row);
   }
 
   listAlive(): NodePresence[] {
-    const rows = this.db.prepare(`
+    const rows = this.db
+      .prepare(
+        `
       SELECT p.*, h.node_id AS hb_node_id, h.member_id, h.timestamp, h.tokens_per_second,
              h.cpu_load, h.mem_used_gib, h.battery_level, h.is_charging, h.models_available,
              h.region, h.version
@@ -164,14 +206,22 @@ export class HeartbeatStore {
       JOIN node_heartbeats h ON h.id = p.latest_beat_id
       WHERE p.status != 'offline'
       ORDER BY h.tokens_per_second DESC
-    `).all() as any[];
+    `,
+      )
+      .all() as any[];
     return rows.map((r) => this.mapPresence(r));
   }
 
   historyFor(nodeId: string, limit = 100): NodeHeartbeat[] {
-    return (this.db.prepare(`
+    return (
+      this.db
+        .prepare(
+          `
       SELECT * FROM node_heartbeats WHERE node_id = ? ORDER BY timestamp DESC LIMIT ?
-    `).all(nodeId, limit) as any[]).map((r) => ({
+    `,
+        )
+        .all(nodeId, limit) as any[]
+    ).map((r) => ({
       id: r.id,
       nodeId: r.node_id,
       memberId: r.member_id,
@@ -221,7 +271,9 @@ export interface HeartbeatEmitterConfig {
   intervalMs?: number; // default 30_000
   version?: string;
   store?: HeartbeatStore;
-  collectMetrics: () => Promise<Omit<NodeHeartbeat, "id" | "nodeId" | "memberId" | "timestamp" | "version">>;
+  collectMetrics: () => Promise<
+    Omit<NodeHeartbeat, "id" | "nodeId" | "memberId" | "timestamp" | "version">
+  >;
 }
 
 export class HeartbeatEmitter extends EventEmitter {

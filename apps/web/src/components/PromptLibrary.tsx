@@ -1,14 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  BookOpen,
-  Pin,
-  PinOff,
-  Plus,
-  Search,
-  Send,
-  Trash2,
-  X,
-} from "lucide-react";
+import { BookOpen, Pin, PinOff, Plus, Search, Send, Trash2, X } from "lucide-react";
 
 interface PromptTemplate {
   id: string;
@@ -140,12 +131,8 @@ export function PromptLibrary() {
   }, [communityPacks, query]);
 
   function togglePin(id: string) {
-    setMyTemplates((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t)),
-    );
-    setCommunityPacks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t)),
-    );
+    setMyTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t)));
+    setCommunityPacks((prev) => prev.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t)));
   }
 
   function deleteTemplate(id: string) {
@@ -200,7 +187,11 @@ export function PromptLibrary() {
     const isExpanded = expandedId === tpl.id;
 
     return (
-      <div key={tpl.id} className="prompt-card" onClick={() => setExpandedId(isExpanded ? null : tpl.id)}>
+      <div
+        key={tpl.id}
+        className="prompt-card"
+        onClick={() => setExpandedId(isExpanded ? null : tpl.id)}
+      >
         <div className="prompt-card-title">
           {tpl.pinned && <span className="prompt-card-pin">📌</span>}
           {tpl.title}
@@ -209,7 +200,9 @@ export function PromptLibrary() {
         <div className="prompt-card-footer">
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
             {tpl.tags.map((tag) => (
-              <span key={tag} className="prompt-tag">{tag}</span>
+              <span key={tag} className="prompt-tag">
+                {tag}
+              </span>
             ))}
           </div>
           <div className="prompt-card-actions" onClick={(e) => e.stopPropagation()}>
@@ -242,7 +235,9 @@ export function PromptLibrary() {
             </div>
             {vars.map((v) => (
               <div key={v} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <label style={{ fontSize: 11, color: "var(--text-muted)", width: 80 }}>{`{{${v}}}`}</label>
+                <label
+                  style={{ fontSize: 11, color: "var(--text-muted)", width: 80 }}
+                >{`{{${v}}}`}</label>
                 <input
                   style={{
                     flex: 1,
@@ -255,9 +250,7 @@ export function PromptLibrary() {
                   }}
                   placeholder={v}
                   value={testInput[v] ?? ""}
-                  onChange={(e) =>
-                    setTestInput((prev) => ({ ...prev, [v]: e.target.value }))
-                  }
+                  onChange={(e) => setTestInput((prev) => ({ ...prev, [v]: e.target.value }))}
                 />
               </div>
             ))}
@@ -269,10 +262,24 @@ export function PromptLibrary() {
             style={{ display: "flex", gap: 6, marginTop: 8 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <button className="btn-secondary" style={{ fontSize: 11, padding: "4px 10px" }} onClick={() => copyResolved(tpl)}>
+            <button
+              className="btn-secondary"
+              style={{ fontSize: 11, padding: "4px 10px" }}
+              onClick={() => copyResolved(tpl)}
+            >
               {copied === tpl.id ? "Copied!" : "Copy"}
             </button>
-            <button className="btn-primary" style={{ fontSize: 11, padding: "4px 10px", display: "flex", alignItems: "center", gap: 4 }} onClick={() => sendToChat(tpl)}>
+            <button
+              className="btn-primary"
+              style={{
+                fontSize: 11,
+                padding: "4px 10px",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+              onClick={() => sendToChat(tpl)}
+            >
               <Send size={12} /> Send to Chat
             </button>
           </div>
@@ -292,7 +299,13 @@ export function PromptLibrary() {
           <div style={{ position: "relative", flex: 1, maxWidth: 360 }}>
             <Search
               size={14}
-              style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }}
+              style={{
+                position: "absolute",
+                left: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "var(--text-muted)",
+              }}
             />
             <input
               className="prompts-search"
@@ -302,7 +315,11 @@ export function PromptLibrary() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <button className="btn-primary" style={{ display: "flex", alignItems: "center", gap: 6 }} onClick={() => setShowModal(true)}>
+          <button
+            className="btn-primary"
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+            onClick={() => setShowModal(true)}
+          >
             <Plus size={15} /> New Prompt
           </button>
         </div>
@@ -326,7 +343,9 @@ export function PromptLibrary() {
           ) : (
             <div className="empty-state" style={{ padding: "20px 0" }}>
               <BookOpen size={28} />
-              <span>No templates yet. Click <strong>New Prompt</strong> to create one.</span>
+              <span>
+                No templates yet. Click <strong>New Prompt</strong> to create one.
+              </span>
             </div>
           )}
         </section>
@@ -377,8 +396,14 @@ export function PromptLibrary() {
               />
             </div>
             <div className="prompt-modal-footer">
-              <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn-primary" onClick={createTemplate} disabled={!form.title.trim() || !form.body.trim()}>
+              <button className="btn-secondary" onClick={() => setShowModal(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn-primary"
+                onClick={createTemplate}
+                disabled={!form.title.trim() || !form.body.trim()}
+              >
                 Save Template
               </button>
             </div>

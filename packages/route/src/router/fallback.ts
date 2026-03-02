@@ -58,7 +58,7 @@ export class FallbackChain {
     }
 
     // All steps failed — synthesise an error response rather than throwing
-    const reasons = errors.map(e => `${e.step.model}: ${(e.err as Error).message}`).join("; ");
+    const reasons = errors.map((e) => `${e.step.model}: ${(e.err as Error).message}`).join("; ");
     return {
       content: `LokaRoute encountered errors contacting all providers: ${reasons}`,
       finalTier: this.steps.at(-1)!.tier,

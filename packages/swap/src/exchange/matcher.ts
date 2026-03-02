@@ -38,13 +38,23 @@ function scoreMatch(offer: ExchangeListing, request: ExchangeListing): number {
   if (!assetsCompatible(offer.asking, request.asset)) return 0;
 
   // Amount overlap: offer must supply at least what the request asks
-  const offeredAmount = offer.asset.type === "lokacredits" ? offer.asset.amount
-    : offer.asset.type === "api-credits" ? offer.asset.amount
-    : offer.asset.type === "compute-time" ? offer.asset.hours : 0;
+  const offeredAmount =
+    offer.asset.type === "lokacredits"
+      ? offer.asset.amount
+      : offer.asset.type === "api-credits"
+        ? offer.asset.amount
+        : offer.asset.type === "compute-time"
+          ? offer.asset.hours
+          : 0;
 
-  const neededAmount = request.asking.type === "lokacredits" ? request.asking.amount
-    : request.asking.type === "api-credits" ? request.asking.amount
-    : request.asking.type === "compute-time" ? request.asking.hours : 0;
+  const neededAmount =
+    request.asking.type === "lokacredits"
+      ? request.asking.amount
+      : request.asking.type === "api-credits"
+        ? request.asking.amount
+        : request.asking.type === "compute-time"
+          ? request.asking.hours
+          : 0;
 
   if (offeredAmount <= 0 || neededAmount <= 0) return 0;
 
@@ -67,10 +77,7 @@ export class ListingMatcher {
    * If `listing.listingType === 'offer'`, matches it against open 'want' listings.
    * If `listing.listingType === 'want'`, matches it against open 'offer' listings.
    */
-  findMatches(
-    listing: ExchangeListing,
-    allListings: ExchangeListing[],
-  ): MatchResult[] {
+  findMatches(listing: ExchangeListing, allListings: ExchangeListing[]): MatchResult[] {
     const now = new Date();
     const counterType = listing.listingType === "offer" ? "want" : "offer";
 
@@ -99,10 +106,7 @@ export class ListingMatcher {
    * Find the single best match for a listing.
    * Returns null if no compatible match exists.
    */
-  bestMatch(
-    listing: ExchangeListing,
-    allListings: ExchangeListing[],
-  ): MatchResult | null {
+  bestMatch(listing: ExchangeListing, allListings: ExchangeListing[]): MatchResult | null {
     const matches = this.findMatches(listing, allListings);
     return matches[0] ?? null;
   }

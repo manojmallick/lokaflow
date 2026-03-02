@@ -53,10 +53,7 @@ export class LokaTrainer extends EventEmitter {
   async train(config: TrainingConfig): Promise<string> {
     this.startedAt = Date.now();
 
-    const args = [
-      "--dataset", config.dataset,
-      "--output_dir", config.outputDir,
-    ];
+    const args = ["--dataset", config.dataset, "--output_dir", config.outputDir];
 
     if (config.baseModel) args.push("--base_model", config.baseModel);
     if (config.epochs !== undefined) args.push("--epochs", String(config.epochs));

@@ -32,7 +32,7 @@ export function interceptRequest(req: FastifyRequest): InterceptedRequest {
     : [];
 
   // Extract query from the last user message (the one being routed)
-  const lastUser = [...messages].reverse().find(m => m.role === "user");
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
   const query = typeof lastUser?.content === "string" ? lastUser.content : "";
 
   return {
@@ -69,11 +69,11 @@ export function buildRoutingHeaders(
   latencyMs: number,
 ): Record<string, string> {
   return {
-    "X-LokaRoute-Tier":       decision.tier,
-    "X-LokaRoute-Model":      decision.model,
-    "X-LokaRoute-Score":      decision.classification.score.toFixed(3),
+    "X-LokaRoute-Tier": decision.tier,
+    "X-LokaRoute-Model": decision.model,
+    "X-LokaRoute-Score": decision.classification.score.toFixed(3),
     "X-LokaRoute-Latency-Ms": String(latencyMs),
     ...(decision.policyOverride ? { "X-LokaRoute-Override": decision.policyOverride } : {}),
-    ...(decision.piiDetected    ? { "X-LokaRoute-PII":      "detected" }               : {}),
+    ...(decision.piiDetected ? { "X-LokaRoute-PII": "detected" } : {}),
   };
 }

@@ -67,16 +67,17 @@ export class InterimDecomposer {
     complexityIndex: number,
     graphId: string,
     depth = 0,
-  ): Promise<TaskGraph> {
-    const raw = await this.callDecomposer(task, intent, complexityIndex);
-    return this.buildGraph(raw, task, intent, graphId, depth);
+  ): Promise<{ graph: TaskGraph; planTokens: { input: number; output: number } }> {
+    const { output: raw, planTokens } = await this.callDecomposer(task, intent, complexityIndex);
+    const graph = this.buildGraph(raw, task, intent, graphId, depth);
+    return { graph, planTokens };
   }
 
   private async callDecomposer(
     task: string,
     intent: IntentProfile,
     complexityIndex: number,
-  ): Promise<DecompositionOutput> {
+  ): Promise<{ output: DecompositionOutput; planTokens: { input: number; output: number } }> {
     // Build condensed model capability JSON (lean — max ~400 tokens)
     const modelCapabilityJson = JSON.stringify(
       this.registry.getAvailable().map((m) => ({
@@ -124,14 +125,18 @@ export class InterimDecomposer {
           .replace(/\s*```$/i, "")
           .trim();
         const parsed = JSON.parse(jsonStr) as unknown;
-        return DecompositionOutputSchema.parse(parsed);
+        return {
+          output: DecompositionOutputSchema.parse(parsed),
+          planTokens: { input: result.inputTokens, output: result.outputTokens },
+        };
       } catch (err) {
         lastError = err;
       }
     }
 
+    void lastError;
     // Both attempts failed — fall back to heuristic decomposition
-    return this.heuristicDecompose(task, intent);
+    return { output: this.heuristicDecompose(task, intent), planTokens: { input: 0, output: 0 } };
   }
 
   /**

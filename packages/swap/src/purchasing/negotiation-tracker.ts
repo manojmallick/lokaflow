@@ -6,21 +6,21 @@ import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
 
 export type NegotiationStatus =
-  | "drafting"     // building demand case
-  | "submitted"    // sent to provider
-  | "in-progress"  // active back-and-forth
-  | "agreed"       // terms accepted
-  | "rejected"     // provider declined
-  | "expired";     // negotiation window closed
+  | "drafting" // building demand case
+  | "submitted" // sent to provider
+  | "in-progress" // active back-and-forth
+  | "agreed" // terms accepted
+  | "rejected" // provider declined
+  | "expired"; // negotiation window closed
 
 export interface NegotiationRound {
   id: string;
   negotiationId: string;
   roundNumber: number;
-  ourOffer: number;           // EUR/1M tokens we offered
-  providerCounter?: number;   // EUR/1M tokens they countered (null if first round)
-  note?: string;              // free-text negotiation notes
-  recordedAt: string;         // ISO 8601
+  ourOffer: number; // EUR/1M tokens we offered
+  providerCounter?: number; // EUR/1M tokens they countered (null if first round)
+  note?: string; // free-text negotiation notes
+  recordedAt: string; // ISO 8601
 }
 
 export interface Negotiation {
@@ -33,8 +33,8 @@ export interface Negotiation {
   targetPricePerMToken: number;
   /** Agreed final rate — populated when status === 'agreed' */
   agreedPricePerMToken?: number;
-  contractStartDate?: string;  // ISO date
-  contractEndDate?: string;    // ISO date
+  contractStartDate?: string; // ISO date
+  contractEndDate?: string; // ISO date
   /** Total months committed in this deal */
   commitmentMonths?: number;
   createdAt: string;
@@ -92,19 +92,23 @@ export class NegotiationTracker {
   ): Negotiation {
     const now = new Date().toISOString();
     const id = randomUUID();
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO negotiations
         (id, provider, status, demanded_tokens_per_month, target_price_per_mtoken, created_at, updated_at)
       VALUES (?, ?, 'drafting', ?, ?, ?, ?)
-    `).run(id, provider, demandedTokensPerMonth, targetPricePerMToken, now, now);
+    `,
+      )
+      .run(id, provider, demandedTokensPerMonth, targetPricePerMToken, now, now);
     return this.get(id)!;
   }
 
   /** Advance the negotiation status */
   updateStatus(id: string, status: NegotiationStatus): void {
-    this.db.prepare(
-      `UPDATE negotiations SET status = ?, updated_at = ? WHERE id = ?`,
-    ).run(status, new Date().toISOString(), id);
+    this.db
+      .prepare(`UPDATE negotiations SET status = ?, updated_at = ? WHERE id = ?`)
+      .run(status, new Date().toISOString(), id);
   }
 
   /** Record the agreed price when a deal is struck */
@@ -115,7 +119,9 @@ export class NegotiationTracker {
     contractEndDate: string,
     commitmentMonths: number,
   ): void {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE negotiations
       SET status = 'agreed',
           agreed_price_per_mtoken = ?,
@@ -124,7 +130,16 @@ export class NegotiationTracker {
           commitment_months = ?,
           updated_at = ?
       WHERE id = ?
-    `).run(agreedPricePerMToken, contractStartDate, contractEndDate, commitmentMonths, new Date().toISOString(), id);
+    `,
+      )
+      .run(
+        agreedPricePerMToken,
+        contractStartDate,
+        contractEndDate,
+        commitmentMonths,
+        new Date().toISOString(),
+        id,
+      );
   }
 
   /** Record a negotiation round */
@@ -137,11 +152,23 @@ export class NegotiationTracker {
     const id = randomUUID();
     const roundNumber = this._nextRoundNumber(negotiationId);
     const recordedAt = new Date().toISOString();
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO negotiation_rounds
         (id, negotiation_id, round_number, our_offer, provider_counter, note, recorded_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, negotiationId, roundNumber, ourOffer, providerCounter ?? null, note ?? null, recordedAt);
+    `,
+      )
+      .run(
+        id,
+        negotiationId,
+        roundNumber,
+        ourOffer,
+        providerCounter ?? null,
+        note ?? null,
+        recordedAt,
+      );
     return {
       id,
       negotiationId,
@@ -161,25 +188,37 @@ export class NegotiationTracker {
 
   /** Retrieve all negotiations for a provider */
   getAllForProvider(provider: string): Negotiation[] {
-    return (this.db.prepare(`SELECT * FROM negotiations WHERE provider = ? ORDER BY created_at DESC`).all(provider) as any[]).map(this._rowToNegotiation);
+    return (
+      this.db
+        .prepare(`SELECT * FROM negotiations WHERE provider = ? ORDER BY created_at DESC`)
+        .all(provider) as any[]
+    ).map(this._rowToNegotiation);
   }
 
   /** Get the current agreed rate for a provider (null if no active deal) */
   getCurrentRate(provider: string): number | null {
-    const row = this.db.prepare(`
+    const row = this.db
+      .prepare(
+        `
       SELECT agreed_price_per_mtoken FROM negotiations
       WHERE provider = ? AND status = 'agreed'
         AND (contract_end_date IS NULL OR date(contract_end_date) >= date('now'))
       ORDER BY contract_start_date DESC LIMIT 1
-    `).get(provider) as any;
+    `,
+      )
+      .get(provider) as any;
     return row?.agreed_price_per_mtoken ?? null;
   }
 
   /** Rounds for a given negotiation */
   getRounds(negotiationId: string): NegotiationRound[] {
-    return (this.db.prepare(
-      `SELECT * FROM negotiation_rounds WHERE negotiation_id = ? ORDER BY round_number ASC`,
-    ).all(negotiationId) as any[]).map((r) => ({
+    return (
+      this.db
+        .prepare(
+          `SELECT * FROM negotiation_rounds WHERE negotiation_id = ? ORDER BY round_number ASC`,
+        )
+        .all(negotiationId) as any[]
+    ).map((r) => ({
       id: r.id,
       negotiationId: r.negotiation_id,
       roundNumber: r.round_number,
@@ -191,9 +230,11 @@ export class NegotiationTracker {
   }
 
   private _nextRoundNumber(negotiationId: string): number {
-    const result = this.db.prepare(
-      `SELECT MAX(round_number) as maxRound FROM negotiation_rounds WHERE negotiation_id = ?`,
-    ).get(negotiationId) as any;
+    const result = this.db
+      .prepare(
+        `SELECT MAX(round_number) as maxRound FROM negotiation_rounds WHERE negotiation_id = ?`,
+      )
+      .get(negotiationId) as any;
     return (result?.maxRound ?? 0) + 1;
   }
 
