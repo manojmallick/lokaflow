@@ -7,6 +7,9 @@
             "node"
         ]
     },
+    "references": [
+        { "path": "../agent" }
+    ],
     "include": [
         "src/**/*"
     ],

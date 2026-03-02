@@ -9,6 +9,7 @@ import { defineConfig } from "vitest/config";
 // below remaps any relative import of the form "../../src/<path>" to
 // packages/core/src/<path> so we don't have to touch every test file.
 const coreSrc = path.resolve("packages/core/src");
+const agentSrc = path.resolve("packages/agent/src/index.ts");
 
 export default defineConfig({
   resolve: {
@@ -17,6 +18,10 @@ export default defineConfig({
         // Matches ../../src/<anything> or ../src/<anything> etc.
         find: /^(\.\.\/)+src\/(.*)/,
         replacement: `${coreSrc}/$2`,
+      },
+      {
+        find: "@lokaflow/agent",
+        replacement: agentSrc,
       },
     ],
   },
