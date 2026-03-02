@@ -44,7 +44,7 @@ export async function windowsWakeOnLan(mac: string, broadcastIp = "255.255.255.2
   // 16 repetitions of the MAC address
   for (let i = 0; i < 16; i++) {
     for (let j = 0; j < 6; j++) {
-      packet[6 + i * 6 + j] = macBytes[j];
+      packet[6 + i * 6 + j] = macBytes[j]!;
     }
   }
 
@@ -104,8 +104,8 @@ export async function listPowerSchemes(): Promise<WindowsPowerScheme[]> {
     const m = line.match(/GUID:\s*([0-9a-f-]+)\s*\((.+?)\)\s*(\*)?$/i);
     if (m) {
       schemes.push({
-        guid: m[1].trim(),
-        name: m[2].trim(),
+        guid: m[1]!.trim(),
+        name: m[2]!.trim(),
         active: Boolean(m[3]),
       });
     }
@@ -171,8 +171,8 @@ export async function getWindowsBatteryStatus(): Promise<WindowsBatteryStatus> {
       level: isNaN(level) ? 100 : level,
       isCharging,
       isPresent: true,
-      estimatedMinutes: isNaN(mins) ? undefined : mins,
-      health: level > 20 ? "good" : "degraded",
+      ...(!isNaN(mins) && { estimatedMinutes: mins }),
+      health: (level > 20 ? "good" : "degraded") as "good" | "degraded",
     };
   } catch {
     // No battery or WMI not available

@@ -7,6 +7,7 @@
 
 import { platform, arch, release } from "os";
 import { execSync } from "child_process";
+import { existsSync, readFileSync } from "fs";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -51,10 +52,8 @@ function detectWsl(): boolean {
 
 function detectContainer(): boolean {
   try {
-    // Check for /.dockerenv (Docker) or systemd container env
-    const { existsSync } = require("fs") as typeof import("fs");
     if (existsSync("/.dockerenv")) return true;
-    const cgroup = require("fs").readFileSync("/proc/1/cgroup", "utf8") as string;
+    const cgroup = readFileSync("/proc/1/cgroup", "utf8");
     return cgroup.includes("docker") || cgroup.includes("containerd");
   } catch {
     return false;
@@ -83,7 +82,7 @@ function detectDiscoveryBackend(os: OsFamily, isWsl: boolean, isContainer: boole
 }
 
 function detectPowerBackend(os: OsFamily): PowerBackend {
-  if (os === "darwin") return "darwin";
+  if (os === "macos") return "darwin";
   if (os === "windows") return "windows";
   if (os === "linux") {
     return hasBinary("systemctl") ? "linux-systemd" : "linux-sysfs";
@@ -92,15 +91,10 @@ function detectPowerBackend(os: OsFamily): PowerBackend {
 }
 
 function detectBatteryBackend(os: OsFamily): BatteryBackend {
-  if (os === "darwin") return "darwin-pmset";
+  if (os === "macos") return "darwin-pmset";
   if (os === "windows") return "windows-wmi";
   if (os === "linux") {
-    try {
-      const { existsSync } = require("fs") as typeof import("fs");
-      return existsSync("/sys/class/power_supply") ? "linux-sysfs" : "none";
-    } catch {
-      return "none";
-    }
+    return existsSync("/sys/class/power_supply") ? "linux-sysfs" : "none";
   }
   return "none";
 }
