@@ -588,6 +588,221 @@ total_saving% = local_route%(60–70%)
 = 80–95% vs naive all-cloud approach
 ```
 
+
 ---
 
-*© 2026 LearnHubPlay BV · LokaFlow™ · BUSL 1.1 · lokaflow.io*
+## 9. Product Architecture — How the Family Maps to Code
+
+All six LokaFlow products are modules or deployment modes of a single codebase.
+Not separate apps. Not separate repositories. One install — feature flags and
+deployment config determine which capabilities are available.
+
+```
+lokaflow (single monorepo)
+    │
+    ├── 🌊 LokaFlow Core      → packages/core/ + apps/web/         FREE: everyone
+    ├── 🤖 LokaAgent™         → packages/agent/ + packages/orchestrator/   FREE: everyone
+    ├── 🛡️ LokaGuard™         → packages/guard/                    PAID: Business+
+    ├── 🏢 LokaEnterprise     → packages/enterprise/ + docker/     PAID: Enterprise
+    ├── 🎓 LokaLearn™         → packages/content/packs/            FREE: everyone
+    └── 🌍 LokaAccess™        → apps/mobile/ (2028) + docs/partnerships/   FUTURE
+```
+
+### 9.1 LokaGuard™ — Compliance Module (`packages/guard/`)
+
+Unlocked by licence tier check in `packages/enterprise/src/licence/tier.ts`.
+Free users see the tab greyed out. Business and Enterprise unlock it fully.
+
+**New package layout:**
+```
+packages/guard/
+  src/
+    audit/
+      trail.ts              AuditTrail — append-only SQLite audit_log table
+      schema.ts             AuditEntry type with ComplianceFlag[]
+    reports/
+      base.ts               Shared PDF utilities (pdfkit)
+      dora.ts               DORA Article 11 ICT risk report
+      sox.ts                SOX Section 404 internal controls report
+      gdpr.ts               GDPR Article 30 processing activities
+    pii/
+      custom-rules.ts       Custom org PII rules (pattern/NLP + action)
+      residency.ts          DataResidencyGuard (EU / US / any enforcement)
+    compliance/
+      checker.ts            ComplianceChecker — flags per framework
+      frameworks/
+        dora.ts, sox.ts, gdpr.ts
+    index.ts
+```
+
+**SQL schema (appended to existing `~/.lokaflow/lokaflow.db`):**
+```sql
+CREATE TABLE IF NOT EXISTS audit_log (
+  id TEXT PRIMARY KEY,
+  timestamp TEXT NOT NULL,
+  user_id TEXT NOT NULL,          -- SHA-256 hash, never plaintext
+  department TEXT,
+  query_hash TEXT NOT NULL,       -- SHA-256 of prompt content
+  model_used TEXT NOT NULL,
+  input_tokens INTEGER,
+  output_tokens INTEGER,
+  pii_detected BOOLEAN DEFAULT FALSE,
+  pii_types TEXT,                 -- JSON array e.g. ["IBAN","BSN"]
+  data_residency TEXT,            -- 'local' | 'eu' | 'us'
+  cost_eur REAL,
+  response_ms INTEGER,
+  routing_reason TEXT,
+  compliance_flags TEXT,          -- JSON array of ComplianceFlag
+  created_at TEXT DEFAULT (datetime('now'))
+);
+```
+
+**Router integration (zero breaking change):**
+```typescript
+// packages/core/src/router/router.ts — add after Step 5
+if (this.config.lokaGuard?.enabled) {
+  await this.auditTrail.record({ ...routingDecision, piiDetected, complianceFlags })
+}
+```
+
+**Config:**
+```yaml
+lokaGuard:
+  enabled: true
+  frameworks: [DORA, GDPR]
+  dataResidency: EU
+  reportSchedule: "0 9 1 * *"    # first of month 09:00
+  auditRetentionDays: 2555        # 7 years (DORA requirement)
+  customPIIRules: []
+```
+
+---
+
+### 9.2 LokaEnterprise — Corporate Deployment (`packages/enterprise/`, `docker/`)
+
+Same codebase. Different deployment. Docker compose wraps the existing
+`@lokaflow/api` and `apps/web` images with Postgres, Nginx, and Ollama.
+
+**Docker layout:**
+```
+docker/
+  docker-compose.yml              Full stack: api + web + ollama + postgres + nginx
+  docker-compose.air-gap.yml      Zero external network (all cloud providers disabled)
+  Dockerfile.api                  Production build of @lokaflow/api
+  Dockerfile.web                  Production build of apps/web
+  nginx/nginx.conf                Reverse proxy + TLS termination
+  postgres/init.sql               Schema init (replaces SQLite for multi-user)
+  .env.enterprise.example         All environment variables documented
+```
+
+**Admin panel routes (new in `packages/enterprise/src/admin/`):**
+```
+GET  /admin/users               List org users + department + last active
+POST /admin/users/invite        Invite user (email hash only)
+GET  /admin/departments         Department list + routing policies
+PUT  /admin/departments/:id     Update department routing policy
+GET  /admin/licence             Licence status + seat usage
+GET  /admin/usage               Usage analytics per department
+```
+
+**SSO providers (`packages/enterprise/src/sso/`):**
+```
+EntraSSO    — @azure/msal-node (MIT)  → Entra ID / Azure AD
+GoogleSSO   — passport-google-oauth20 (MIT) → Google Workspace
+SAMLProvider — passport-saml (MIT)   → Okta, ADFS, PingFederate
+```
+
+**White-label config (15 minutes to deploy under client brand):**
+```yaml
+enterprise:
+  whiteLabelEnabled: true
+  branding:
+    productName: "BankAI™"
+    logoUrl: "/assets/bank-logo.svg"
+    primaryColor: "#FF6B00"
+    supportEmail: "ai-support@bank.nl"
+  hideLokaFlowBranding: true
+```
+
+---
+
+### 9.3 LokaLearn™ — Education Pack (`packages/content/`)
+
+A JSON prompt template pack. Not a separate app. Installed from the
+prompt library in `apps/web`. Pre-installed for NGO/School tier.
+
+**Pack structure:**
+```
+packages/content/
+  packs/
+    lokalearn.json              30+ education templates (CC0 licence)
+    lokalearn-advanced.json     Advanced curriculum (planned)
+  src/
+    pack.ts                     PromptPack install/list/remove API
+    registry.ts                 Community pack registry client
+  index.ts
+```
+
+**Pack categories (lokalearn.json):**
+```
+Coding education    8 templates  explain-code, debug-guide, coding-exercise, ...
+Essay writing       6 templates  feedback, outline, citation-helper, ...
+Mathematics         5 templates  concept-explain, step-by-step-solver, ...
+Language learning   5 templates  translate-explain, conversation-practice, ...
+Science / research  4 templates  eli5, research-starter, study-plan, ...
+Exam prep           4 templates  flashcard-creator, quiz-generator, ...
+```
+
+All templates use `model_preference: "local"` — works entirely offline
+via Qwen 2.5 (29 languages) without any API key.
+
+---
+
+### 9.4 LokaAccess™ — Global Initiative (`docs/partnerships/`, `apps/mobile/`)
+
+Not a build task for 2026. A positioning and partnership document.
+
+**2026 deliverables:**
+- `docs/partnerships/LokaAccess_Partnership_Brief.pdf` — 1-page brief for telcos/NGOs
+- `docs/mobile/android-spike.md` — Android technical feasibility (React Native + llama.cpp)
+- Landing page at lokaaccess.io → routes to lokaflow.com download
+
+**2028 build (when telco/NGO partnership secured):**
+- React Native + llama.cpp Android app (minimum: Android 9+, 4GB RAM)
+- Offline-first: models downloaded once, zero data cost after setup
+- Target models: tinyllama:1.1b (638MB), llama3.2:1b (1.3GB)
+- WhatsApp bot integration (for feature phone access)
+
+---
+
+## 10. Pricing Model — Architecture Implications
+
+The licence tier is resolved once per session by `packages/enterprise/src/licence/tier.ts`
+and injected into the React context. Feature flags gate UI sections and API routes.
+
+```typescript
+// Licence tier resolution
+interface LicenceTier {
+  tier: 'individual' | 'ngo' | 'startup' | 'small_business' | 'business' | 'enterprise'
+  lokaGuardEnabled: boolean
+  adminPanelEnabled: boolean
+  ssoEnabled: boolean
+  whiteLabelEnabled: boolean
+  maxSeats: number | 'unlimited'
+}
+
+// Free if EITHER condition is false:
+function resolveTier(employees: number, revenueEur: number): LicenceTier {
+  if (employees <= 100 || revenueEur <= 1_000_000) {
+    return FREE_TIER  // regardless of which condition was false
+  }
+  // Both exceeded — determine paid tier by employee count
+  if (employees <= 499)  return SMALL_BUSINESS_TIER  // €49/mo
+  if (employees <= 2000) return BUSINESS_TIER         // €199/mo (LokaGuard included)
+  return ENTERPRISE_TIER                              // €999+/mo (all features)
+}
+```
+
+---
+
+*© 2026 LearnHubPlay BV · LokaFlow™ · BUSL 1.1 → Apache 2.0 (2030-01-01) · lokaflow.io*
