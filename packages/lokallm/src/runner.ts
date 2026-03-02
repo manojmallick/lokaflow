@@ -5,7 +5,7 @@
 // packages/lokallm/src/runner.ts
 // PythonRunner — spawn a Python script, stream its stdout/stderr, and emit lifecycle events.
 
-import { spawn, type ChildProcess } from "child_process";
+import { spawn, execSync, type ChildProcess } from "child_process";
 import { EventEmitter } from "events";
 import { existsSync } from "fs";
 
@@ -67,7 +67,6 @@ export class PythonRunner extends EventEmitter {
   private detectPython(): string {
     // Prefer python3, fall back to python (Windows)
     try {
-      const { execSync } = require("child_process") as typeof import("child_process");
       execSync("python3 --version", { stdio: "ignore" });
       return "python3";
     } catch {
@@ -176,7 +175,7 @@ export class PythonRunner extends EventEmitter {
     // tqdm: " 45%|..."
     const tqdm = line.match(/^\s*(\d{1,3})%\|/);
     if (tqdm) {
-      const percent = parseInt(tqdm[1], 10);
+      const percent = parseInt(tqdm[1]!, 10);
       this.emit("data", { type: "progress", percent, message: line.trim() } satisfies RunnerEvent);
       return;
     }
@@ -184,7 +183,7 @@ export class PythonRunner extends EventEmitter {
     // HF Trainer: "{'loss': 1.234, 'epoch': 0.5}"
     const epoch = line.match(/'epoch':\s*([\d.]+)/);
     if (epoch) {
-      const pct = Math.min(100, Math.round(parseFloat(epoch[1]) * 100));
+      const pct = Math.min(100, Math.round(parseFloat(epoch[1]!) * 100));
       this.emit("data", { type: "progress", percent: pct, message: line.trim() } satisfies RunnerEvent);
     }
   }

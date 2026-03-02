@@ -64,7 +64,7 @@ export class LokaTrainer extends EventEmitter {
 
     this.runner = new PythonRunner(LORA_SCRIPT, {
       args,
-      pythonBin: config.pythonBin,
+      ...(config.pythonBin !== undefined && { pythonBin: config.pythonBin }),
     });
 
     this.emit("data", { type: "start", config } satisfies TrainerEvent);
@@ -80,11 +80,11 @@ export class LokaTrainer extends EventEmitter {
 
         // Extract epoch from message
         const epochMatch = ev.message.match(/'epoch':\s*([\d.]+)/);
-        if (epochMatch) progress.epochEstimate = parseFloat(epochMatch[1]);
+        if (epochMatch) progress.epochEstimate = parseFloat(epochMatch[1]!);
 
         // Extract loss
         const lossMatch = ev.message.match(/'loss':\s*([\d.]+)/);
-        if (lossMatch) progress.loss = parseFloat(lossMatch[1]);
+        if (lossMatch) progress.loss = parseFloat(lossMatch[1]!);
 
         this.emit("data", { type: "progress", progress } satisfies TrainerEvent);
       }

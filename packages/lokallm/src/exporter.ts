@@ -55,7 +55,7 @@ export class GGUFExporter extends EventEmitter {
 
     this.runner = new PythonRunner(GGUF_SCRIPT, {
       args,
-      pythonBin: config.pythonBin,
+      ...(config.pythonBin !== undefined && { pythonBin: config.pythonBin }),
     });
 
     this.emit("data", { type: "start", config } satisfies ExporterEvent);

@@ -62,18 +62,18 @@ export async function runFullPipeline(config: FullPipelineConfig): Promise<FullP
   const adapterDir = await trainer.train({
     dataset: config.dataset,
     outputDir: config.adapterOutputDir,
-    baseModel: config.baseModel,
-    epochs: config.epochs,
-    batchSize: config.batchSize,
-    pythonBin: config.pythonBin,
+    ...(config.baseModel !== undefined && { baseModel: config.baseModel }),
+    ...(config.epochs !== undefined && { epochs: config.epochs }),
+    ...(config.batchSize !== undefined && { batchSize: config.batchSize }),
+    ...(config.pythonBin !== undefined && { pythonBin: config.pythonBin }),
   });
 
   const exportStart = Date.now();
   const ggufPath = await exporter.export({
     adapter: adapterDir,
     output: config.ggufOutputPath,
-    baseModel: config.baseModel,
-    pythonBin: config.pythonBin,
+    ...(config.baseModel !== undefined && { baseModel: config.baseModel }),
+    ...(config.pythonBin !== undefined && { pythonBin: config.pythonBin }),
   });
 
   const ollamaModelfile = exporter.generateOllamaModelfile(
