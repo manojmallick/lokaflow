@@ -267,6 +267,9 @@ importers:
       '@google/generative-ai':
         specifier: ^0.17.0
         version: 0.17.2
+      '@lokaflow/agent':
+        specifier: workspace:*
+        version: link:../agent
       better-sqlite3:
         specifier: ^11.5.0
         version: 11.10.0

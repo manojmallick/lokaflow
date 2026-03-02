@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Search,
   Settings,
+  ScrollText,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { Chat } from "./components/Chat";
@@ -20,11 +21,12 @@ import { LokaAudit } from "./components/LokaAudit";
 import { History } from "./components/History";
 import { BatchScheduler } from "./components/BatchScheduler";
 import { Playground } from "./components/Playground";
+import { LogViewer } from "./components/LogViewer";
 
-type View = "dashboard" | "chat" | "mesh" | "settings" | "prompts" | "audit" | "playground" | "history" | "batch";
+type View = "dashboard" | "chat" | "mesh" | "settings" | "prompts" | "audit" | "playground" | "history" | "batch" | "logs";
 type SettingsTab = "connection" | "routing" | "keys" | "budget" | "privacy" | "notifications" | "appearance";
 
-const VALID_VIEWS: View[] = ["dashboard", "chat", "mesh", "settings", "prompts", "audit", "playground", "history", "batch"];
+const VALID_VIEWS: View[] = ["dashboard", "chat", "mesh", "settings", "prompts", "audit", "playground", "history", "batch", "logs"];
 const VALID_SETTINGS_TABS: SettingsTab[] = ["connection", "routing", "keys", "budget", "privacy", "notifications", "appearance"];
 
 function parseHash(): { view: View; settingsTab?: SettingsTab } {
@@ -116,6 +118,9 @@ function App(): JSX.Element {
           <NavLink id="playground" active={view} onClick={navigate}>
             <FlaskConical size={18} /> Playground
           </NavLink>
+          <NavLink id="logs" active={view} onClick={navigate}>
+            <ScrollText size={18} /> Log Viewer
+          </NavLink>
 
           <div className="nav-divider" />
 
@@ -137,6 +142,7 @@ function App(): JSX.Element {
         {view === "history" && <div className="content-padded"><History /></div>}
         {view === "batch" && <div className="content-padded"><BatchScheduler /></div>}
         {view === "playground" && <div className="content-padded"><Playground /></div>}
+        {view === "logs" && <LogViewer />}
       </main>
     </div>
   );

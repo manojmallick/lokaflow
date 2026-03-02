@@ -471,6 +471,9 @@ type TraceStepKind =
   | "budget"
   | "dispatch"
   | "delegation"
+  | "agent"
+  | "agent_quality"
+  | "agent_telemetry"
   | "subtask"
   | "subtask_done"
   | "subtask_fail"
@@ -504,6 +507,19 @@ function classifyLine(line: string): TraceStep {
   if (l.startsWith("step 4(b)")) return { kind: "budget", raw, status: "ok" };
   if (l.startsWith("step 4:")) return { kind: "provider", raw, status: "ok" };
   if (l.startsWith("step 5:")) return { kind: "dispatch", raw, status: "ok" };
+  // ── LokaAgent 8-stage pipeline lines ────────────────────────────────────
+  if (l.startsWith("[AGENT]") && l.includes("Pipeline complete"))
+    return { kind: "result", raw, status: "ok" };
+  if (l.startsWith("[AGENT]") && l.includes("QualityGate") && /\b0\//.test(l))
+    return { kind: "agent_quality", raw, status: "warn" };
+  if (l.startsWith("[AGENT]") && l.includes("QualityGate"))
+    return { kind: "agent_quality", raw, status: "ok" };
+  if (l.startsWith("[AGENT]") && (l.includes("Telemetry") || l.includes("Savings") || l.includes("Nodes:")))
+    return { kind: "agent_telemetry", raw, status: "info" };
+  if (l.startsWith("[AGENT]") && (l.includes("escalated") || l.includes("error")))
+    return { kind: "agent", raw, status: "warn" };
+  if (l.startsWith("[AGENT]")) return { kind: "agent", raw, status: "ok" };
+  // ── Legacy delegation lines ───────────────────────────────────────────────
   if (l.startsWith("[DELEGATION]") && l.includes("failed"))
     return { kind: "delegation", raw, status: "error" };
   if (l.startsWith("[DELEGATION]")) return { kind: "delegation", raw, status: "ok" };
@@ -532,6 +548,9 @@ const STEP_ICONS: Record<TraceStepKind, React.ReactNode> = {
   budget: <Coins size={13} />,
   dispatch: <Zap size={13} />,
   delegation: <Network size={13} />,
+  agent: <Bot size={13} />,
+  agent_quality: <Shield size={13} />,
+  agent_telemetry: <BarChart2 size={13} />,
   subtask: <ArrowRight size={13} />,
   subtask_done: <CheckCircle2 size={13} />,
   subtask_fail: <XCircle size={13} />,

@@ -1,7 +1,7 @@
 {
     "name": "lokaflow-vscode",
     "displayName": "LokaFlow",
-    "description": "LokaFlow™ Local-First AI Routing for VS Code",
+    "description": "LokaFlow Local-First AI Routing for VS Code",
     "version": "0.1.0",
     "publisher": "learnhubplay",
     "repository": {
@@ -20,18 +20,66 @@
         "commands": [
             {
                 "command": "lokaflow.chat",
-                "title": "LokaFlow: Open Chat"
+                "title": "LokaFlow: Open Chat",
+                "icon": "$(comment-discussion)"
             },
             {
                 "command": "lokaflow.explainCode",
-                "title": "LokaFlow: Explain Selected Code"
+                "title": "LokaFlow: Explain Selected Code",
+                "icon": "$(lightbulb)"
+            },
+            {
+                "command": "lokaflow.showHistory",
+                "title": "LokaFlow: Show Routing History",
+                "icon": "$(history)"
+            },
+            {
+                "command": "lokaflow.refreshHistory",
+                "title": "LokaFlow: Refresh History",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "lokaflow.openDashboard",
+                "title": "LokaFlow: Open Savings Dashboard",
+                "icon": "$(graph)"
             }
         ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "lokaflow",
+                    "title": "LokaFlow",
+                    "icon": "$(circuit-board)"
+                }
+            ]
+        },
+        "views": {
+            "lokaflow": [
+                {
+                    "id": "lokaflow.history",
+                    "name": "Routing History",
+                    "icon": "$(history)",
+                    "contextualTitle": "LokaFlow Routing History"
+                }
+            ]
+        },
         "menus": {
             "editor/context": [
                 {
                     "when": "editorHasSelection",
                     "command": "lokaflow.explainCode",
+                    "group": "navigation"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "lokaflow.refreshHistory",
+                    "when": "view == lokaflow.history",
+                    "group": "navigation"
+                },
+                {
+                    "command": "lokaflow.openDashboard",
+                    "when": "view == lokaflow.history",
                     "group": "navigation"
                 }
             ]

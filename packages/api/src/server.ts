@@ -38,6 +38,7 @@ import routeRoute from "./routes/route.js";
 import costRoute from "./routes/cost.js";
 import modelsRoute from "./routes/models.js";
 import historyRoute from "./routes/history.js";
+import logsRoute from "./routes/logs.js";
 
 export async function createServer(opts: ApiServerOptions) {
   // Use 0.0.0.0 (all IPv4 interfaces) so browsers can reach the server via both
@@ -169,6 +170,7 @@ export async function createServer(opts: ApiServerOptions) {
   await fastify.register(costRoute, { tracker, config });
   await fastify.register(modelsRoute, { router });
   await fastify.register(historyRoute);
+  await fastify.register(logsRoute);
 
   // Root redirect
   fastify.get("/", async (_req, reply) => {

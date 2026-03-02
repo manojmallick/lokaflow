@@ -33,6 +33,7 @@ import { BudgetTracker } from "./budget.js";
 import { appendFileSync, statSync, renameSync } from "fs";
 import { SearchEngine } from "../search/engine.js";
 import { MemoryManager } from "../memory/rag.js";
+import { LokaAgent } from "@lokaflow/agent";
 
 const LOG_FILE = "lokaflow-routing.log";
 const LOG_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -60,6 +61,7 @@ export class Router {
   private readonly config: LokaFlowConfig;
   private readonly searchEngine?: SearchEngine;
   private readonly memoryManager?: MemoryManager;
+  private readonly agent: LokaAgent;
 
   constructor(providers: RouterProviders, config: LokaFlowConfig) {
     this.providers = providers;
@@ -77,6 +79,14 @@ export class Router {
     if (config.memory.enabled) {
       this.memoryManager = new MemoryManager();
     }
+    this.agent = new LokaAgent({
+      ollamaBaseUrl: config.local.baseUrls[0] ?? "http://localhost:11434",
+      complexityThresholds: {
+        trivialBypass: config.router.complexityLocalThreshold,
+        cloudEscalate: config.router.complexityCloudThreshold,
+      },
+      taskSplitter: { maxSubtasks: 6, maxDepth: 3, minSubtaskTokens: 150 },
+    });
   }
 
   /** Expose providers so API layers (health check, model listing) can inspect them. */
@@ -261,135 +271,85 @@ export class Router {
     let actualTier = tier;
 
     try {
-      if (tier === "specialist" && this.config.router.delegationEnabled === true) {
+      if ((tier === "specialist" || tier === "cloud") && this.config.router.delegationEnabled === true) {
+        // ── LokaAgent 8-stage pipeline ─────────────────────────────────────
+        // Stage flow: PromptGuard → ComplexityScorer → TaskSplitter (DAG) →
+        //             ModelMatcher → ContextPacker → ExecutionEngine →
+        //             QualityGate (per-node, escalates failing nodes to cloud) →
+        //             Assembler (intent-aware merge strategy)
         trace.push(
-          `[DELEGATION] Invoking specialist '${provider.name}' to generate ExecutionPlan...`,
+          `[AGENT] Handing off to LokaAgent pipeline (tier=${tier}, score=${score.toFixed(2)})...`,
         );
-        // 1. Ask Specialist to build a plan
-        const planMessages: Message[] = [
-          ...messages,
-          {
-            role: "system",
-            content:
-              'You are a technical planner. Do not write the code or solve the problem directly. Break the user\'s request down into 1-4 clear, strictly defined, and easy-to-implement sub-tasks. Output ONLY valid JSON matching this schema: { "subtasks": ["task 1", "task 2"] } without markdown blocks or other text.',
-          },
-        ];
 
-        const planResponse = await provider.complete(planMessages, options);
-        let plan: import("../types.js").ExecutionPlan | null = null;
+        const agentResp = await this.agent.process({
+          prompt: messages.at(-1)?.content ?? messages.map((m) => m.content).join(" "),
+          conversationHistory: messages.slice(0, -1).map((m) => ({
+            role: m.role as "user" | "assistant" | "system",
+            content: m.content,
+          })),
+          localOnly: false,
+          qualityPreference: score > 0.85 ? "QUALITY" : "BALANCED",
+        });
 
-        try {
-          // Strip markdown code fences in any position (```json...``` or ```...```)
-          // then extract the first valid JSON object from the response.
-          let cleaned = planResponse.content
-            .replace(/```[a-z]*\n?/g, "") // remove opening fences
-            .replace(/```/g, "") // remove closing fences
-            .trim();
-          // Extract first { ... } block in case model adds extra prose
-          const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-          if (jsonMatch) cleaned = jsonMatch[0]!;
-          plan = JSON.parse(cleaned);
-        } catch (e) {
-          trace.push(
-            `[DELEGATION] Failed to parse JSON plan from specialist. Falling back to standard execution. Output: ${planResponse.content.slice(0, 50)}...`,
+        // Emit subtask traces in the existing format so TracePanel renders them
+        const execNodes = agentResp.trace.execution.nodes;
+        const depthMap = new Map(
+          agentResp.trace.decomposition.nodes.map((n) => [n.id, n.depth]),
+        );
+
+        trace.push(
+          `  → Distributing ${execNodes.length} sub-tasks recursively (maxDepth=3)...`,
+        );
+        if (options.onStream) {
+          options.onStream(
+            `> ⚡ *Distributing ${execNodes.length} sub-tasks across LokaAgent worker tree...*\n\n`,
           );
         }
 
-        if (plan && Array.isArray(plan.subtasks) && plan.subtasks.length > 0) {
+        execNodes.forEach((n, i) => {
+          const depth = depthMap.get(n.id) ?? 0;
+          const escalatedTag = n.escalated ? " [ESCALATED→cloud]" : "";
           trace.push(
-            `[DELEGATION] Specialist generated ${plan.subtasks.length} sub-tasks. Delegating to local worker...`,
+            `      ↪ [Depth ${depth}] Subtask ${i} completed by ${n.model}${escalatedTag} [model=${n.model}] in ${(n.latencyMs / 1000).toFixed(1)}s (In: ${n.tokensInput}, Out: ${n.tokensOutput}).`,
           );
+        });
 
-          let aggregatedContent = `## Execution Plan\n`;
-          plan.subtasks.forEach((task, i) => {
-            aggregatedContent += `${i + 1}. ${task}\n`;
-          });
-          if (options.onStream) options.onStream(aggregatedContent);
-
-          let totalLocalInputTokens = 0;
-          let totalLocalOutputTokens = 0;
-          let maxLatency = planResponse.latencyMs;
-
-          // 2. Execute each sub-task concurrently across the local/specialist execution trees
-          trace.push(
-            `  → Distributing ${plan.subtasks.length} sub-tasks recursively (maxDepth=2)...`,
-          );
-
-          if (options.onStream) {
-            options.onStream(
-              `> ⚡ *Distributing ${plan.subtasks.length} sub-tasks across worker tree...*\n\n`,
-            );
-          }
-
-          const taskPromises = plan.subtasks.map(async (subtask, i) =>
-            this.executeRecursiveSubtask(subtask, messages, options, trace, 0, 2, i),
-          );
-
-          // Wait for all subtasks (and potential nested trees) to finish
-          const stepResults = await Promise.all(taskPromises);
-
-          // 3. Assemble the ordered response
-          const usedLocalModels = new Set<string>();
-
-          stepResults.forEach((result) => {
-            const { stepResponse, index, workerName, latencyMs, depth } = result;
-            if (workerName !== provider.name) usedLocalModels.add(stepResponse.model);
-
-            let block = `### Sub-task ${index + 1}\n\n`;
-            if (depth > 0) {
-              block += `> *Recursively broken down (Depth ${depth}). Executed by **${stepResponse.model}** on node \`${workerName}\` in ${(latencyMs / 1000).toFixed(1)}s (In: **${stepResponse.inputTokens}**, Out: **${stepResponse.outputTokens}**)*\n\n`;
-            } else {
-              block += `> *Executed by **${stepResponse.model}** on node \`${workerName}\` in ${(latencyMs / 1000).toFixed(1)}s (In: **${stepResponse.inputTokens}**, Out: **${stepResponse.outputTokens}**)*\n\n`;
-            }
-            block += `${stepResponse.content}\n\n`;
-
-            aggregatedContent += block;
-            if (options.onStream) options.onStream(block);
-
-            totalLocalInputTokens += stepResponse.inputTokens;
-            totalLocalOutputTokens += stepResponse.outputTokens;
-            maxLatency = Math.max(maxLatency, planResponse.latencyMs + latencyMs); // Track aggregate latency
-          });
-
-          // Calculate hypothentical cost if we had used the Specialist for the local work
-          const hypotheticalCloudCost =
-            (totalLocalInputTokens / 1000) * provider.costPer1kInputTokens +
-            (totalLocalOutputTokens / 1000) * provider.costPer1kOutputTokens;
-
-          const localModelsStr = Array.from(usedLocalModels).join(", ");
-
-          let telemetryStr = `\n---\n### 📊 Delegation Telemetry (Parallel Execution)\n`;
-          telemetryStr += `- **Specialist Planner (${planResponse.model})**:\n`;
-          telemetryStr += `  - Time: ${(planResponse.latencyMs / 1000).toFixed(1)}s\n`;
-          telemetryStr += `  - Tokens: ${planResponse.inputTokens} in, ${planResponse.outputTokens} out\n`;
-          telemetryStr += `  - Cost incurred: €${planResponse.costEur.toFixed(5)}\n`;
-          telemetryStr += `- **Local Workers (${localModelsStr})**:\n`;
-          telemetryStr += `  - Total Wall-Clock Time: ${((maxLatency - planResponse.latencyMs) / 1000).toFixed(1)}s\n`;
-          telemetryStr += `  - Total Tokens: ${totalLocalInputTokens} in, ${totalLocalOutputTokens} out\n`;
-          telemetryStr += `  - Cost incurred: €0.00000\n`;
-          telemetryStr += `- **Estimated Savings**: **€${hypotheticalCloudCost.toFixed(5)}** vs a pure-cloud architecture\n`;
-
-          if (options.onStream) options.onStream(telemetryStr);
-          aggregatedContent += telemetryStr;
-
-          // 4. Return final decision
-          response = {
-            content: aggregatedContent,
-            model: `planned-by:${planResponse.model},executed-by:${localModelsStr}`,
-            inputTokens: planResponse.inputTokens + totalLocalInputTokens, // Specialist input + Local inputs
-            outputTokens: planResponse.outputTokens + totalLocalOutputTokens, // Specialist output + Local outputs
-            costEur: planResponse.costEur, // Local is free
-            latencyMs: maxLatency,
-          };
-
-          actualTier = "delegated";
-          trace.push(`[DELEGATION] Completed all sub-tasks correctly.`);
-        } else {
-          // If no plan, just do it normally
-          response = await provider.complete(messages, options);
+        // Quality gate summary
+        const gatesPassed = agentResp.trace.qualityGates.filter((g) => g.passed).length;
+        const gatesTotal = agentResp.trace.qualityGates.length;
+        trace.push(`[AGENT] QualityGate: ${gatesPassed}/${gatesTotal} nodes passed.`);
+        if (agentResp.partial) {
+          trace.push(`[AGENT] Some nodes were escalated to cloud (quality gate failed local output).`);
         }
+
+        // Telemetry block
+        const sv = agentResp.trace.savings;
+        let telemetryStr = `\n---\n### 📊 LokaAgent Telemetry\n`;
+        telemetryStr += `- **Nodes**: ${sv.totalNodes} total · ${sv.localNodes} local · ${sv.cloudNodes} cloud · ${sv.escalatedNodes} escalated\n`;
+        telemetryStr += `- **Tokens**: ${sv.actualLocalTokens} local · ${sv.actualCloudTokens} cloud (equivalent cloud: ${sv.cloudEquivalentTokens})\n`;
+        telemetryStr += `- **Savings**: ${sv.savingPercent.toFixed(1)}% · **€${sv.savingEur.toFixed(5)}** vs pure-cloud\n`;
+        telemetryStr += `- **Assembly strategy**: ${agentResp.trace.assembly.strategy}\n`;
+
+        if (options.onStream) {
+          options.onStream(agentResp.content);
+          options.onStream(telemetryStr);
+        }
+
+        response = {
+          content: agentResp.content + telemetryStr,
+          model: `agent-pipeline`,
+          inputTokens: agentResp.metrics.totalInputTokens,
+          outputTokens: agentResp.metrics.totalOutputTokens,
+          costEur: agentResp.metrics.estimatedCostEur,
+          latencyMs: agentResp.metrics.totalLatencyMs,
+        };
+
+        actualTier = "delegated";
+        trace.push(
+          `[AGENT] Pipeline complete. Nodes=${agentResp.metrics.nodesExecuted}, Escalated=${agentResp.metrics.nodesEscalated}, Cost=€${agentResp.metrics.estimatedCostEur.toFixed(5)}.`,
+        );
       } else {
-        // Standard execution
+        // Standard execution — local tier or delegation disabled
         response = await provider.complete(messages, options);
       }
     } catch (err) {
@@ -459,19 +419,31 @@ export class Router {
     const { score, tier } = this.classifier.classify(subtask);
     const start = Date.now();
 
+    // Subtask specialist handoff threshold: if a subtask still scores above this
+    // after being split off, it is too complex for a local worker and the specialist
+    // must handle it directly (regardless of remaining depth budget).
+    const SUBTASK_SPECIALIST_THRESHOLD = 0.65;
+
     // 1. Execute directly if:
     //    a) task is local-tier (simple), OR
-    //    b) task is specialist-tier (medium complexity) — local coder handles this fine, OR
+    //    b) task is specialist-tier (medium complexity) — but score <= 0.65 so local is fine, OR
     //    c) we've hit the recursion depth cap
     // Only recurse into the planner for genuinely cloud-tier (very complex) subtasks.
     if (tier !== "cloud" || currentDepth >= maxDepth) {
       let worker: BaseProvider;
 
-      // If we hit max depth and it's STILL complex, run on Specialist to avoid gibberish output
-      if (tier !== "local" && currentDepth >= maxDepth && this.providers.specialist) {
+      // If score > 0.65 the subtask is still too hard for a local model — hand off
+      // to the specialist provider regardless of how deep we are in the DAG.
+      if (score > SUBTASK_SPECIALIST_THRESHOLD && this.providers.specialist) {
         worker = this.providers.specialist;
         trace.push(
-          `  [Depth ${currentDepth}] Subtask ${index} is STILL complex (score=${score.toFixed(2)}). Forcing Specialist execution.`,
+          `  [Depth ${currentDepth}] Subtask ${index} score=${score.toFixed(2)} > ${SUBTASK_SPECIALIST_THRESHOLD} → Specialist takeover.`,
+        );
+      } else if (tier !== "local" && currentDepth >= maxDepth && this.providers.specialist) {
+        // Safety net: hit max depth and still complex — force Specialist to avoid gibberish
+        worker = this.providers.specialist;
+        trace.push(
+          `  [Depth ${currentDepth}] Subtask ${index} is STILL complex (score=${score.toFixed(2)}) at maxDepth. Forcing Specialist execution.`,
         );
       } else {
         worker = this.providers.local[index % this.providers.local.length]!;

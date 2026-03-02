@@ -10,7 +10,7 @@ router:
   specialist_provider: gemini
   specialist_model: gemini-2.0-flash
   complexity_local_threshold: 0.30
-  complexity_cloud_threshold: 0.70
+  complexity_cloud_threshold: 0.90
   max_local_tokens: 8000
   pii_scan: false
   fallback_to_local: true
