@@ -15,6 +15,41 @@ export type { MeshNode, MeshTask, MeshTaskResult, NodeState, NodeRole } from "./
 export type { MeshStatus } from "./lokamesh.js";
 export type { SchedulerResult } from "./scheduler/scheduler.js";
 
+// ── Platform detection ─────────────────────────────────────────────────────
+export {
+  getPlatformCapabilities,
+  resetPlatformCache,
+  describePlatform,
+} from "./platform/platform.js";
+export type {
+  OsFamily,
+  DiscoveryBackend,
+  PowerBackend,
+  BatteryBackend,
+  PlatformCapabilities,
+} from "./platform/platform.js";
+
+// ── HTTP-based discovery (Windows / WSL / container fallback) ────────────────
+export { HttpDiscovery } from "./discovery/http-fallback.js";
+export type { HttpDiscoveryOptions } from "./discovery/http-fallback.js";
+
+// ── Windows power management ────────────────────────────────────────────────
+export {
+  windowsWakeOnLan,
+  windowsSleep,
+  windowsHibernate,
+  windowsLockScreen,
+  windowsShutdown,
+  listPowerSchemes,
+  activatePowerScheme,
+  setHighPerformance,
+  setBalanced,
+  getWindowsBatteryStatus,
+  preventSleep,
+  POWER_SCHEME,
+} from "./power/windows.js";
+export type { WindowsBatteryStatus, WindowsPowerScheme } from "./power/windows.js";
+
 // Battery Intelligence™
 export { ChargeGuardian } from "./battery/guardian/charge-guardian.js";
 export { ThermalGuard, getThermalZone } from "./battery/guardian/thermal-guard.js";
