@@ -3,6 +3,8 @@
 // LokaRoute™ — lokaflow.io
 //
 // packages/route/src/proxy/server.ts
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ProxyServer — drop-in OpenAI-compatible proxy with LokaRoute classifier wired in.
 // Clients point to http://127.0.0.1:4041/v1 and get transparent local/cloud routing.
 

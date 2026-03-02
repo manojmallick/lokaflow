@@ -5,10 +5,10 @@
 // OrchestratorPipeline — The main entry point. Executes the full Plan → Execute → Verify → Assemble DAG.
 
 import type { Message } from "../types.js";
-import type { OrchestrationResult, TaskGraph, TaskNode, TierLevel } from "../types.js";
+import type { OrchestrationResult, TaskGraph, TierLevel } from "../types.js";
 import { TaskDecomposer } from "../decomposer/decomposer.js";
 import { TokenBudgetAllocator } from "../budget/allocator.js";
-import { ModelRegistry, type ModelProfile } from "../models/registry.js";
+import { ModelRegistry } from "../models/registry.js";
 
 // We assume these are passed in from Core
 interface ProviderApi {

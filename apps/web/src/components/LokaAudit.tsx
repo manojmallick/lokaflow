@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { useEffect, useRef, useState } from "react";
 import {
   BarChart2,
@@ -125,7 +126,6 @@ export function LokaAudit() {
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {

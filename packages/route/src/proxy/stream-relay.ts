@@ -62,7 +62,7 @@ export class StreamRelay {
     let tokenCount = 0;
     const decoder = new TextDecoder();
 
-    // @ts-ignore — ReadableStream types differ between environments
+    // @ts-expect-error — ReadableStream types differ between environments
     const reader = (body as ReadableStream<Uint8Array>).getReader?.();
 
     if (!reader) {

@@ -37,7 +37,7 @@ export class TokenBudgetAllocator {
     const allocatedNodes: TaskNode[] = [];
 
     // First pass: give everyone the minimum
-    for (const node of graph.nodes) {
+    for (const _node of graph.nodes) {
       remainingBudget -= MIN_BUDGET;
     }
 

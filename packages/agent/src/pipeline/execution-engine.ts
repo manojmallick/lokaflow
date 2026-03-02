@@ -12,7 +12,6 @@ import type {
   NodeResult,
   ExecutionResult,
   ModelOutput,
-  EscalationReason,
 } from "../types/agent.js";
 import { topologicalSort } from "../dag/topological-sort.js";
 import { assertNoCycle } from "../dag/cycle-detector.js";
@@ -63,12 +62,12 @@ export class ExecutionEngine {
 
     const results = new Map<string, NodeResult>();
     const layers = topologicalSort(graph);
-    let parallelBatches = 0;
+    let _parallelBatches = 0;
 
     for (let i = 0; i < layers.length; i++) {
       const layer = layers[i];
       if (!layer || layer.length === 0) continue;
-      parallelBatches++;
+      _parallelBatches++;
 
       // Pre-warm next layer's model while current layer runs (overlaps cold-start)
       if (this.config.preWarmNextModel && i + 1 < layers.length) {

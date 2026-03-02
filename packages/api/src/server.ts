@@ -11,11 +11,12 @@
 //   GET  /v1/models            ← list available models
 //   GET  /v1/health            ← provider health check
 //   GET  /docs                 ← Swagger UI (if enabled)
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 
 import Fastify from "fastify";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-import fp from "fastify-plugin";
 
 import type { ApiServerOptions } from "./types.js";
 import {

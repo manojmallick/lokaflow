@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { useEffect, useState, useCallback } from "react";
 import { ChevronDown, ChevronRight, Cloud, Cpu, RefreshCw, Wifi, WifiOff, Zap } from "lucide-react";
 

@@ -3,6 +3,7 @@
 //
 // packages/cli/src/utils/meshConfig.ts
 // Resolves lokanet.yaml config file for LokaMesh CLI commands.
+/* eslint-disable no-console */
 
 import { existsSync } from "fs";
 import { join } from "path";

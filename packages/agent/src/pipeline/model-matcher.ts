@@ -9,11 +9,7 @@
 import type { ModelAssignment, ModelTier, TaskNode, TaskType } from "../types/agent.js";
 import type { ModelCapabilityRegistry } from "../registry/model-registry.js";
 import type { WarmModelTracker } from "../registry/warm-tracker.js";
-import {
-  CLOUD_FALLBACK_MODEL,
-  DEFAULT_NANO_MODEL,
-  DEFAULT_STANDARD_MODEL,
-} from "../registry/interim-models.js";
+import { CLOUD_FALLBACK_MODEL, DEFAULT_STANDARD_MODEL } from "../registry/interim-models.js";
 
 export class ModelMatcher {
   constructor(

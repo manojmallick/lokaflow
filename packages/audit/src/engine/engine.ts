@@ -22,7 +22,7 @@ export class AuditEngine {
       try {
         const mod = await import("@lokaflow/orchestrator");
         this.measurer = new mod.ComplexityMeasurer();
-      } catch (err) {
+      } catch {
         throw new Error("LokaOrchestrator package is required for AuditEngine. Is it built?");
       }
     }

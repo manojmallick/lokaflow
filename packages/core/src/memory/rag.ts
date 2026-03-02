@@ -20,7 +20,7 @@
 
 import type { Message } from "../types.js";
 import { MemoryStore } from "./store.js";
-import type { MemoryEntry, SimilarEntry } from "./store.js";
+import type { MemoryEntry } from "./store.js";
 
 // ── TF-IDF vectorizer ────────────────────────────────────────────────────────
 

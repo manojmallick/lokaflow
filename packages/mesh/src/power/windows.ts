@@ -5,7 +5,7 @@
 // Windows-specific power management — Wake-on-LAN, sleep, and battery via
 // native Windows APIs (powercfg, WMI, netsh).
 
-import { execSync, spawn } from "child_process";
+import { spawn } from "child_process";
 import { promisify } from "util";
 import { exec } from "child_process";
 
@@ -191,7 +191,7 @@ export async function getWindowsBatteryStatus(): Promise<WindowsBatteryStatus> {
 /** Keep system awake by preventing sleep via powercfg overrides */
 export async function preventSleep(durationSeconds: number): Promise<void> {
   // Use powercfg /requestsoverride to mark process as requiring system power
-  const pidStr = process.pid.toString();
+  const _pidStr = process.pid.toString();
   try {
     await execAsync(`powercfg /requestsoverride process node.exe system`);
   } catch {

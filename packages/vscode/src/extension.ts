@@ -3,6 +3,8 @@
 // LokaFlow™ — lokaflow.io
 //
 // packages/vscode/src/extension.ts
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // VS Code extension entry point.
 // Adds:
 //   • Status bar item showing current routing tier + estimated cost

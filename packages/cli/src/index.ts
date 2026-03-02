@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 
 // Load .env from the current working directory before anything else runs.
 // This makes GEMINI_API_KEY, ANTHROPIC_API_KEY, etc. available to all providers.

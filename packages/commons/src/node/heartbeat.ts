@@ -3,6 +3,7 @@
 // LokaCommons™ — lokaflow.io
 //
 // packages/commons/src/node/heartbeat.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Node heartbeat: emit periodic presence signals and store them for health tracking.
 
 import Database from "better-sqlite3";
@@ -121,7 +122,7 @@ export class HeartbeatStore {
 
     // Update presence
     const existing = this.getPresence(full.nodeId);
-    const wasOffline = existing?.status === "offline";
+    const _wasOffline = existing?.status === "offline";
     this.db
       .prepare(
         `

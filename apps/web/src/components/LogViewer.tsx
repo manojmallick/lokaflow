@@ -3,6 +3,7 @@
 //
 // apps/web/src/components/LogViewer.tsx
 // Live log viewer — streams lokaflow-routing.log via SSE, with filtering and
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 // colour-coded line classification matching the TracePanel in Chat.tsx.
 
 import { useState, useEffect, useRef, useCallback } from "react";

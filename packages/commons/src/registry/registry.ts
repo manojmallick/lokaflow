@@ -8,11 +8,11 @@ import { NodeCapacityReport } from "../types/routing.js";
 export class CommonsRegistry {
   private nodes: Map<string, NodeCapacityReport> = new Map();
 
-  register(report: NodeCapacityReport) {
+  register(report: NodeCapacityReport): void {
     this.nodes.set(report.nodeId, report);
   }
 
-  remove(nodeId: string) {
+  remove(nodeId: string): void {
     this.nodes.delete(nodeId);
   }
 

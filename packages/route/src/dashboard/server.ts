@@ -3,6 +3,7 @@
 // LokaRoute™ — lokaflow.io
 //
 // packages/route/src/dashboard/server.ts
+/* eslint-disable no-console */
 // Local savings dashboard — serves a self-contained HTML page at localhost:4040.
 // No external CDN dependencies; all chart rendering is inline SVG sparklines.
 

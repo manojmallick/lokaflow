@@ -1,6 +1,9 @@
 // © 2026 LearnHubPlay BV. All rights reserved.
 // Licensed under BUSL 1.1 — see LICENSE for details.
 // LokaMesh Battery Intelligence™ — lokaflow.io
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 
 import Database from "better-sqlite3";
 import { existsSync, mkdirSync } from "fs";

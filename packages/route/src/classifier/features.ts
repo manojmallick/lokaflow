@@ -208,7 +208,7 @@ export class FeatureExtractor {
  * Returns 0.0–1.0.
  */
 export function computeCompositeScore(features: ClassifierFeatures): number {
-  const boolToNum = (b: boolean) => (b ? 1 : 0);
+  const boolToNum = (b: boolean): number => (b ? 1 : 0);
 
   const raw =
     features.tokenCount * SIGNAL_WEIGHTS.tokenCount +

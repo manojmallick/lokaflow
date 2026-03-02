@@ -4,6 +4,8 @@
 //
 // packages/cli/src/route.ts
 // Full CLI for LokaRoute proxy — start, savings, classify, breakdown, feedback, setup, dashboard
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Command } from "commander";
 import chalk from "chalk";
@@ -156,7 +158,6 @@ const classifyCmd = new Command("classify")
 
       const extractor = new FeatureExtractor();
       const features = extractor.extract(query);
-      const score = features.historicalComplexityBaseline ?? 0;
 
       const classifier = new QueryClassifier({ sensitivity: opts.sensitivity as any });
       const result = classifier.classify(query);

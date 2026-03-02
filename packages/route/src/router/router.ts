@@ -8,7 +8,7 @@
 
 import type { QueryClassification } from "../types/classification.js";
 import type { RouteDecision, RoutingTier } from "../types/routing.js";
-import { DEFAULT_TIER_MODELS, isLocalTier, scoreToTier } from "../types/routing.js";
+import { DEFAULT_TIER_MODELS, isLocalTier } from "../types/routing.js";
 import type { RoutingPolicy } from "./policy.js";
 import { DEFAULT_POLICY, matchPolicyOverride } from "./policy.js";
 import type { SavingsTracker } from "../tracker/savings-tracker.js";

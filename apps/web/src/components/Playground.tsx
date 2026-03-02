@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { useState } from "react";
 import { FlaskConical, Loader2, RotateCcw, Send, Star, Trophy } from "lucide-react";
 

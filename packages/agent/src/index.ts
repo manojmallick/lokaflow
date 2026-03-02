@@ -13,7 +13,6 @@ import type {
   AssemblyStrategy,
   ComplexityTrace,
   DecompositionTrace,
-  EscalationReason,
   ExecutionNodeTrace,
   ModelAssignmentTrace,
   PromptGuardTrace,
@@ -147,7 +146,7 @@ export class LokaAgent {
 
     const cleanPrompt = guardResult.cleanPrompt ?? request.prompt;
     const intent = guardResult.intent!;
-    const localOnly = request.localOnly ?? guardResult.localOnly ?? false;
+    const _localOnly = request.localOnly ?? guardResult.localOnly ?? false;
 
     // ── Stage 2: ComplexityScorer ───────────────────────────────────────────
     const complexity = await this.scorer.score(cleanPrompt, intent);

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Command } from "commander";
 import chalk from "chalk";
 
@@ -7,7 +8,7 @@ export const commonsCommand = new Command("commons")
     console.log(chalk.blue("[LokaCommons] Initializing cooperative tracker..."));
     try {
       const { CommonsRegistry } = await import("@lokaflow/commons");
-      const registry = new CommonsRegistry();
+      const _registry = new CommonsRegistry();
       console.log(chalk.green("Connected to LokaCommons network."));
     } catch (e) {
       console.error(chalk.red("Failed to load LokaCommons"), e);

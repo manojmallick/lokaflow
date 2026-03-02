@@ -3,7 +3,7 @@
 // LokaMesh Battery Intelligence™ — lokaflow.io
 
 import { BatteryState } from "../agents/base.js";
-import { getThermalZone, ThermalGuard } from "../guardian/thermal-guard.js";
+import { ThermalGuard } from "../guardian/thermal-guard.js";
 
 export interface MeshNodeMock {
   id: string;

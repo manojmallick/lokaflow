@@ -3,6 +3,9 @@
 // LokaRoute™ — lokaflow.io
 //
 // packages/route/src/tracker/report.ts
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 // SavingsReport — queries SavingsTracker SQLite DB and produces human-readable
 // CLI output and structured JSON for the dashboard.
 

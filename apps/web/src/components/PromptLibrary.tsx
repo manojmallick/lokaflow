@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { useState, useMemo, useEffect } from "react";
 import { BookOpen, Pin, PinOff, Plus, Search, Send, Trash2, X } from "lucide-react";
 

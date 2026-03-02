@@ -14,13 +14,9 @@ import { homedir } from "os";
 import { join } from "path";
 import { randomUUID } from "crypto";
 import type { RoutingTier } from "../types/routing.js";
-import type {
-  LearningRecord,
-  FeedbackSignal,
-  UserClassificationBaseline,
-} from "../types/tracking.js";
+import type { FeedbackSignal, UserClassificationBaseline } from "../types/tracking.js";
 
-interface LearningRow {
+interface _LearningRow {
   id: string;
   timestamp: string;
   token_count: number;

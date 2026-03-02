@@ -1,5 +1,6 @@
 // © 2026 LearnHubPlay BV. All rights reserved.
 // Licensed under BUSL 1.1 — see LICENSE for details.
+/* eslint-disable no-console */
 
 /**
  * BudgetTracker — enforces daily and monthly EUR spend caps.

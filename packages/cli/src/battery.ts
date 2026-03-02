@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { Command } from "commander";
 import chalk from "chalk";
 import { execSync } from "child_process";

@@ -1,6 +1,7 @@
 // © 2026 LearnHubPlay BV. All rights reserved.
 // Licensed under BUSL 1.1 — see LICENSE for details.
 // LokaMesh Battery Intelligence™ — lokaflow.io
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { readFile, access, readdir } from "fs/promises";
 import { join } from "path";
@@ -84,7 +85,7 @@ export class LinuxBatteryAgent implements BatteryAgent {
     const [
       capacityStr,
       statusStr,
-      energyNowStr,
+      _energyNowStr,
       energyFullStr,
       energyFullDesignStr,
       cycleCountStr,

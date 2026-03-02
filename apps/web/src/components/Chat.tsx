@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { useState, useRef, useEffect, useCallback, useMemo, ChangeEvent } from "react";
 import {
   Send,

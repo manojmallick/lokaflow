@@ -3,6 +3,7 @@
 //
 // packages/mesh/src/discovery/mdns.ts
 // MdnsDiscovery — announces this node on the LAN and scans for other LokaMesh nodes.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Uses multicast-dns (zero-config, no Bonjour daemon required).
 // Service type: _lokaflow._tcp.local
 

@@ -3,6 +3,7 @@
 //
 // packages/api/src/routes/health.ts
 // GET /v1/health — provider status check
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { FastifyPluginAsync } from "fastify";
 import type { Router } from "@lokaflow/core";

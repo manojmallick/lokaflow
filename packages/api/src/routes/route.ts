@@ -53,7 +53,7 @@ const routeRoute: FastifyPluginAsync<RouteRouteOptions> = async (fastify, opts) 
       const decision = await opts.router.route(messages);
 
       // Estimate cost for the messages (rough — based on token count × provider rate)
-      const inputTokenEstimate = messages.reduce(
+      const _inputTokenEstimate = messages.reduce(
         (acc, m) => acc + Math.ceil(m.content.length / 4),
         0,
       );

@@ -3,6 +3,7 @@
 //
 // packages/mesh/src/lokamesh.ts
 // LokaMesh — main facade class. The public API for the LokaMesh cluster layer.
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 //
 // Usage:
 //   const mesh = new LokaMesh({ configPath: "./lokanet.yaml" })

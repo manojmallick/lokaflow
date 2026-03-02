@@ -1,6 +1,7 @@
 // © 2026 LearnHubPlay BV. All rights reserved.
 // Licensed under BUSL 1.1 — see LICENSE for details.
 // LokaSwap™ — lokaflow.io
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ApiProviderIntegration, ProviderBalance, ProviderRate } from "./base.js";
 

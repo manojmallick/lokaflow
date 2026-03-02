@@ -5,6 +5,7 @@
 // packages/route/src/proxy/openai-compat.ts
 // OpenAICompatLayer — normalises request/response formats across all providers
 // into a single canonical shape so the rest of the proxy never needs to branch.
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 
 import type { RouteDecision } from "../types/routing.js";
 

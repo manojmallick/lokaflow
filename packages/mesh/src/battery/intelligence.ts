@@ -1,6 +1,7 @@
 // © 2026 LearnHubPlay BV. All rights reserved.
 // Licensed under BUSL 1.1 — see LICENSE for details.
 // LokaMesh Battery Intelligence™ — lokaflow.io
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { platform } from "os";
 import { EventEmitter } from "events";

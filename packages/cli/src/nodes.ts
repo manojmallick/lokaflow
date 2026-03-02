@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Command } from "commander";
 import chalk from "chalk";
 import { resolveMeshConfigPath } from "./utils/meshConfig.js";

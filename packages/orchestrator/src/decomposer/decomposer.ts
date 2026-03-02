@@ -83,7 +83,7 @@ Respond ONLY with valid JSON in this exact format, no markdown blocks:
         nodes,
         criticalPathLength: parsed.criticalPathLength || 1,
       };
-    } catch (err) {
+    } catch {
       // Fallback: don't decompose, just return a single node graph
       return {
         planId: crypto.randomUUID(),

@@ -13,7 +13,6 @@ import { DECOMPOSER_MODEL } from "../registry/interim-models.js";
 import { DECOMPOSITION_SYSTEM_PROMPT, buildDecompositionPrompt } from "./prompts/decomposition.js";
 import type { ModelCapabilityRegistry } from "../registry/model-registry.js";
 import type { WarmModelTracker } from "../registry/warm-tracker.js";
-import { estimateTokens } from "../utils/tokens.js";
 
 // ---------------------------------------------------------------------------
 // Zod schema — strict validation of decomposer output

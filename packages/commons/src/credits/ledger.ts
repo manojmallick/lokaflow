@@ -1,6 +1,8 @@
 // © 2026 LearnHubPlay BV. All rights reserved.
 // Licensed under BUSL 1.1 — see LICENSE for details.
 // LokaCommons™ — lokaflow.io
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 
 import Database from "better-sqlite3";
 import { randomUUID } from "crypto";

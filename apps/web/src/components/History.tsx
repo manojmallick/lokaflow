@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { useMemo, useState } from "react";
 import { Clock, Download, Filter, Hash, MessageSquare, Search, X } from "lucide-react";
 

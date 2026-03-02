@@ -4,7 +4,7 @@
 // packages/api/src/types.ts
 // Shared types for the LokaFlow REST API layer.
 
-import type { LokaFlowConfig, Message, RoutingDecision } from "@lokaflow/core";
+import type { LokaFlowConfig, RoutingDecision } from "@lokaflow/core";
 
 // ── OpenAI-compatible chat types ────────────────────────────────────────────
 

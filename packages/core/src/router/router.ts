@@ -1,5 +1,6 @@
 // © 2026 LearnHubPlay BV. All rights reserved.
 // Licensed under BUSL 1.1 — see LICENSE for details.
+/* eslint-disable no-console */
 
 /**
  * Router — the core orchestration engine.
@@ -332,7 +333,7 @@ export class Router {
         const localTotal = sv.actualLocalTokens;
         const cloudTotal = sv.actualCloudTokens;
         const grandTotal = plannerTotal + localTotal + cloudTotal || 1; // avoid ÷0
-        const pctOf = (n: number) => ((n / grandTotal) * 100).toFixed(1);
+        const pctOf = (n: number): string => ((n / grandTotal) * 100).toFixed(1);
 
         let telemetryStr = `\n---\n### 📊 LokaAgent Telemetry\n`;
         telemetryStr += `- **Nodes**: ${sv.totalNodes} total · ${sv.localNodes} local · ${sv.cloudNodes} cloud · ${sv.escalatedNodes} escalated\n`;
