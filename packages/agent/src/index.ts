@@ -46,6 +46,7 @@ export interface LokaAgentConfig {
     minSubtaskTokens: number;
   };
   heuristicOnlyScoring: boolean;
+  heuristicConfidenceThreshold?: number;
 }
 
 const DEFAULT_CONFIG: LokaAgentConfig = {
@@ -61,6 +62,7 @@ const DEFAULT_CONFIG: LokaAgentConfig = {
     minSubtaskTokens: 150,
   },
   heuristicOnlyScoring: false,
+  heuristicConfidenceThreshold: 0.8,
 };
 
 // ---------------------------------------------------------------------------
@@ -87,7 +89,7 @@ export class LokaAgent {
     this.scorer = new ComplexityScorer({
       scorerModel: "ollama:qwen2.5:7b",
       heuristicOnlyMode: this.config.heuristicOnlyScoring,
-      heuristicConfidenceThreshold: 0.8,
+      heuristicConfidenceThreshold: this.config.heuristicConfidenceThreshold ?? 0.8,
       ollamaBaseUrl: this.config.ollamaBaseUrl,
     });
     this.decomposer = new InterimDecomposer(this.registry, this.warmTracker, {
@@ -151,11 +153,13 @@ export class LokaAgent {
     // ── Stage 2: ComplexityScorer ───────────────────────────────────────────
     const complexity = await this.scorer.score(cleanPrompt, intent);
 
+    const heuristicThreshold = this.config.heuristicConfidenceThreshold ?? 0.8;
     const complexityTrace: ComplexityTrace = {
       index: complexity.index,
       dimensions: complexity.dimensions,
       confidence: complexity.confidence,
-      usedModelCall: complexity.confidence < 0.8 && !this.config.heuristicOnlyScoring,
+      usedModelCall:
+        complexity.confidence < heuristicThreshold && !this.config.heuristicOnlyScoring,
     };
 
     // Trivial bypass: complexity < threshold → hand off to simple local routing

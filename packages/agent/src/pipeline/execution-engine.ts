@@ -130,18 +130,22 @@ export class ExecutionEngine {
     priorResults: Map<string, NodeResult>,
     localOnly = false,
   ): Promise<NodeResult> {
-    // Enforce localOnly (PII guard): if the task graph assigned a cloud model,
-    // redirect to the node's local fallback (or DEFAULT_NANO_MODEL) so that
-    // PII-detected prompts are never forwarded to a remote provider.
-    const effectiveNode: TaskNode =
-      localOnly && !node.assignedModel.startsWith("ollama:")
-        ? {
-            ...node,
-            assignedModel: node.fallbackModel.startsWith("ollama:")
-              ? node.fallbackModel
-              : DEFAULT_NANO_MODEL,
-          }
-        : node;
+    // Redirect non-Ollama model IDs to a local model when:
+    //   (a) localOnly is set (PII guard — never forward to remote), or
+    //   (b) cloudEscalation is not enabled (offline-only engine, the default).
+    // This keeps NodeResult.model honest: it always reflects the model that
+    // was actually executed rather than a cloud assignment that never ran.
+    const needsLocalRedirect =
+      !node.assignedModel.startsWith("ollama:") &&
+      (localOnly || this.config.cloudEscalation !== true);
+    const effectiveNode: TaskNode = needsLocalRedirect
+      ? {
+          ...node,
+          assignedModel: node.fallbackModel.startsWith("ollama:")
+            ? node.fallbackModel
+            : DEFAULT_NANO_MODEL,
+        }
+      : node;
 
     const packed = await this.packer.pack(effectiveNode, priorResults);
     const formattedContext = this.packer.format(packed);
@@ -319,14 +323,21 @@ export class ExecutionEngine {
   ): Promise<ModelOutput> {
     const start = Date.now();
 
-    // Cloud (non-`ollama:`) models are not handled by OllamaClient in this engine.
-    // When such a model is requested, transparently fall back to a local nano model
-    // so that execution still produces a meaningful result instead of a guaranteed
-    // failure and empty output.
-    const effectiveModelId = modelId.startsWith("ollama:") ? modelId : DEFAULT_NANO_MODEL;
+    // Only Ollama model IDs are supported by this engine.
+    // Non-ollama IDs (cloud providers) should have been redirected to a local
+    // model in executeNode before reaching here; if one slips through (e.g.
+    // cloudEscalation=true with a real cloud adapter calling callModel directly)
+    // throw so the caller can handle it properly rather than silently running
+    // the wrong model and reporting misleading NodeResult metadata.
+    if (!modelId.startsWith("ollama:")) {
+      throw new Error(
+        `Model '${modelId}' is not supported by the Ollama execution engine. ` +
+          `Wire a cloud provider adapter or set cloudEscalation to false.`,
+      );
+    }
 
     const result = await this.ollama.complete({
-      model: effectiveModelId,
+      model: modelId,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
