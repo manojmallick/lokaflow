@@ -112,8 +112,9 @@ export class ExecutionEngine {
       localOnly && !node.assignedModel.startsWith("ollama:")
         ? {
             ...node,
-            assignedModel:
-              node.fallbackModel.startsWith("ollama:") ? node.fallbackModel : DEFAULT_NANO_MODEL,
+            assignedModel: node.fallbackModel.startsWith("ollama:")
+              ? node.fallbackModel
+              : DEFAULT_NANO_MODEL,
           }
         : node;
 
