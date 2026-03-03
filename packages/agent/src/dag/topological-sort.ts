@@ -28,20 +28,32 @@ export function topologicalSort(graph: TaskGraph): TaskNode[][] {
   }
 
   const layers: TaskNode[][] = [];
+  // Build adjacency list: nodeId → list of node IDs that depend on it.
+  // This makes the inner loop O(E) per layer instead of O(V²).
+  const dependentsOf = new Map<string, string[]>();
+  for (const node of graph.nodes) {
+    for (const dep of node.dependsOn) {
+      const list = dependentsOf.get(dep) ?? [];
+      list.push(node.id);
+      dependentsOf.set(dep, list);
+    }
+  }
+
   let ready = graph.nodes.filter((n) => (inDegree.get(n.id) ?? 0) === 0);
 
   while (ready.length > 0) {
     // Push this layer
     layers.push(ready);
 
-    // Reduce in-degrees for nodes that depend on this layer
+    // Only visit true dependents — O(E) per layer
     const next: TaskNode[] = [];
     for (const node of ready) {
-      for (const other of graph.nodes) {
-        if (other.dependsOn.includes(node.id)) {
-          const deg = (inDegree.get(other.id) ?? 0) - 1;
-          inDegree.set(other.id, deg);
-          if (deg === 0) next.push(other);
+      for (const dependentId of dependentsOf.get(node.id) ?? []) {
+        const deg = (inDegree.get(dependentId) ?? 0) - 1;
+        inDegree.set(dependentId, deg);
+        if (deg === 0) {
+          const dependent = nodeMap.get(dependentId);
+          if (dependent) next.push(dependent);
         }
       }
     }
@@ -56,6 +68,6 @@ export function topologicalSort(graph: TaskGraph): TaskNode[][] {
     );
   }
 
-  void nodeMap; // suppress unused-variable warning
+  // nodeMap is used above for O(1) dependent lookups
   return layers;
 }

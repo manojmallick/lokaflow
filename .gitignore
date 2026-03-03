@@ -136,3 +136,6 @@ temp/
 .lokaflow/
 task_graphs/output/
 cache/
+
+# Expo — machine-specific, must not be committed (see apps/mobile/.expo/README.md)
+apps/mobile/.expo/

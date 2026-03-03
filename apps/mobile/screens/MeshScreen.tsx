@@ -125,7 +125,7 @@ export default function MeshScreen() {
     setLoading(true);
     const base = (await AsyncStorage.getItem("lf_api_url")) ?? "http://localhost:4141";
     try {
-      const data = await fetch(`${base}/health`).then((r) => r.json());
+      const data = await fetch(`${base}/v1/health`).then((r) => r.json());
       setHealth(data);
     } catch {
       setHealth(MOCK_HEALTH);

@@ -1,11 +1,5 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+// Single source of truth is vite.config.js — this file re-exports it so that
+// tsconfig.node.json can include it without duplicating config.
+import config from "./vite.config.js";
 
-// https://vitejs.dev/config/
-export default defineConfig({
-    plugins: [react()],
-    server: {
-        port: 3000,
-        strictPort: true,
-    }
-})
+export default config;

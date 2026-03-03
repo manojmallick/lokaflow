@@ -57,7 +57,7 @@ export class ExecutionEngine {
     this.gate = new QualityGate();
   }
 
-  async execute(graph: TaskGraph): Promise<ExecutionResult> {
+  async execute(graph: TaskGraph, localOnly = false): Promise<ExecutionResult> {
     assertNoCycle(graph);
 
     const results = new Map<string, NodeResult>();
@@ -77,7 +77,9 @@ export class ExecutionEngine {
         }
       }
 
-      const layerResults = await Promise.all(layer.map((node) => this.executeNode(node, results)));
+      const layerResults = await Promise.all(
+        layer.map((node) => this.executeNode(node, results, localOnly)),
+      );
       for (const r of layerResults) {
         results.set(r.nodeId, r);
       }
@@ -101,6 +103,7 @@ export class ExecutionEngine {
   private async executeNode(
     node: TaskNode,
     priorResults: Map<string, NodeResult>,
+    localOnly = false,
   ): Promise<NodeResult> {
     const packed = await this.packer.pack(node, priorResults);
     const formattedContext = this.packer.format(packed);
@@ -117,7 +120,7 @@ export class ExecutionEngine {
     const validated = this.gate.validate(raw, node.outputSchema);
 
     if (!validated.passed) {
-      return this.handleFailure(node, raw, validated, priorResults, packed.totalTokens);
+      return this.handleFailure(node, raw, validated, priorResults, packed.totalTokens, localOnly);
     }
 
     return {
@@ -138,6 +141,7 @@ export class ExecutionEngine {
     validation: { score: number; failedReason?: string | undefined; output: string },
     priorResults: Map<string, NodeResult>,
     packedTokens: number,
+    localOnly = false,
   ): Promise<NodeResult> {
     // Path 1: Retry with same model (once)
     if (validation.score >= 0.5 && node.retryCount < 1) {
@@ -166,7 +170,20 @@ export class ExecutionEngine {
       }
     }
 
-    // Path 2: Escalate to cloud fallback
+    // Path 2: Escalate to cloud fallback — skip if localOnly (PII guard)
+    if (localOnly) {
+      return {
+        nodeId: node.id,
+        output: raw.content,
+        model: node.assignedModel,
+        tokensUsed: raw.usage,
+        latencyMs: raw.latencyMs,
+        packedTokens,
+        qualityScore: validation.score,
+        escalated: false,
+      };
+    }
+
     const cloudRaw = await this.callModel(
       CLOUD_FALLBACK_MODEL,
       `Complete this task: ${node.description}`,
@@ -192,13 +209,9 @@ export class ExecutionEngine {
   ): Promise<ModelOutput> {
     const start = Date.now();
 
-    // Cloud models not handled by OllamaClient — return placeholder
+    // Cloud models not handled by OllamaClient — signal failure so the caller can fall back
     if (!modelId.startsWith("ollama:")) {
-      return {
-        content: `[Cloud model ${modelId} not available in offline mode]`,
-        usage: { inputTokens: 0, outputTokens: 0 },
-        latencyMs: 0,
-      };
+      throw new Error(`Cloud model '${modelId}' is not available via OllamaClient (offline mode).`);
     }
 
     const result = await this.ollama.complete({
@@ -219,10 +232,17 @@ export class ExecutionEngine {
   }
 
   private async withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Node execution timed out after ${ms}ms`)), ms),
-    );
-    return Promise.race([promise, timeout]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`Node execution timed out after ${ms}ms`)), ms);
+    });
+    try {
+      return await Promise.race([promise, timeout]);
+    } finally {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+    }
   }
 
   private async preWarm(modelId: string): Promise<void> {
