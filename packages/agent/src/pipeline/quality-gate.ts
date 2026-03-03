@@ -25,7 +25,9 @@ function checkSchema(content: string, schema: OutputSchema): CheckResult {
     }
   } else if (schema.format === "CODE") {
     // Very loose check: must contain at least a function/class/def keyword or code symbols
-    const hasCodeKeyword = /\b(function|class|def|const|let|var|return|import|export)\b/.test(content);
+    const hasCodeKeyword = /\b(function|class|def|const|let|var|return|import|export)\b/.test(
+      content,
+    );
     const hasArrowFunction = /=>/.test(content);
     const hasCode = hasCodeKeyword || hasArrowFunction;
     if (!hasCode) {

@@ -36,18 +36,11 @@ export class ContextPacker {
     const systemPrompt = this.buildSystemPrompt(node);
     const taskDesc = node.description;
     const outputSchemaStr = this.outputSchemaToString(node);
-
-    // Clamp the instructed max output tokens to the reserved output window
-    // and to any limits defined on the node or its output schema.
-    const schemaMax = node.outputSchema?.maxTokens;
-    const requestedMax = node.tokenBudget?.outputMax;
+    // Clamp the instructed output limit to the reserved output window,
+    // the node's token budget, and any schema-level limit — whichever is smallest.
     const effectiveOutputMax = Math.max(
       1,
-      Math.min(
-        outputReserve,
-        schemaMax ?? outputReserve,
-        requestedMax ?? outputReserve,
-      ),
+      Math.min(outputReserve, node.outputSchema.maxTokens, node.tokenBudget.outputMax),
     );
     const tokenBudgetInstruction = `Your response MUST be under ${effectiveOutputMax} tokens.`;
 

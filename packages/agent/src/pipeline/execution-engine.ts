@@ -129,7 +129,7 @@ export class ExecutionEngine {
     const validated = this.gate.validate(raw, effectiveNode.outputSchema);
 
     if (!validated.passed) {
-      return this.handleFailure(effectiveNode, raw, validated, priorResults, packed.totalTokens, localOnly);
+      return this.handleFailure(node, raw, validated, priorResults, packed.totalTokens, localOnly);
     }
 
     return {
@@ -179,7 +179,7 @@ export class ExecutionEngine {
       }
     }
 
-    // Path 2: Escalate to cloud fallback — skipped when localOnly is enforced
+    // Path 2: Escalate to cloud fallback — skip if localOnly (PII guard)
     if (localOnly) {
       return {
         nodeId: node.id,
@@ -218,11 +218,9 @@ export class ExecutionEngine {
   ): Promise<ModelOutput> {
     const start = Date.now();
 
-    // Cloud models not handled by OllamaClient — signal failure explicitly
+    // Cloud models not handled by OllamaClient — signal failure so the caller can fall back
     if (!modelId.startsWith("ollama:")) {
-      throw new Error(
-        `Cloud model '${modelId}' is not available via OllamaClient (offline mode).`,
-      );
+      throw new Error(`Cloud model '${modelId}' is not available via OllamaClient (offline mode).`);
     }
 
     const result = await this.ollama.complete({
@@ -245,12 +243,8 @@ export class ExecutionEngine {
   private async withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(
-        () => reject(new Error(`Node execution timed out after ${ms}ms`)),
-        ms,
-      );
+      timer = setTimeout(() => reject(new Error(`Node execution timed out after ${ms}ms`)), ms);
     });
-
     try {
       return await Promise.race([promise, timeout]);
     } finally {
