@@ -119,20 +119,24 @@ const MOCK_HEALTH: HealthData = {
 export default function MeshScreen() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [offline, setOffline] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setOffline(false);
     const base = (await AsyncStorage.getItem("lf_api_url")) ?? "http://localhost:4141";
     try {
       const data = await fetch(`${base}/v1/health`).then((r) => r.json());
       setHealth(data);
     } catch {
-      setHealth(MOCK_HEALTH);
+      setOffline(true);
+      // Keep stale health data visible if available; fall back to mock only on first load.
+      if (!health) setHealth(MOCK_HEALTH);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [health]);
 
   useEffect(() => {
     load();
@@ -142,6 +146,11 @@ export default function MeshScreen() {
 
   return (
     <SafeAreaView style={s.container}>
+      {offline && (
+        <View style={s.offlineBanner}>
+          <Text style={s.offlineBannerText}>⚠ API unreachable — showing cached data</Text>
+        </View>
+      )}
       <ScrollView
         contentContainerStyle={s.content}
         refreshControl={
@@ -269,6 +278,14 @@ function MiniStat({ label, pct, color }: { label: string; pct: number; color: st
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#09090b" },
+  offlineBanner: {
+    backgroundColor: "#7c2d12",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  offlineBannerText: { color: "#fef2f2", fontSize: 13, fontWeight: "600" },
   content: { padding: 16, paddingBottom: 32 },
   overviewCard: {
     backgroundColor: "#18181b",

@@ -70,11 +70,13 @@ export class ExecutionEngine {
       if (!layer || layer.length === 0) continue;
       _parallelBatches++;
 
-      // Pre-warm next layer's model while current layer runs (overlaps cold-start)
+      // Pre-warm all distinct models in the next layer while current layer runs.
+      // Capped at 3 to avoid flooding Ollama with concurrent load requests.
       if (this.config.preWarmNextModel && i + 1 < layers.length) {
         const nextLayer = layers[i + 1];
-        if (nextLayer && nextLayer[0]) {
-          void this.preWarm(nextLayer[0].assignedModel);
+        if (nextLayer) {
+          const distinct = [...new Set(nextLayer.map((n) => n.assignedModel))].slice(0, 3);
+          for (const modelId of distinct) void this.preWarm(modelId);
         }
       }
 
@@ -131,10 +133,31 @@ export class ExecutionEngine {
       this.config.maxTimeoutMs,
     );
 
-    const raw = await this.withTimeout(
-      this.callModel(effectiveNode.assignedModel, packed.systemPrompt, formattedContext),
-      timeoutMs,
-    );
+    let raw: ModelOutput;
+    try {
+      raw = await this.withTimeout(
+        this.callModel(effectiveNode.assignedModel, packed.systemPrompt, formattedContext),
+        timeoutMs,
+      );
+    } catch (err) {
+      // callModel throws for non-Ollama models (cloud-only IDs) or on timeout/network errors.
+      // Synthesise a zero-score result so handleFailure can route to cloud escalation or
+      // return escalated:false honestly — rather than propagating the exception.
+      const emptyRaw: ModelOutput = {
+        content: "",
+        usage: { inputTokens: 0, outputTokens: 0 },
+        latencyMs: 0,
+      };
+      const failedValidation = { passed: false, score: 0, failedReason: String(err), output: "" };
+      return this.handleFailure(
+        effectiveNode,
+        emptyRaw,
+        failedValidation,
+        priorResults,
+        packed.totalTokens,
+        localOnly,
+      );
+    }
 
     const validated = this.gate.validate(raw, effectiveNode.outputSchema);
 
@@ -210,22 +233,36 @@ export class ExecutionEngine {
       };
     }
 
-    const cloudRaw = await this.callModel(
-      CLOUD_FALLBACK_MODEL,
-      `Complete this task: ${node.description}`,
-      `Task: ${node.description}\n\nOutput format: ${node.outputSchema.format}`,
-    ).catch(() => raw); // if cloud also fails, use original raw
-
-    return {
-      nodeId: node.id,
-      output: cloudRaw.content || raw.content,
-      model: CLOUD_FALLBACK_MODEL,
-      tokensUsed: cloudRaw.usage,
-      latencyMs: cloudRaw.latencyMs,
-      packedTokens,
-      qualityScore: validation.score,
-      escalated: true,
-    };
+    try {
+      const cloudRaw = await this.callModel(
+        CLOUD_FALLBACK_MODEL,
+        `Complete this task: ${node.description}`,
+        `Task: ${node.description}\n\nOutput format: ${node.outputSchema.format}`,
+      );
+      return {
+        nodeId: node.id,
+        output: cloudRaw.content || raw.content,
+        model: CLOUD_FALLBACK_MODEL,
+        tokensUsed: cloudRaw.usage,
+        latencyMs: cloudRaw.latencyMs,
+        packedTokens,
+        qualityScore: validation.score,
+        escalated: true,
+      };
+    } catch {
+      // Cloud escalation unavailable (offline mode or provider error) —
+      // return the original local result so escalated: false is honest.
+      return {
+        nodeId: node.id,
+        output: raw.content,
+        model: node.assignedModel,
+        tokensUsed: raw.usage,
+        latencyMs: raw.latencyMs,
+        packedTokens,
+        qualityScore: validation.score,
+        escalated: false,
+      };
+    }
   }
 
   private async callModel(
@@ -236,15 +273,12 @@ export class ExecutionEngine {
     const start = Date.now();
 
     // Cloud models are not handled by OllamaClient in this engine.
-    // Return a structured "unavailable" result instead of throwing so the caller
-    // (handleFailure) can apply its own fallback/degradation logic rather than
-    // aborting the whole graph execution.
+    // Throw so callers (handleFailure) can detect failure and degrade
+    // gracefully rather than treating a synthetic response as a real output.
     if (!modelId.startsWith("ollama:")) {
-      return {
-        content: `Model '${modelId}' is not available in this ExecutionEngine (Ollama-only offline mode).`,
-        usage: { inputTokens: 0, outputTokens: 0 },
-        latencyMs: Date.now() - start,
-      };
+      throw new Error(
+        `Model '${modelId}' is not available in this ExecutionEngine (Ollama-only offline mode).`,
+      );
     }
 
     const result = await this.ollama.complete({

@@ -9,17 +9,65 @@
 import type { GuardResult, IntentProfile, OutputType, QualityPreference } from "../types/agent.js";
 
 // ---------------------------------------------------------------------------
-// PII patterns (mirrors packages/commons/src — re-declared for zero dep)
+// PII patterns — validated to reduce false positives
+// (mirrors @lokaflow/core PIIScanner logic; re-declared for zero extra dep)
 // ---------------------------------------------------------------------------
 
+/** Elfproef (Dutch 11-check) for BSN — avoids flagging arbitrary 9-digit numbers. */
+function isValidBsn(digits: string): boolean {
+  if (digits.length !== 9) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    const d = Number(digits[i]);
+    sum += (i < 8 ? 9 - i : -1) * d;
+  }
+  return sum % 11 === 0;
+}
+
+/** Luhn algorithm — avoids false-positive credit-card matches. */
+function isValidLuhn(digits: string): boolean {
+  let sum = 0;
+  let alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let n = Number(digits[i]);
+    if (alt) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum += n;
+    alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+
 const PII_PATTERNS: RegExp[] = [
-  /\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}\b/i, // IBAN
-  /\b\d{9}\b/, // BSN (9 digits)
-  /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i, // email
-  /\b(?:\+31|0)[0-9\s\-]{9,12}\b/, // NL phone
-  /\b4[0-9]{12}(?:[0-9]{3})?\b/, // Visa
-  /\b5[1-5][0-9]{14}\b/, // Mastercard
+  /\bNL\d{2}[A-Z]{4}\d{10}\b/, // Dutch IBAN
+  /\b[A-Z]{2}\d{2}[A-Z0-9]{4,30}\b/i, // generic IBAN
+  /\b[\w.+%-]+@[\w-]+\.[a-z]{2,}\b/i, // email
+  /(\+31|0031|0)[0-9()\s\-.]{8,14}|\+[1-9]\d{7,14}/, // NL/international phone
+  /\b(?:\d{1,3}\.){3}\d{1,3}\b/, // IP address
 ];
+
+/** Returns true if text contains validated PII (Elfproef BSN or Luhn credit card). */
+function containsValidatedPii(prompt: string): boolean {
+  // Fast path: check simple patterns first
+  if (PII_PATTERNS.some((p) => p.test(prompt))) return true;
+
+  // BSN: 9 consecutive digits validated with Elfproef
+  const bsnMatches = prompt.match(/\b\d{9}\b/g) ?? [];
+  if (bsnMatches.some((m) => isValidBsn(m))) return true;
+
+  // Credit cards: 13–16 digit sequences validated with Luhn
+  const ccMatches = prompt.match(/\b(?:\d[ -]?){13,16}\b/g) ?? [];
+  if (
+    ccMatches
+      .map((m) => m.replace(/[ -]/g, ""))
+      .some((m) => m.length >= 13 && m.length <= 16 && isValidLuhn(m))
+  )
+    return true;
+
+  return false;
+}
 
 // ---------------------------------------------------------------------------
 // Safety block-list — deterministic, no model required
@@ -111,7 +159,7 @@ export class PromptGuard {
     }
 
     // CHECK 2: PII scan — if PII found, force local-only
-    const piiDetected = PII_PATTERNS.some((p) => p.test(prompt));
+    const piiDetected = containsValidatedPii(prompt);
 
     // CHECK 3: Ambiguity — ask before spending compute
     const ambiguityScore = this.scoreAmbiguity(prompt);
