@@ -37,7 +37,7 @@ export class ModelMatcher {
     if (candidates.length === 0) {
       const cloudAssign: ModelAssignment = {
         modelId: CLOUD_FALLBACK_MODEL,
-        tier: "CLOUD_STANDARD" as ModelTier,
+        tier: "CLOUD_STANDARD",
         fallbackModelId: CLOUD_FALLBACK_MODEL,
         qualityScore: 0,
         reason: "no_local_capable",
@@ -66,7 +66,7 @@ export class ModelMatcher {
     if (!best) {
       const fallbackAssign: ModelAssignment = {
         modelId: CLOUD_FALLBACK_MODEL,
-        tier: "CLOUD_STANDARD" as ModelTier,
+        tier: "CLOUD_STANDARD",
         fallbackModelId: CLOUD_FALLBACK_MODEL,
         qualityScore: 0,
         reason: "no_local_capable",
@@ -89,11 +89,16 @@ export class ModelMatcher {
     return assignment;
   }
 
-  private selectFallback(tier: string): string {
-    if (tier === "LOCAL_NANO") return DEFAULT_STANDARD_MODEL;
-    if (tier === "LOCAL_STANDARD") return CLOUD_FALLBACK_MODEL;
-    if (tier === "LOCAL_LARGE") return CLOUD_FALLBACK_MODEL;
-    return CLOUD_FALLBACK_MODEL;
+  private selectFallback(tier: ModelTier): string {
+    switch (tier) {
+      case "LOCAL_NANO":
+        return DEFAULT_STANDARD_MODEL;
+      case "LOCAL_STANDARD":
+      case "LOCAL_LARGE":
+        return CLOUD_FALLBACK_MODEL;
+      default:
+        return CLOUD_FALLBACK_MODEL;
+    }
   }
 
   /**

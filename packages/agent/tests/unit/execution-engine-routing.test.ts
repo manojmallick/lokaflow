@@ -109,7 +109,8 @@ describe("ExecutionEngine — non-Ollama model graceful degradation", () => {
   });
 
   it("returns escalated=true when cloud fallback succeeds", async () => {
-    const engine = new ExecutionEngine(mockRegistry, engineConfig);
+    // cloudEscalation must be explicitly enabled — offline-only mode is the default.
+    const engine = new ExecutionEngine(mockRegistry, { ...engineConfig, cloudEscalation: true });
     stubPacker(engine);
 
     let callCount = 0;

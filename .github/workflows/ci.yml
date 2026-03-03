@@ -78,6 +78,7 @@ jobs:
                --filter @lokaflow/orchestrator \
                --filter @lokaflow/audit \
                --filter @lokaflow/api \
+               --filter @lokaflow/agent \
                -r run build
 
       - name: Run tsc

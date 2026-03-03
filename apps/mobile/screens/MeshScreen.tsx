@@ -127,7 +127,15 @@ export default function MeshScreen() {
     setOffline(false);
     const base = (await AsyncStorage.getItem("lf_api_url")) ?? "http://localhost:4141";
     try {
-      const data = await fetch(`${base}/v1/health`).then((r) => r.json());
+      const res = await fetch(`${base}/v1/health`);
+      if (!res.ok) {
+        if (__DEV__) {
+          const body = await res.text().catch(() => "");
+          console.error("[MeshScreen] Health check failed", { status: res.status, body });
+        }
+        throw new Error(`Health check returned HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as HealthData;
       setHealth(data);
     } catch {
       setOffline(true);

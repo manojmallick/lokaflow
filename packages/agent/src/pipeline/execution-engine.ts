@@ -41,7 +41,14 @@ export class ExecutionEngine {
 
   constructor(
     private readonly registry: ModelCapabilityRegistry,
-    private readonly config = {
+    private readonly config: {
+      defaultTimeoutMs: number;
+      maxTimeoutMs: number;
+      preWarmNextModel: boolean;
+      ollamaBaseUrl: string;
+      /** Enable cloud escalation when a provider adapter is wired in. Default: false. */
+      cloudEscalation?: boolean;
+    } = {
       defaultTimeoutMs: 120_000,
       maxTimeoutMs: 180_000,
       preWarmNextModel: true,
@@ -136,7 +143,12 @@ export class ExecutionEngine {
     let raw: ModelOutput;
     try {
       raw = await this.withTimeout(
-        this.callModel(effectiveNode.assignedModel, packed.systemPrompt, formattedContext),
+        this.callModel(
+          effectiveNode.assignedModel,
+          packed.systemPrompt,
+          formattedContext,
+          timeoutMs,
+        ),
         timeoutMs,
       );
     } catch (err) {
@@ -192,35 +204,48 @@ export class ExecutionEngine {
     packedTokens: number,
     localOnly = false,
   ): Promise<NodeResult> {
-    // Path 1: Retry with same model (once)
-    if (validation.score >= 0.5 && node.retryCount < 1) {
+    // Path 1: Retry with same model (once) — only for Ollama models supported by this engine.
+    // Guard against non-Ollama IDs before calling so we don't get a guaranteed throw.
+    if (
+      validation.score >= 0.5 &&
+      node.retryCount < 1 &&
+      node.assignedModel.startsWith("ollama:")
+    ) {
       const retryNode: TaskNode = { ...node, retryCount: 1 };
-      // Add explicit instruction to fix the failure
-      const retry = await this.callModel(
-        node.assignedModel,
-        node.outputSchema.format === "JSON"
-          ? "You MUST return valid JSON only. No prose."
-          : node.description,
-        `Please retry. Previous attempt was: ${raw.content.slice(0, 200)}\n\nTask: ${node.description}`,
-      );
+      try {
+        // Add explicit instruction to fix the failure; use a reduced timeout for retries.
+        const retry = await this.callModel(
+          node.assignedModel,
+          node.outputSchema.format === "JSON"
+            ? "You MUST return valid JSON only. No prose."
+            : node.description,
+          `Please retry. Previous attempt was: ${raw.content.slice(0, 200)}\n\nTask: ${node.description}`,
+          Math.min(30_000, this.config.maxTimeoutMs),
+        );
 
-      const revalidated = this.gate.validate(retry, node.outputSchema);
-      if (revalidated.passed) {
-        return {
-          nodeId: retryNode.id,
-          output: revalidated.output,
-          model: node.assignedModel,
-          tokensUsed: retry.usage,
-          latencyMs: retry.latencyMs,
-          packedTokens,
-          qualityScore: revalidated.score,
-          escalated: false,
-        };
+        const revalidated = this.gate.validate(retry, node.outputSchema);
+        if (revalidated.passed) {
+          return {
+            nodeId: retryNode.id,
+            output: revalidated.output,
+            model: node.assignedModel,
+            tokensUsed: retry.usage,
+            latencyMs: retry.latencyMs,
+            packedTokens,
+            qualityScore: revalidated.score,
+            escalated: false,
+          };
+        }
+      } catch {
+        // Retry threw (timeout / OOM / network error) — fall through to cloud escalation.
       }
     }
 
-    // Path 2: Escalate to cloud fallback — skip if localOnly (PII guard)
-    if (localOnly) {
+    // Path 2: Escalate to cloud fallback.
+    // Skipped when: (a) localOnly — PII guard forbids cloud, or
+    //              (b) config.cloudEscalation is false (offline-only engine, default).
+    // Set config.cloudEscalation = true when a cloud provider adapter is wired into callModel().
+    if (localOnly || this.config.cloudEscalation !== true) {
       return {
         nodeId: node.id,
         output: raw.content,
@@ -238,6 +263,7 @@ export class ExecutionEngine {
         CLOUD_FALLBACK_MODEL,
         `Complete this task: ${node.description}`,
         `Task: ${node.description}\n\nOutput format: ${node.outputSchema.format}`,
+        Math.min(60_000, this.config.maxTimeoutMs),
       );
       return {
         nodeId: node.id,
@@ -250,7 +276,7 @@ export class ExecutionEngine {
         escalated: true,
       };
     } catch {
-      // Cloud escalation unavailable (offline mode or provider error) —
+      // Cloud escalation failed (provider error) —
       // return the original local result so escalated: false is honest.
       return {
         nodeId: node.id,
@@ -269,6 +295,7 @@ export class ExecutionEngine {
     modelId: string,
     systemPrompt: string,
     userContent: string,
+    timeoutMs = this.config.maxTimeoutMs,
   ): Promise<ModelOutput> {
     const start = Date.now();
 
@@ -288,7 +315,7 @@ export class ExecutionEngine {
         { role: "user", content: userContent },
       ],
       temperature: 0.2,
-      timeoutMs: this.config.maxTimeoutMs,
+      timeoutMs,
     });
 
     return {

@@ -145,9 +145,16 @@ Output format: ${node.outputSchema.format}`;
         temperature: 0.1,
         timeoutMs: 20_000,
       });
-      return result.content;
+      const summary = result.content;
+      if (estimateTokens(summary) <= targetTokens) return summary;
+      // Summary still exceeds budget — try structural extraction on the summary first.
+      const structured = this.extractStructure(summary);
+      if (estimateTokens(structured) <= targetTokens) return structured;
+      // Final fallback: hard-truncate the summary to honour the token budget.
+      const avgChars = 4.0;
+      return summary.slice(0, targetTokens * avgChars) + "\n[...truncated]";
     } catch {
-      // Can't compress — return truncated original
+      // Ollama unavailable — return truncated original.
       const avgChars = 4.0;
       return text.slice(0, targetTokens * avgChars) + "\n[...truncated]";
     }
