@@ -7,7 +7,7 @@
 // Swappable with LokaLLMDecomposer via config: agent.decomposer: 'lokallm'.
 
 import { z } from "zod";
-import type { TaskGraph, TaskNode, IntentProfile, TaskEdge } from "../types/agent.js";
+import type { TaskGraph, TaskNode, IntentProfile, TaskEdge, OutputSchema, OutputFormat } from "../types/agent.js";
 import { OllamaClient } from "../utils/ollama.js";
 import { DECOMPOSER_MODEL } from "../registry/interim-models.js";
 import { DECOMPOSITION_SYSTEM_PROMPT, buildDecompositionPrompt } from "./prompts/decomposition.js";
@@ -187,11 +187,7 @@ export class InterimDecomposer {
       depth,
       description: s.description,
       inputContext: s.input_context,
-      outputSchema: {
-        format: "PLAIN" as const,
-        requiredElements: [],
-        maxTokens: s.token_budget.output_max,
-      },
+      outputSchema: this.parseOutputSchema(s.output_schema, s.token_budget.output_max),
       assignedModel: s.assigned_model,
       fallbackModel: "anthropic:claude-sonnet-4",
       estimatedComplexity: s.estimated_complexity,
@@ -222,4 +218,24 @@ export class InterimDecomposer {
       createdAt: now,
     };
   }
-}
+
+  /**
+   * Parse the decomposer's freeform `output_schema` string into a structured OutputSchema.
+   * Looks for format keywords and bracket-enclosed required elements.
+   */
+  private parseOutputSchema(raw: string, maxTokens: number): OutputSchema {
+    const upper = raw.toUpperCase();
+
+    let format: OutputFormat = "PLAIN";
+    if (upper.includes("JSON")) format = "JSON";
+    else if (["CODE", "TYPESCRIPT", "PYTHON", "JAVASCRIPT"].some((kw) => upper.includes(kw))) format = "CODE";
+    else if (upper.includes("MARKDOWN") || upper.includes("MD")) format = "MARKDOWN";
+
+    // Extract required elements from bracket or comma-separated lists e.g. "[field1, field2]"
+    const bracketMatch = /\[([^\]]+)\]/.exec(raw);
+    const requiredElements: string[] = bracketMatch
+      ? bracketMatch[1].split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    return { format, requiredElements, maxTokens };
+  }

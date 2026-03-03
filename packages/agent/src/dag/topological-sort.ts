@@ -23,8 +23,15 @@ export function topologicalSort(graph: TaskGraph): TaskNode[][] {
   const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
   // inDegree: how many un-resolved dependencies each node has
   const inDegree = new Map<string, number>();
+  // dependentsById: adjacency list from a node to all nodes that depend on it
+  const dependentsById = new Map<string, string[]>();
+
   for (const node of graph.nodes) {
     inDegree.set(node.id, node.dependsOn.length);
+    for (const dep of node.dependsOn) {
+      if (!dependentsById.has(dep)) dependentsById.set(dep, []);
+      dependentsById.get(dep)!.push(node.id);
+    }
   }
 
   const layers: TaskNode[][] = [];
@@ -37,11 +44,12 @@ export function topologicalSort(graph: TaskGraph): TaskNode[][] {
     // Reduce in-degrees for nodes that depend on this layer
     const next: TaskNode[] = [];
     for (const node of ready) {
-      for (const other of graph.nodes) {
-        if (other.dependsOn.includes(node.id)) {
-          const deg = (inDegree.get(other.id) ?? 0) - 1;
-          inDegree.set(other.id, deg);
-          if (deg === 0) next.push(other);
+      for (const dependentId of dependentsById.get(node.id) ?? []) {
+        const deg = (inDegree.get(dependentId) ?? 0) - 1;
+        inDegree.set(dependentId, deg);
+        if (deg === 0) {
+          const dependentNode = nodeMap.get(dependentId);
+          if (dependentNode) next.push(dependentNode);
         }
       }
     }
@@ -56,6 +64,5 @@ export function topologicalSort(graph: TaskGraph): TaskNode[][] {
     );
   }
 
-  void nodeMap; // suppress unused-variable warning
   return layers;
 }

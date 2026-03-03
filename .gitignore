@@ -131,8 +131,7 @@ temp/
 .tmp/
 
 # ──────────────────────────────
-# LokaFlow runtime data
+# Expo (React Native)
 # ──────────────────────────────
-.lokaflow/
-task_graphs/output/
-cache/
+apps/mobile/.expo/
+

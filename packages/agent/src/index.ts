@@ -146,7 +146,7 @@ export class LokaAgent {
 
     const cleanPrompt = guardResult.cleanPrompt ?? request.prompt;
     const intent = guardResult.intent!;
-    const _localOnly = request.localOnly ?? guardResult.localOnly ?? false;
+    const localOnly = request.localOnly ?? guardResult.localOnly ?? false;
 
     // ── Stage 2: ComplexityScorer ───────────────────────────────────────────
     const complexity = await this.scorer.score(cleanPrompt, intent);
@@ -231,7 +231,7 @@ export class LokaAgent {
     }));
 
     // ── Stage 5 + 6: ContextPacker + ExecutionEngine ──────────────────────
-    const executionResult = await this.engine.execute(graph);
+    const executionResult = await this.engine.execute(graph, localOnly);
     const nodeResults = executionResult.nodeResults;
 
     // ── Stage 7: QualityGate (embedded inside ExecutionEngine per node) ────

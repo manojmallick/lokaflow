@@ -18,7 +18,7 @@ import { assertNoCycle } from "../dag/cycle-detector.js";
 import { ContextPacker } from "./context-packer.js";
 import { QualityGate } from "./quality-gate.js";
 import { OllamaClient } from "../utils/ollama.js";
-import { CLOUD_FALLBACK_MODEL } from "../registry/interim-models.js";
+import { CLOUD_FALLBACK_MODEL, DEFAULT_STANDARD_MODEL } from "../registry/interim-models.js";
 import type { ModelCapabilityRegistry } from "../registry/model-registry.js";
 
 const TIMEOUT_BY_COMPLEXITY: Record<string, number> = {
@@ -57,7 +57,7 @@ export class ExecutionEngine {
     this.gate = new QualityGate();
   }
 
-  async execute(graph: TaskGraph): Promise<ExecutionResult> {
+  async execute(graph: TaskGraph, localOnly = false): Promise<ExecutionResult> {
     assertNoCycle(graph);
 
     const results = new Map<string, NodeResult>();
@@ -77,7 +77,9 @@ export class ExecutionEngine {
         }
       }
 
-      const layerResults = await Promise.all(layer.map((node) => this.executeNode(node, results)));
+      const layerResults = await Promise.all(
+        layer.map((node) => this.executeNode(node, results, localOnly)),
+      );
       for (const r of layerResults) {
         results.set(r.nodeId, r);
       }
@@ -101,29 +103,39 @@ export class ExecutionEngine {
   private async executeNode(
     node: TaskNode,
     priorResults: Map<string, NodeResult>,
+    localOnly = false,
   ): Promise<NodeResult> {
-    const packed = await this.packer.pack(node, priorResults);
+    // Enforce local-only constraint: if PII detected, always use local model
+    const effectiveModel =
+      localOnly && !node.assignedModel.startsWith("ollama:")
+        ? DEFAULT_STANDARD_MODEL
+        : node.assignedModel;
+    const effectiveNode = effectiveModel !== node.assignedModel
+      ? { ...node, assignedModel: effectiveModel }
+      : node;
+
+    const packed = await this.packer.pack(effectiveNode, priorResults);
     const formattedContext = this.packer.format(packed);
     const timeoutMs = Math.min(
-      node.timeoutMs || complexityToTimeout(node.estimatedComplexity),
+      effectiveNode.timeoutMs || complexityToTimeout(effectiveNode.estimatedComplexity),
       this.config.maxTimeoutMs,
     );
 
     const raw = await this.withTimeout(
-      this.callModel(node.assignedModel, packed.systemPrompt, formattedContext),
+      this.callModel(effectiveNode.assignedModel, packed.systemPrompt, formattedContext),
       timeoutMs,
     );
 
-    const validated = this.gate.validate(raw, node.outputSchema);
+    const validated = this.gate.validate(raw, effectiveNode.outputSchema);
 
     if (!validated.passed) {
-      return this.handleFailure(node, raw, validated, priorResults, packed.totalTokens);
+      return this.handleFailure(effectiveNode, raw, validated, priorResults, packed.totalTokens, localOnly);
     }
 
     return {
-      nodeId: node.id,
+      nodeId: effectiveNode.id,
       output: validated.output,
-      model: node.assignedModel,
+      model: effectiveNode.assignedModel,
       tokensUsed: raw.usage,
       latencyMs: raw.latencyMs,
       packedTokens: packed.totalTokens,
@@ -138,6 +150,7 @@ export class ExecutionEngine {
     validation: { score: number; failedReason?: string | undefined; output: string },
     priorResults: Map<string, NodeResult>,
     packedTokens: number,
+    localOnly = false,
   ): Promise<NodeResult> {
     // Path 1: Retry with same model (once)
     if (validation.score >= 0.5 && node.retryCount < 1) {
@@ -166,7 +179,20 @@ export class ExecutionEngine {
       }
     }
 
-    // Path 2: Escalate to cloud fallback
+    // Path 2: Escalate to cloud fallback — skipped when localOnly is enforced
+    if (localOnly) {
+      return {
+        nodeId: node.id,
+        output: raw.content,
+        model: node.assignedModel,
+        tokensUsed: raw.usage,
+        latencyMs: raw.latencyMs,
+        packedTokens,
+        qualityScore: validation.score,
+        escalated: false,
+      };
+    }
+
     const cloudRaw = await this.callModel(
       CLOUD_FALLBACK_MODEL,
       `Complete this task: ${node.description}`,
@@ -192,13 +218,11 @@ export class ExecutionEngine {
   ): Promise<ModelOutput> {
     const start = Date.now();
 
-    // Cloud models not handled by OllamaClient — return placeholder
+    // Cloud models not handled by OllamaClient — signal failure explicitly
     if (!modelId.startsWith("ollama:")) {
-      return {
-        content: `[Cloud model ${modelId} not available in offline mode]`,
-        usage: { inputTokens: 0, outputTokens: 0 },
-        latencyMs: 0,
-      };
+      throw new Error(
+        `Cloud model '${modelId}' is not available via OllamaClient (offline mode).`,
+      );
     }
 
     const result = await this.ollama.complete({
@@ -219,10 +243,21 @@ export class ExecutionEngine {
   }
 
   private async withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Node execution timed out after ${ms}ms`)), ms),
-    );
-    return Promise.race([promise, timeout]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`Node execution timed out after ${ms}ms`)),
+        ms,
+      );
+    });
+
+    try {
+      return await Promise.race([promise, timeout]);
+    } finally {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+    }
   }
 
   private async preWarm(modelId: string): Promise<void> {
