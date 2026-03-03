@@ -18,6 +18,11 @@ export interface OllamaCompletionOptions {
   /** Stop generating at these tokens */
   stop?: string[];
   timeoutMs?: number;
+  /**
+   * External AbortSignal (e.g. from a per-node timeout controller).
+   * Combined with the internal timeout signal so whichever fires first wins.
+   */
+  signal?: AbortSignal;
 }
 
 export interface OllamaCompletionResult {
@@ -35,6 +40,13 @@ export class OllamaClient {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? 120_000);
 
+    // Combine the internal timeout signal with any caller-supplied signal so
+    // whichever fires first (execution-engine deadline or internal timeout) wins.
+    const signal =
+      opts.signal !== undefined
+        ? AbortSignal.any([controller.signal, opts.signal])
+        : controller.signal;
+
     try {
       const res = await fetch(`${this.baseUrl}/api/chat`, {
         method: "POST",
@@ -48,7 +60,7 @@ export class OllamaClient {
             stop: opts.stop,
           },
         }),
-        signal: controller.signal,
+        signal,
       });
 
       if (!res.ok) {

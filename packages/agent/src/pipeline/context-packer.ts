@@ -5,7 +5,7 @@
 // packages/agent/src/pipeline/context-packer.ts
 // Stage 5 — ContextPacker: pack per-subtask context within model window budget.
 // Rule: packed_tokens ≤ model.context_limit × 0.75
-// Never pass raw upstream output — always compress first.
+// Compress raw upstream output when needed to fit within the window budget.
 
 import type { TaskNode, PackedContext, NodeResult, DependencyOutput } from "../types/agent.js";
 import type { ModelCapabilityRegistry } from "../registry/model-registry.js";

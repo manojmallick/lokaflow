@@ -21,13 +21,16 @@ import { OllamaClient } from "../utils/ollama.js";
 import { CLOUD_FALLBACK_MODEL, DEFAULT_NANO_MODEL } from "../registry/interim-models.js";
 import type { ModelCapabilityRegistry } from "../registry/model-registry.js";
 
-const TIMEOUT_BY_COMPLEXITY: Record<string, number> = {
+const TIMEOUT_BY_COMPLEXITY: Readonly<Record<string, number>> = {
   TRIVIAL: 30_000,
   MODERATE: 60_000,
-  COMPLEX: 120_000,
-  MAX: 180_000,
 };
 
+/**
+ * Map a normalised complexity score to a timeout.
+ * COMPLEX and above use the engine's configurable defaultTimeoutMs so
+ * operators can tune it without touching source code.
+ */
 function complexityToTimeout(complexity: number, defaultMs: number): number {
   if (complexity < 0.35) return TIMEOUT_BY_COMPLEXITY["TRIVIAL"]!;
   if (complexity < 0.55) return TIMEOUT_BY_COMPLEXITY["MODERATE"]!;
@@ -87,11 +90,22 @@ export class ExecutionEngine {
         }
       }
 
-      const layerResults = await Promise.all(
-        layer.map((node) => this.executeNode(node, results, localOnly)),
-      );
-      for (const r of layerResults) {
-        results.set(r.nodeId, r);
+      // Honour TaskNode.canRunParallel: if any node in this layer is marked as
+      // non-parallel, run all nodes in the layer sequentially (in deterministic
+      // priority order) to avoid concurrent side-effects.
+      const hasNonParallel = layer.some((n) => n.canRunParallel === false);
+      if (hasNonParallel) {
+        for (const node of layer) {
+          const r = await this.executeNode(node, results, localOnly);
+          results.set(r.nodeId, r);
+        }
+      } else {
+        const layerResults = await Promise.all(
+          layer.map((node) => this.executeNode(node, results, localOnly)),
+        );
+        for (const r of layerResults) {
+          results.set(r.nodeId, r);
+        }
       }
     }
 
@@ -142,13 +156,18 @@ export class ExecutionEngine {
 
     let raw: ModelOutput;
     try {
+      // Use a factory-based withTimeout so the AbortSignal is threaded into
+      // callModel and down to the underlying fetch — cancelling the in-flight
+      // HTTP request and freeing resources when the deadline fires.
       raw = await this.withTimeout(
-        this.callModel(
-          effectiveNode.assignedModel,
-          packed.systemPrompt,
-          formattedContext,
-          timeoutMs,
-        ),
+        (signal) =>
+          this.callModel(
+            effectiveNode.assignedModel,
+            packed.systemPrompt,
+            formattedContext,
+            timeoutMs,
+            signal,
+          ),
         timeoutMs,
       );
     } catch (err) {
@@ -296,6 +315,7 @@ export class ExecutionEngine {
     systemPrompt: string,
     userContent: string,
     timeoutMs = this.config.maxTimeoutMs,
+    signal?: AbortSignal,
   ): Promise<ModelOutput> {
     const start = Date.now();
 
@@ -316,6 +336,7 @@ export class ExecutionEngine {
       ],
       temperature: 0.2,
       timeoutMs,
+      ...(signal !== undefined && { signal }),
     });
 
     return {
@@ -325,17 +346,21 @@ export class ExecutionEngine {
     };
   }
 
-  private async withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`Node execution timed out after ${ms}ms`)), ms);
-    });
+  /**
+   * Run `fn` with an AbortSignal; abort (and cancel the underlying request)
+   * if the deadline fires before `fn` resolves. The signal is threaded into
+   * the fetch layer so the HTTP connection is actually torn down on timeout.
+   */
+  private async withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(new Error(`Node execution timed out after ${ms}ms`)),
+      ms,
+    );
     try {
-      return await Promise.race([promise, timeout]);
+      return await fn(controller.signal);
     } finally {
-      if (timer !== undefined) {
-        clearTimeout(timer);
-      }
+      clearTimeout(timer);
     }
   }
 

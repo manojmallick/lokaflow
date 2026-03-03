@@ -251,7 +251,7 @@ export default function MeshScreen() {
 
 // ── sub-components ─────────────────────────────────────────────────────────────
 
-function LatencyBar({ ms, tier, status }: { ms: number; tier: string; status?: string }) {
+function LatencyBar({ ms, tier }: { ms: number; tier: string }) {
   const max = tier === "local" ? 300 : 800;
   const pct = Math.min(100, (ms / max) * 100);
   let color = "#10b981";

@@ -76,7 +76,16 @@ export default function HistoryScreen() {
 
   useEffect(() => {
     AsyncStorage.getItem("lf_chat_sessions").then((raw: string | null) => {
-      setSessions(raw ? JSON.parse(raw) : []);
+      let parsed: unknown = [];
+      if (raw) {
+        try {
+          parsed = JSON.parse(raw);
+        } catch (err) {
+          if (__DEV__) console.warn("[HistoryScreen] Failed to parse lf_chat_sessions", err);
+          parsed = [];
+        }
+      }
+      setSessions(Array.isArray(parsed) ? (parsed as ChatSession[]) : []);
     });
   }, []);
 
