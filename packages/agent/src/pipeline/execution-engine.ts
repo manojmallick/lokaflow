@@ -28,10 +28,10 @@ const TIMEOUT_BY_COMPLEXITY: Record<string, number> = {
   MAX: 180_000,
 };
 
-function complexityToTimeout(complexity: number): number {
+function complexityToTimeout(complexity: number, defaultMs: number): number {
   if (complexity < 0.35) return TIMEOUT_BY_COMPLEXITY["TRIVIAL"]!;
   if (complexity < 0.55) return TIMEOUT_BY_COMPLEXITY["MODERATE"]!;
-  return TIMEOUT_BY_COMPLEXITY["COMPLEX"]!;
+  return defaultMs; // uses engine's configurable defaultTimeoutMs for complex tasks
 }
 
 export class ExecutionEngine {
@@ -98,6 +98,7 @@ export class ExecutionEngine {
     return {
       nodeResults: results,
       totalTokens: { inputTokens: totalInputTokens, outputTokens: totalOutputTokens },
+      parallelBatches: _parallelBatches,
     };
   }
 
@@ -121,8 +122,12 @@ export class ExecutionEngine {
 
     const packed = await this.packer.pack(effectiveNode, priorResults);
     const formattedContext = this.packer.format(packed);
+    // Use node-level override first; fall back to complexity-based lookup;
+    // use defaultTimeoutMs as the baseline for complex tasks so the config
+    // field is actually wired in rather than dead.
     const timeoutMs = Math.min(
-      effectiveNode.timeoutMs || complexityToTimeout(effectiveNode.estimatedComplexity),
+      effectiveNode.timeoutMs ||
+        complexityToTimeout(effectiveNode.estimatedComplexity, this.config.defaultTimeoutMs),
       this.config.maxTimeoutMs,
     );
 

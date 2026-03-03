@@ -206,6 +206,8 @@ export interface NodeResult {
 export interface ExecutionResult {
   nodeResults: Map<string, NodeResult>;
   totalTokens: TokenUsage;
+  /** Number of topological layers executed (each layer runs in parallel). */
+  parallelBatches: number;
 }
 
 // ---------------------------------------------------------------------------

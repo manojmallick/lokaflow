@@ -7,7 +7,10 @@ function findTsFiles(dir, fileList = []) {
   for (const file of files) {
     // Compute fullPath first so exclusion comparisons are path-based and consistent.
     const fullPath = path.join(dir, file);
-    if (file === 'node_modules' || file === 'dist' || fullPath.includes('packages/route')) continue;
+    // Normalise to forward-slashes so the check works on Windows too (where
+    // path.join returns back-slash separated paths).
+    const normalizedFullPath = fullPath.split(path.sep).join('/');
+    if (file === 'node_modules' || file === 'dist' || normalizedFullPath.includes('packages/route')) continue;
 
     if (fs.statSync(fullPath).isDirectory()) {
       findTsFiles(fullPath, fileList);

@@ -261,7 +261,7 @@ export class LokaAgent {
       modelAssignments,
       execution: {
         nodes: executionNodes,
-        parallelBatches: graph.nodes.length > 0 ? 1 : 0,
+        parallelBatches: executionResult.parallelBatches,
         totalLatencyMs: Date.now() - start,
       },
       qualityGates,

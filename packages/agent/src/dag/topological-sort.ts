@@ -28,6 +28,20 @@ export function topologicalSort(
   }
 
   const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
+
+  // Validate that every dependsOn edge points to a known node.
+  // Report missing nodes explicitly rather than letting Kahn's algorithm
+  // silently under-count placed nodes and emit a misleading "Possible cycle" error.
+  for (const node of graph.nodes) {
+    for (const depId of node.dependsOn) {
+      if (!nodeMap.has(depId)) {
+        throw new Error(
+          `Unknown dependency: node '${node.id}' depends on '${depId}' which does not exist in the graph.`,
+        );
+      }
+    }
+  }
+
   // inDegree: how many un-resolved dependencies each node has
   const inDegree = new Map<string, number>();
   for (const node of graph.nodes) {
@@ -67,11 +81,13 @@ export function topologicalSort(
     ready = next;
   }
 
-  // Sanity: every node must be in exactly one layer
+  // Sanity: every node must be in exactly one layer.
+  // At this point all dependency IDs are known-valid (checked above), so a
+  // deficit here can only be caused by a cycle that slipped past assertNoCycle.
   const placed = layers.flat().length;
   if (placed !== graph.nodes.length) {
     throw new Error(
-      `Topological sort incomplete: ${placed} of ${graph.nodes.length} nodes placed. Possible cycle.`,
+      `Topological sort incomplete: ${placed} of ${graph.nodes.length} nodes placed. Cycle detected.`,
     );
   }
 
