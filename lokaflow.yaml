@@ -2,9 +2,10 @@ local:
   provider: ollama
   base_urls:
     - http://localhost:11434
+    - http://192.168.2.65:11434/
     # Add additional Ollama nodes here, e.g.:
     # - http://<your-lan-ip>:11434
-  default_model: qwen2.5-coder:7b
+  default_model: qwen7b-fast
   timeout_seconds: 120
 
 router:

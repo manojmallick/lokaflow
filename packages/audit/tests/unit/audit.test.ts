@@ -56,51 +56,51 @@ const claudeSample = `[
 ]`;
 
 describe("Parsers", () => {
-    it("parses ChatGPT export format", () => {
-        const parser = new ChatgptParser();
-        const data = parser.parse(chatgptSample);
+  it("parses ChatGPT export format", () => {
+    const parser = new ChatgptParser();
+    const data = parser.parse(chatgptSample);
 
-        expect(data.provider).toBe("chatgpt");
-        expect(data.conversations).toHaveLength(1);
-        expect(data.conversations[0].messages).toHaveLength(2);
-        expect(data.conversations[0].messages[0].role).toBe("user");
-        expect(data.conversations[0].messages[0].content).toContain("center a div");
-    });
+    expect(data.provider).toBe("chatgpt");
+    expect(data.conversations).toHaveLength(1);
+    expect(data.conversations[0].messages).toHaveLength(2);
+    expect(data.conversations[0].messages[0].role).toBe("user");
+    expect(data.conversations[0].messages[0].content).toContain("center a div");
+  });
 
-    it("parses Claude export format", () => {
-        const parser = new ClaudeParser();
-        const data = parser.parse(claudeSample);
+  it("parses Claude export format", () => {
+    const parser = new ClaudeParser();
+    const data = parser.parse(claudeSample);
 
-        expect(data.provider).toBe("claude");
-        expect(data.conversations).toHaveLength(1);
-        expect(data.conversations[0].messages).toHaveLength(2);
-        expect(data.conversations[0].messages[0].role).toBe("user");
-        expect(data.conversations[0].messages[0].content).toContain("kubernetes");
-    });
+    expect(data.provider).toBe("claude");
+    expect(data.conversations).toHaveLength(1);
+    expect(data.conversations[0].messages).toHaveLength(2);
+    expect(data.conversations[0].messages[0].role).toBe("user");
+    expect(data.conversations[0].messages[0].content).toContain("kubernetes");
+  });
 });
 
 describe("AuditEngine", () => {
-    it("analyzes simple vs complex queries and predicts savings", async () => {
-        // Requires Orchestrator to be built and resolvable
-        const engine = new AuditEngine();
+  it("analyzes simple vs complex queries and predicts savings", async () => {
+    // Requires Orchestrator to be built and resolvable
+    const engine = new AuditEngine();
 
-        // We combine both samples into one pseudo-export
-        const gptData = new ChatgptParser().parse(chatgptSample);
-        const claudeData = new ClaudeParser().parse(claudeSample);
+    // We combine both samples into one pseudo-export
+    const gptData = new ChatgptParser().parse(chatgptSample);
+    const claudeData = new ClaudeParser().parse(claudeSample);
 
-        const combinedData: ExportData = {
-            provider: "chatgpt", // arbitrary for test
-            exportDateMs: Date.now(),
-            conversations: [...gptData.conversations, ...claudeData.conversations]
-        };
+    const combinedData: ExportData = {
+      provider: "chatgpt", // arbitrary for test
+      exportDateMs: Date.now(),
+      conversations: [...gptData.conversations, ...claudeData.conversations],
+    };
 
-        // The react query should be 'simple' (local), the k8s query might be 'complex'
-        const report = await engine.analyze(combinedData, 22.99);
+    // The react query should be 'simple' (local), the k8s query might be 'complex'
+    const report = await engine.analyze(combinedData, 22.99);
 
-        expect(report.totalConversations).toBe(2);
-        expect(report.totalUserMessages).toBe(2);
-        expect(report.canCancel).toBe(true); // Given the tiny volume, API cost will be practically zero
-        expect(report.monthlySavingsEur).toBeGreaterThan(20);
-        expect(report.reasoning).toContain("can be handled locally for free");
-    });
+    expect(report.totalConversations).toBe(2);
+    expect(report.totalUserMessages).toBe(2);
+    expect(report.canCancel).toBe(true); // Given the tiny volume, API cost will be practically zero
+    expect(report.monthlySavingsEur).toBeGreaterThan(20);
+    expect(report.reasoning).toContain("can be handled locally for free");
+  });
 });

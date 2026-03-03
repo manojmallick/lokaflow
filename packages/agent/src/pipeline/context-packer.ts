@@ -13,6 +13,13 @@ import { OllamaClient } from "../utils/ollama.js";
 import { DEFAULT_NANO_MODEL } from "../registry/interim-models.js";
 import { estimateTokens, usableTokenBudget } from "../utils/tokens.js";
 
+/**
+ * Fixed token overhead added by format() for markdown headers and "\n\n" separators.
+ * Keeps pack() budget calculations honest so the final prompt never silently overflows.
+ */
+const FORMAT_OVERHEAD_BASE = 50; // covers fixed headers (## Task, ## Output format, etc.) + separators
+const FORMAT_OVERHEAD_PER_DEP = 10; // "### Step {id}:\n" per dependency section
+
 export class ContextPacker {
   private readonly ollama: OllamaClient;
 
@@ -44,11 +51,15 @@ export class ContextPacker {
     );
     const tokenBudgetInstruction = `Your response MUST be under ${effectiveOutputMax} tokens.`;
 
+    // Reserve tokens for the markdown headers and separators that format() will add.
+    // This prevents the final formatted prompt from silently exceeding the input budget.
     let tokenSoFar =
       estimateTokens(systemPrompt) +
       estimateTokens(taskDesc) +
       estimateTokens(outputSchemaStr) +
-      estimateTokens(tokenBudgetInstruction);
+      estimateTokens(tokenBudgetInstruction) +
+      FORMAT_OVERHEAD_BASE +
+      FORMAT_OVERHEAD_PER_DEP * node.dependsOn.length;
 
     // Collect dependency outputs (compressed to fit)
     const dependencyOutputs: DependencyOutput[] = [];

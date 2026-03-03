@@ -101,31 +101,36 @@ export function LogViewer(): JSX.Element {
     };
   }, []);
 
-  // Initial connect + reconnect when live toggled on
+  // Manage live SSE connection — only re-run when live/connect changes.
+  // Keeping lineLimit out of this effect prevents a reconnect (and data loss)
+  // when the user changes the line-limit selector while streaming.
   useEffect(() => {
     if (live) {
       connect();
-    } else {
-      esRef.current?.close();
-      esRef.current = null;
-      setConnected(false);
-      // Fetch snapshot via REST
-      fetch(`${API_BASE()}/v1/logs/raw?lines=${lineLimit}`)
-        .then((r) => r.json())
-        .then((d: { lines?: string[] }) =>
-          setLines(
-            (Array.isArray(d.lines) ? d.lines : []).map((text) => ({
-              seq: ++seqRef.current,
-              text,
-            })),
-          ),
-        )
-        .catch(() => setLines([]));
     }
     return () => {
       esRef.current?.close();
     };
-  }, [live, connect, lineLimit]);
+  }, [live, connect]);
+
+  // Fetch snapshot via REST when not live, or when lineLimit changes while paused.
+  useEffect(() => {
+    if (live) return; // SSE effect above handles the live case
+    esRef.current?.close();
+    esRef.current = null;
+    setConnected(false);
+    fetch(`${API_BASE()}/v1/logs/raw?lines=${lineLimit}`)
+      .then((r) => r.json())
+      .then((d: { lines?: string[] }) =>
+        setLines(
+          (Array.isArray(d.lines) ? d.lines : []).map((text) => ({
+            seq: ++seqRef.current,
+            text,
+          })),
+        ),
+      )
+      .catch(() => setLines([]));
+  }, [live, lineLimit]);
 
   // Auto-scroll to bottom when new lines arrive
   useEffect(() => {

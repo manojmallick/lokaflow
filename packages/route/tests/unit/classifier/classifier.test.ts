@@ -8,9 +8,9 @@
 // Run: pnpm --filter @lokaflow/route test
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { QueryClassifier }     from "../../../src/classifier/classifier.js";
+import { QueryClassifier } from "../../../src/classifier/classifier.js";
 import { PersonalisedLearner } from "../../../src/classifier/learner.js";
-import { isLocalTier }         from "../../../src/types/routing.js";
+import { isLocalTier } from "../../../src/types/routing.js";
 import querySamples from "../../fixtures/query-samples.json";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ describe("QueryClassifier — tier regression", () => {
 
   it("routes 'What is the capital of France?' → local-trivial (score ≤ 0.30)", () => {
     const r = classifier.classify("What is the capital of France?", {});
-    expect(r.score).toBeLessThanOrEqual(0.30);
+    expect(r.score).toBeLessThanOrEqual(0.3);
     expect(r.tier).toBe("local-trivial");
   });
 
@@ -49,21 +49,24 @@ describe("QueryClassifier — tier regression", () => {
   });
 
   it("routes DORA compliance review → cloud-frontier (score ≥ 0.85)", () => {
-    const q = "Analyse DORA Article 11 TLPT requirements and map our current controls to achieve compliance";
+    const q =
+      "Analyse DORA Article 11 TLPT requirements and map our current controls to achieve compliance";
     const r = classifier.classify(q, {});
     expect(r.score).toBeGreaterThanOrEqual(0.85);
     expect(r.tier).toBe("cloud-frontier");
   });
 
   it("routes SOX audit review → cloud-frontier (score ≥ 0.85)", () => {
-    const q = "Review this SOX audit trail and identify non-compliant transactions referencing PCAOB AS 2201";
+    const q =
+      "Review this SOX audit trail and identify non-compliant transactions referencing PCAOB AS 2201";
     const r = classifier.classify(q, {});
-    expect(r.score).toBeGreaterThanOrEqual(0.80);
+    expect(r.score).toBeGreaterThanOrEqual(0.8);
     expect(r.tier).toBe("cloud-frontier");
   });
 
   it("routes microservices architecture design → cloud-capable", () => {
-    const q = "Design a microservices architecture for a high-volume e-commerce platform with CQRS and event sourcing";
+    const q =
+      "Design a microservices architecture for a high-volume e-commerce platform with CQRS and event sourcing";
     const r = classifier.classify(q, {});
     expect(r.score).toBeGreaterThanOrEqual(0.55);
   });
@@ -144,14 +147,26 @@ describe("QueryClassifier — sensitivity deltas", () => {
   const query = "Write a function to parse JSON";
 
   it("conservative sensitivity returns higher score than balanced", () => {
-    const cons = new QueryClassifier({ sensitivity: "conservative", learner: new PersonalisedLearner(":memory:") });
-    const bal  = new QueryClassifier({ sensitivity: "balanced",     learner: new PersonalisedLearner(":memory:") });
+    const cons = new QueryClassifier({
+      sensitivity: "conservative",
+      learner: new PersonalisedLearner(":memory:"),
+    });
+    const bal = new QueryClassifier({
+      sensitivity: "balanced",
+      learner: new PersonalisedLearner(":memory:"),
+    });
     expect(cons.classify(query, {}).score).toBeGreaterThan(bal.classify(query, {}).score);
   });
 
   it("aggressive sensitivity returns lower score than balanced", () => {
-    const agg = new QueryClassifier({ sensitivity: "aggressive",  learner: new PersonalisedLearner(":memory:") });
-    const bal = new QueryClassifier({ sensitivity: "balanced",    learner: new PersonalisedLearner(":memory:") });
+    const agg = new QueryClassifier({
+      sensitivity: "aggressive",
+      learner: new PersonalisedLearner(":memory:"),
+    });
+    const bal = new QueryClassifier({
+      sensitivity: "balanced",
+      learner: new PersonalisedLearner(":memory:"),
+    });
     expect(agg.classify(query, {}).score).toBeLessThan(bal.classify(query, {}).score);
   });
 });

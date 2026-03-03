@@ -15,7 +15,6 @@ export class DecompositionGate {
     private readonly config = {
       minTokenSavingPercent: 20, // top-level minimum saving
       recursiveMinTokenSavingPercent: 15, // deeper levels allow looser threshold
-      maxLatencyOverheadPercent: 15,
       minSubtaskQuality: 0.65,
     },
   ) {}

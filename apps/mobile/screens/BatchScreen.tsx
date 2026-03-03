@@ -248,8 +248,11 @@ export default function BatchScreen() {
     setJobs((prev) => [newJob, ...prev]);
 
     // Reset form
-    setNewName(""); setNewTemplate(""); setNewSchedule("Every weekday at 09:00");
-    setNewInput(""); setNewOutput("");
+    setNewName("");
+    setNewTemplate("");
+    setNewSchedule("Every weekday at 09:00");
+    setNewInput("");
+    setNewOutput("");
     setNewJobModal(false);
     setSaving(false);
   }, [newName, newTemplate, newSchedule, newInput, newOutput]);
@@ -280,7 +283,9 @@ export default function BatchScreen() {
                 <Text style={s.queueModel}>Model: {q.model}</Text>
                 <View style={s.progressRow}>
                   <View style={s.progressBg}>
-                    <View style={[s.progressFill, { width: `${(q.done / q.total) * 100}%` as any }]} />
+                    <View
+                      style={[s.progressFill, { width: `${(q.done / q.total) * 100}%` as any }]}
+                    />
                   </View>
                   <Text style={s.progressText}>
                     {q.done}/{q.total}
@@ -376,11 +381,36 @@ export default function BatchScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView style={s.modalBody} keyboardShouldPersistTaps="handled">
-              <FormField label="Job Name *" placeholder="Daily DORA Check" value={newName} onChange={setNewName} />
-              <FormField label="Template Title" placeholder="DORA Article 11 Review" value={newTemplate} onChange={setNewTemplate} />
-              <FormField label="Input Source *" placeholder="/policies/  or  git diff HEAD~7" value={newInput} onChange={setNewInput} />
-              <FormField label="Output Destination" placeholder="/reports/  or  Slack webhook" value={newOutput} onChange={setNewOutput} />
-              <FormField label="Schedule" placeholder="Every weekday at 09:00" value={newSchedule} onChange={setNewSchedule} />
+              <FormField
+                label="Job Name *"
+                placeholder="Daily DORA Check"
+                value={newName}
+                onChange={setNewName}
+              />
+              <FormField
+                label="Template Title"
+                placeholder="DORA Article 11 Review"
+                value={newTemplate}
+                onChange={setNewTemplate}
+              />
+              <FormField
+                label="Input Source *"
+                placeholder="/policies/  or  git diff HEAD~7"
+                value={newInput}
+                onChange={setNewInput}
+              />
+              <FormField
+                label="Output Destination"
+                placeholder="/reports/  or  Slack webhook"
+                value={newOutput}
+                onChange={setNewOutput}
+              />
+              <FormField
+                label="Schedule"
+                placeholder="Every weekday at 09:00"
+                value={newSchedule}
+                onChange={setNewSchedule}
+              />
             </ScrollView>
             <View style={s.modalFooter}>
               <TouchableOpacity
@@ -585,7 +615,6 @@ const s = StyleSheet.create({
   },
   closeBtnText: { color: "#fafafa", fontWeight: "700", fontSize: 15 },
 });
-
 
 // ── types ──────────────────────────────────────────────────────────────────────
 

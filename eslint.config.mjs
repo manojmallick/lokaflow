@@ -7,10 +7,17 @@ import tsParser from "@typescript-eslint/parser";
 /** @type {import("eslint").Linter.FlatConfig[]} */
 export default [
   {
-    ignores: ["dist/**", "node_modules/**", "coverage/**", "*.js"],
+    ignores: [
+      "**/dist/**",
+      "node_modules/**",
+      "**/node_modules/**",
+      "coverage/**",
+      "*.js",
+      "**/*.d.ts",
+    ],
   },
   {
-    files: ["src/**/*.ts", "packages/*/src/**/*.ts", "apps/*/src/**/*.{ts,tsx}"],
+    files: ["src/**/*.ts", "packages/**/*.ts", "apps/**/*.{ts,tsx}"],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

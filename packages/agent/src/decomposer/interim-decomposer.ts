@@ -241,18 +241,17 @@ export class InterimDecomposer {
       format = "CODE";
     else if (upper.includes("MARKDOWN") || upper.includes("MD")) format = "MARKDOWN";
 
-    // Extract required elements from bracket-enclosed lists e.g. "[field1, field2]",
-    // or fall back to splitting the whole string by commas if no brackets are found.
+    // Only populate requiredElements when an explicit bracket list is present,
+    // e.g. "[field1, field2]". Freeform prose like "JSON object with key findings"
+    // must not be comma-split into fake required elements — that over-constrains
+    // the worker prompt with meaningless tokens.
     const bracketMatch = /\[([^\]]+)\]/.exec(raw);
     const requiredElements: string[] = bracketMatch
       ? bracketMatch[1]!
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean)
-      : raw
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0 && !/json|markdown|code|plain/i.test(s));
+      : [];
 
     return { format, requiredElements, maxTokens };
   }
