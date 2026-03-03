@@ -191,7 +191,17 @@ export function PromptLibrary() {
       <div
         key={tpl.id}
         className="prompt-card"
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
         onClick={() => setExpandedId(isExpanded ? null : tpl.id)}
+        onKeyDown={(e) => {
+          if (e.currentTarget !== e.target) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpandedId(isExpanded ? null : tpl.id);
+          }
+        }}
       >
         <div className="prompt-card-title">
           {tpl.pinned && <span className="prompt-card-pin">📌</span>}

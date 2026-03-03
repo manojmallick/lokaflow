@@ -121,13 +121,14 @@ export class Assembler {
 
   private orderResults(results: Map<string, NodeResult>, order: string[]): NodeResult[] {
     const ordered: NodeResult[] = [];
+    const orderSet = new Set(order);
     for (const id of order) {
       const r = results.get(id);
       if (r) ordered.push(r);
     }
     // Any remaining nodes not in the order list
     for (const [id, r] of results) {
-      if (!order.includes(id)) ordered.push(r);
+      if (!orderSet.has(id)) ordered.push(r);
     }
     return ordered;
   }

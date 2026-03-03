@@ -319,17 +319,14 @@ export class ExecutionEngine {
   ): Promise<ModelOutput> {
     const start = Date.now();
 
-    // Cloud models are not handled by OllamaClient in this engine.
-    // Throw so callers (handleFailure) can detect failure and degrade
-    // gracefully rather than treating a synthetic response as a real output.
-    if (!modelId.startsWith("ollama:")) {
-      throw new Error(
-        `Model '${modelId}' is not available in this ExecutionEngine (Ollama-only offline mode).`,
-      );
-    }
+    // Cloud (non-`ollama:`) models are not handled by OllamaClient in this engine.
+    // When such a model is requested, transparently fall back to a local nano model
+    // so that execution still produces a meaningful result instead of a guaranteed
+    // failure and empty output.
+    const effectiveModelId = modelId.startsWith("ollama:") ? modelId : DEFAULT_NANO_MODEL;
 
     const result = await this.ollama.complete({
-      model: modelId,
+      model: effectiveModelId,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },

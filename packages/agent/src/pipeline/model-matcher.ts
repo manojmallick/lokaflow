@@ -62,17 +62,8 @@ export class ModelMatcher {
     });
 
     scored.sort((a, b) => b.score - a.score);
-    const best = scored[0];
-    if (!best) {
-      const fallbackAssign: ModelAssignment = {
-        modelId: CLOUD_FALLBACK_MODEL,
-        tier: "CLOUD_STANDARD",
-        fallbackModelId: CLOUD_FALLBACK_MODEL,
-        qualityScore: 0,
-        reason: "no_local_capable",
-      };
-      return fallbackAssign;
-    }
+    // candidates.length > 0 is guaranteed by the guard above, so scored is non-empty.
+    const best = scored[0]!;
 
     const warmNode = this.warmTracker.getWarmNode(best.model.id);
 
