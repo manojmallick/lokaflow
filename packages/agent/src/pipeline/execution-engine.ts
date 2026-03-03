@@ -18,7 +18,7 @@ import { assertNoCycle } from "../dag/cycle-detector.js";
 import { ContextPacker } from "./context-packer.js";
 import { QualityGate } from "./quality-gate.js";
 import { OllamaClient } from "../utils/ollama.js";
-import { CLOUD_FALLBACK_MODEL } from "../registry/interim-models.js";
+import { CLOUD_FALLBACK_MODEL, DEFAULT_NANO_MODEL } from "../registry/interim-models.js";
 import type { ModelCapabilityRegistry } from "../registry/model-registry.js";
 
 const TIMEOUT_BY_COMPLEXITY: Record<string, number> = {
@@ -105,28 +105,47 @@ export class ExecutionEngine {
     priorResults: Map<string, NodeResult>,
     localOnly = false,
   ): Promise<NodeResult> {
-    const packed = await this.packer.pack(node, priorResults);
+    // Enforce localOnly (PII guard): if the task graph assigned a cloud model,
+    // redirect to the node's local fallback (or DEFAULT_NANO_MODEL) so that
+    // PII-detected prompts are never forwarded to a remote provider.
+    const effectiveNode: TaskNode =
+      localOnly && !node.assignedModel.startsWith("ollama:")
+        ? {
+            ...node,
+            assignedModel:
+              node.fallbackModel.startsWith("ollama:") ? node.fallbackModel : DEFAULT_NANO_MODEL,
+          }
+        : node;
+
+    const packed = await this.packer.pack(effectiveNode, priorResults);
     const formattedContext = this.packer.format(packed);
     const timeoutMs = Math.min(
-      node.timeoutMs || complexityToTimeout(node.estimatedComplexity),
+      effectiveNode.timeoutMs || complexityToTimeout(effectiveNode.estimatedComplexity),
       this.config.maxTimeoutMs,
     );
 
     const raw = await this.withTimeout(
-      this.callModel(node.assignedModel, packed.systemPrompt, formattedContext),
+      this.callModel(effectiveNode.assignedModel, packed.systemPrompt, formattedContext),
       timeoutMs,
     );
 
-    const validated = this.gate.validate(raw, node.outputSchema);
+    const validated = this.gate.validate(raw, effectiveNode.outputSchema);
 
     if (!validated.passed) {
-      return this.handleFailure(node, raw, validated, priorResults, packed.totalTokens, localOnly);
+      return this.handleFailure(
+        effectiveNode,
+        raw,
+        validated,
+        priorResults,
+        packed.totalTokens,
+        localOnly,
+      );
     }
 
     return {
-      nodeId: node.id,
+      nodeId: effectiveNode.id,
       output: validated.output,
-      model: node.assignedModel,
+      model: effectiveNode.assignedModel,
       tokensUsed: raw.usage,
       latencyMs: raw.latencyMs,
       packedTokens: packed.totalTokens,
