@@ -113,7 +113,13 @@ describe("ExecutionEngine — effectiveNode model redirect", () => {
   });
 
   it("(3) cloudEscalation=true: non-ollama assigned model is NOT redirected (cloud path is live)", async () => {
-    const engine = new ExecutionEngine(mockRegistry, { ...engineConfig, cloudEscalation: true });
+    const engine = new ExecutionEngine(mockRegistry, {
+      ...engineConfig,
+      cloudEscalation: true,
+      // Supply a stub ModelCaller to satisfy the constructor guard; callModel is
+      // mocked below so this stub will not actually be invoked during the test.
+      cloudModelCaller: { call: vi.fn() },
+    });
     stubPacker(engine);
 
     const calledWith: string[] = [];
@@ -176,7 +182,12 @@ describe("ExecutionEngine — non-Ollama model graceful degradation", () => {
 
   it("returns escalated=true when cloud fallback succeeds", async () => {
     // cloudEscalation must be explicitly enabled — offline-only mode is the default.
-    const engine = new ExecutionEngine(mockRegistry, { ...engineConfig, cloudEscalation: true });
+    const engine = new ExecutionEngine(mockRegistry, {
+      ...engineConfig,
+      cloudEscalation: true,
+      // Supply a stub ModelCaller; callModel is mocked below so this won't be called.
+      cloudModelCaller: { call: vi.fn() },
+    });
     stubPacker(engine);
 
     let callCount = 0;

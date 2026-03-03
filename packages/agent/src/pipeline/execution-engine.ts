@@ -21,6 +21,19 @@ import { OllamaClient } from "../utils/ollama.js";
 import { CLOUD_FALLBACK_MODEL, DEFAULT_NANO_MODEL } from "../registry/interim-models.js";
 import type { ModelCapabilityRegistry } from "../registry/model-registry.js";
 
+/**
+ * Minimal interface for a cloud provider adapter.
+ * Implement this and pass it as `cloudModelCaller` to enable cloud escalation.
+ */
+export interface ModelCaller {
+  call(
+    modelId: string,
+    systemPrompt: string,
+    userContent: string,
+    timeoutMs: number,
+  ): Promise<ModelOutput>;
+}
+
 const TIMEOUT_BY_COMPLEXITY: Readonly<Record<string, number>> = {
   TRIVIAL: 30_000,
   MODERATE: 60_000,
@@ -51,6 +64,12 @@ export class ExecutionEngine {
       ollamaBaseUrl: string;
       /** Enable cloud escalation when a provider adapter is wired in. Default: false. */
       cloudEscalation?: boolean;
+      /**
+       * Cloud provider adapter — REQUIRED when cloudEscalation=true.
+       * Implementing the ModelCaller interface allows this engine to forward
+       * non-ollama model IDs (e.g. anthropic:*, openai:*) to a real provider.
+       */
+      cloudModelCaller?: ModelCaller;
     } = {
       defaultTimeoutMs: 120_000,
       maxTimeoutMs: 180_000,
@@ -58,6 +77,12 @@ export class ExecutionEngine {
       ollamaBaseUrl: "http://localhost:11434",
     },
   ) {
+    if (config.cloudEscalation === true && !config.cloudModelCaller) {
+      throw new Error(
+        "ExecutionEngine: cloudEscalation is enabled but no cloudModelCaller was provided. " +
+          "Inject a ModelCaller adapter or set cloudEscalation to false.",
+      );
+    }
     this.ollama = new OllamaClient(this.config.ollamaBaseUrl);
     this.packer = new ContextPacker(registry, {
       windowUseFactor: 0.75,
@@ -345,12 +370,14 @@ export class ExecutionEngine {
     // Non-ollama IDs (cloud providers) should have been redirected to a local
     // model in executeNode before reaching here; if one slips through (e.g.
     // cloudEscalation=true with a real cloud adapter calling callModel directly)
-    // throw so the caller can handle it properly rather than silently running
-    // the wrong model and reporting misleading NodeResult metadata.
+    // delegate to the injected cloudModelCaller if available, otherwise throw.
     if (!modelId.startsWith("ollama:")) {
+      if (this.config.cloudModelCaller) {
+        return this.config.cloudModelCaller.call(modelId, systemPrompt, userContent, timeoutMs);
+      }
       throw new Error(
         `Model '${modelId}' is not supported by the Ollama execution engine. ` +
-          `Wire a cloud provider adapter or set cloudEscalation to false.`,
+          `Wire a cloud provider adapter via cloudModelCaller or set cloudEscalation to false.`,
       );
     }
 

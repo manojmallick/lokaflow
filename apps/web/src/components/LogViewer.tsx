@@ -6,7 +6,7 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 // colour-coded line classification matching the TracePanel in Chat.tsx.
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type JSX } from "react";
 import {
   Terminal,
   Wifi,
@@ -64,7 +64,10 @@ function lineClass(line: string): string {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function LogViewer(): JSX.Element {
-  const [lines, setLines] = useState<string[]>([]);
+  // Each entry carries a monotonically increasing seq so React can use it as a
+  // stable key even when displayLines is sliced or re-filtered.
+  const seqRef = useRef(0);
+  const [lines, setLines] = useState<{ seq: number; text: string }[]>([]);
   const [filter, setFilter] = useState("");
   const [live, setLive] = useState(true);
   const [connected, setConnected] = useState(false);
@@ -89,7 +92,7 @@ export function LogViewer(): JSX.Element {
       try {
         const { line } = JSON.parse(evt.data) as { line: string };
         setLines((prev) => {
-          const next = [...prev, line];
+          const next = [...prev, { seq: ++seqRef.current, text: line }];
           return next.length > MAX_BUFFER ? next.slice(-MAX_BUFFER) : next;
         });
       } catch {
@@ -109,7 +112,14 @@ export function LogViewer(): JSX.Element {
       // Fetch snapshot via REST
       fetch(`${API_BASE()}/v1/logs/raw?lines=${lineLimit}`)
         .then((r) => r.json())
-        .then((d: { lines?: string[] }) => setLines(Array.isArray(d.lines) ? d.lines : []))
+        .then((d: { lines?: string[] }) =>
+          setLines(
+            (Array.isArray(d.lines) ? d.lines : []).map((text) => ({
+              seq: ++seqRef.current,
+              text,
+            })),
+          ),
+        )
         .catch(() => setLines([]));
     }
     return () => {
@@ -134,7 +144,7 @@ export function LogViewer(): JSX.Element {
 
   const safeLines = Array.isArray(lines) ? lines : [];
   const filteredLines = filter.trim()
-    ? safeLines.filter((l) => l.toLowerCase().includes(filter.toLowerCase()))
+    ? safeLines.filter((e) => e.text.toLowerCase().includes(filter.toLowerCase()))
     : safeLines;
 
   const displayLines = filteredLines.slice(-lineLimit);
@@ -314,10 +324,10 @@ export function LogViewer(): JSX.Element {
               </span>
             </div>
           ) : (
-            displayLines.map((line, i) => (
-              <div key={i} className={`lv-line ${lineClass(line)}`}>
+            displayLines.map(({ seq, text }, i) => (
+              <div key={seq} className={`lv-line ${lineClass(text)}`}>
                 <span className="lv-lnum">{i + 1}</span>
-                <span className="lv-text">{line}</span>
+                <span className="lv-text">{text}</span>
               </div>
             ))
           )}
@@ -328,7 +338,7 @@ export function LogViewer(): JSX.Element {
         <div className="lv-footer">
           <span>
             <Hash size={10} style={{ display: "inline", marginRight: 3 }} />
-            {displayLines.length.toLocaleString()} lines
+            {safeLines.length.toLocaleString()} lines
             {filter && ` (filtered from ${lines.length.toLocaleString()})`}
           </span>
           <span>lokaflow-routing.log</span>

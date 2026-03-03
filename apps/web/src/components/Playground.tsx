@@ -71,14 +71,43 @@ const DEMO_BENCHMARK: BenchmarkEntry[] = [
 
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
+  const btnRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  // ARIA radiogroup keyboard interaction: ArrowRight/Left move selection; only
+  // the currently selected star (or star 1 if none) is in the tab order.
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const next = Math.min(5, value + 1);
+      onChange(next);
+      btnRefs.current[next - 1]?.focus();
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const prev = Math.max(1, value - 1);
+      onChange(prev);
+      btnRefs.current[prev - 1]?.focus();
+    }
+  }
+
+  const tabbableIdx = (value || 1) - 1; // one item in tab order at a time
+
   return (
-    <div role="radiogroup" aria-label="Rating" style={{ display: "flex", gap: 2 }}>
-      {[1, 2, 3, 4, 5].map((s) => (
+    <div
+      role="radiogroup"
+      aria-label="Rating"
+      style={{ display: "flex", gap: 2 }}
+      onKeyDown={handleKeyDown}
+    >
+      {[1, 2, 3, 4, 5].map((s, idx) => (
         <button
           key={s}
+          ref={(el) => {
+            btnRefs.current[idx] = el;
+          }}
           role="radio"
           aria-checked={(hover || value) >= s}
           aria-label={`Rate ${s} out of 5`}
+          tabIndex={idx === tabbableIdx ? 0 : -1}
           style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
           onMouseEnter={() => setHover(s)}
           onMouseLeave={() => setHover(0)}

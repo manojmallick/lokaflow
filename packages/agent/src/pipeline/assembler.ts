@@ -183,7 +183,8 @@ export class Assembler {
       plannerOutputTokens: planTokens.output,
       nodesExecuted: nodes.length,
       nodesEscalated,
-      estimatedCostEur: (totalInputTokens / 1000) * 0.002 + nodesEscalated * 0.003,
+      estimatedCostEur:
+        ((totalInputTokens + totalOutputTokens) / 1000) * 0.002 + nodesEscalated * 0.003,
     };
   }
 }
