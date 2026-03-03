@@ -31,6 +31,7 @@ export interface ModelCaller {
     systemPrompt: string,
     userContent: string,
     timeoutMs: number,
+    signal?: AbortSignal,
   ): Promise<ModelOutput>;
 }
 
@@ -267,13 +268,19 @@ export class ExecutionEngine {
       const retryNode: TaskNode = { ...node, retryCount: 1 };
       try {
         // Add explicit instruction to fix the failure; use a reduced timeout for retries.
-        const retry = await this.callModel(
-          node.assignedModel,
-          node.outputSchema.format === "JSON"
-            ? "You MUST return valid JSON only. No prose."
-            : node.description,
-          `Please retry. Previous attempt was: ${raw.content.slice(0, 200)}\n\nTask: ${node.description}`,
-          Math.min(30_000, this.config.maxTimeoutMs),
+        const retryMs = Math.min(30_000, this.config.maxTimeoutMs);
+        const retry = await this.withTimeout(
+          (signal) =>
+            this.callModel(
+              node.assignedModel,
+              node.outputSchema.format === "JSON"
+                ? "You MUST return valid JSON only. No prose."
+                : node.description,
+              `Please retry. Previous attempt was: ${raw.content.slice(0, 200)}\n\nTask: ${node.description}`,
+              retryMs,
+              signal,
+            ),
+          retryMs,
         );
 
         const revalidated = this.gate.validate(retry, node.outputSchema);
@@ -317,11 +324,17 @@ export class ExecutionEngine {
     }
 
     try {
-      const cloudRaw = await this.callModel(
-        CLOUD_FALLBACK_MODEL,
-        `Complete this task: ${node.description}`,
-        `Task: ${node.description}\n\nOutput format: ${node.outputSchema.format}`,
-        Math.min(60_000, this.config.maxTimeoutMs),
+      const cloudEscMs = Math.min(60_000, this.config.maxTimeoutMs);
+      const cloudRaw = await this.withTimeout(
+        (signal) =>
+          this.callModel(
+            CLOUD_FALLBACK_MODEL,
+            `Complete this task: ${node.description}`,
+            `Task: ${node.description}\n\nOutput format: ${node.outputSchema.format}`,
+            cloudEscMs,
+            signal,
+          ),
+        cloudEscMs,
       );
       return {
         nodeId: node.id,
@@ -373,7 +386,13 @@ export class ExecutionEngine {
     // delegate to the injected cloudModelCaller if available, otherwise throw.
     if (!modelId.startsWith("ollama:")) {
       if (this.config.cloudModelCaller) {
-        return this.config.cloudModelCaller.call(modelId, systemPrompt, userContent, timeoutMs);
+        return this.config.cloudModelCaller.call(
+          modelId,
+          systemPrompt,
+          userContent,
+          timeoutMs,
+          signal,
+        );
       }
       throw new Error(
         `Model '${modelId}' is not supported by the Ollama execution engine. ` +
