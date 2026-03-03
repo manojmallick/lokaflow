@@ -70,6 +70,20 @@ const COMMUNITY_PACKS: PromptTemplate[] = [
 ];
 
 const LS_KEY = "lf_prompt_templates";
+const LS_PINNED_KEY = "lf_pinned_prompt_ids";
+
+function loadPinnedIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(LS_PINNED_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function savePinnedIds(ids: Set<string>) {
+  localStorage.setItem(LS_PINNED_KEY, JSON.stringify([...ids]));
+}
 
 function loadTemplates(): PromptTemplate[] {
   try {
@@ -92,7 +106,10 @@ interface NewPromptForm {
 
 export function PromptLibrary() {
   const [myTemplates, setMyTemplates] = useState<PromptTemplate[]>(loadTemplates);
-  const [communityPacks, setCommunityPacks] = useState<PromptTemplate[]>(COMMUNITY_PACKS);
+  const [communityPacks, setCommunityPacks] = useState<PromptTemplate[]>(() => {
+    const pinned = loadPinnedIds();
+    return COMMUNITY_PACKS.map((t) => (pinned.has(t.id) ? { ...t, pinned: true } : t));
+  });
   const [query, setQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<NewPromptForm>({ title: "", body: "", tags: "" });
@@ -103,6 +120,13 @@ export function PromptLibrary() {
   useEffect(() => {
     saveTemplates(myTemplates);
   }, [myTemplates]);
+
+  useEffect(() => {
+    const pinnedIds = new Set(
+      [...myTemplates, ...communityPacks].filter((t) => t.pinned).map((t) => t.id),
+    );
+    savePinnedIds(pinnedIds);
+  }, [myTemplates, communityPacks]);
 
   const allPinned = useMemo(
     () => [...myTemplates, ...communityPacks].filter((t) => t.pinned),

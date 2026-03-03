@@ -30,13 +30,17 @@ const engineConfig = {
 // ---------------------------------------------------------------------------
 // Minimal single-node graph (all required TaskNode fields provided)
 // ---------------------------------------------------------------------------
-function makeGraph(modelId = "ollama:tinyllama:1.1b"): TaskGraph {
+function makeGraph(
+  modelId = "ollama:tinyllama:1.1b",
+  fallbackModel = "ollama:tinyllama:1.1b",
+): TaskGraph {
   return {
     nodes: [
       {
         id: "n1",
         description: "Do something",
         assignedModel: modelId,
+        fallbackModel,
         dependsOn: [],
         inputContext: "",
         outputSchema: { format: "text", maxTokens: 200, requiredElements: [] },
@@ -64,6 +68,68 @@ function stubPacker(engine: ExecutionEngine): void {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+// ---------------------------------------------------------------------------
+// effectiveNode redirect: model selection for localOnly / cloudEscalation
+// ---------------------------------------------------------------------------
+describe("ExecutionEngine — effectiveNode model redirect", () => {
+  const cloudModelGraph = () => makeGraph("anthropic:claude-sonnet-4", "ollama:qwen2.5:0.5b"); // non-ollama assigned, ollama fallback
+
+  it("(1) localOnly=true: non-ollama assigned model is redirected to a local model", async () => {
+    const engine = new ExecutionEngine(mockRegistry, engineConfig);
+    stubPacker(engine);
+
+    const calledWith: string[] = [];
+    vi.spyOn(engine as unknown as { callModel: unknown }, "callModel").mockImplementation(
+      async (modelId: unknown) => {
+        calledWith.push(modelId as string);
+        return { content: "ok", usage: { inputTokens: 5, outputTokens: 5 }, latencyMs: 10 };
+      },
+    );
+
+    await engine.execute(cloudModelGraph(), /* localOnly */ true);
+
+    // Should have been redirected — no cloud model ID should have been called
+    expect(calledWith.every((id) => (id as string).startsWith("ollama:"))).toBe(true);
+  });
+
+  it("(2) cloudEscalation=false (default): non-ollama assigned model is redirected to a local model", async () => {
+    // engineConfig has no cloudEscalation field, so it defaults to false/undefined
+    const engine = new ExecutionEngine(mockRegistry, engineConfig);
+    stubPacker(engine);
+
+    const calledWith: string[] = [];
+    vi.spyOn(engine as unknown as { callModel: unknown }, "callModel").mockImplementation(
+      async (modelId: unknown) => {
+        calledWith.push(modelId as string);
+        return { content: "ok", usage: { inputTokens: 5, outputTokens: 5 }, latencyMs: 10 };
+      },
+    );
+
+    await engine.execute(cloudModelGraph(), /* localOnly */ false);
+
+    expect(calledWith.every((id) => (id as string).startsWith("ollama:"))).toBe(true);
+  });
+
+  it("(3) cloudEscalation=true: non-ollama assigned model is NOT redirected (cloud path is live)", async () => {
+    const engine = new ExecutionEngine(mockRegistry, { ...engineConfig, cloudEscalation: true });
+    stubPacker(engine);
+
+    const calledWith: string[] = [];
+    vi.spyOn(engine as unknown as { callModel: unknown }, "callModel").mockImplementation(
+      async (modelId: unknown) => {
+        calledWith.push(modelId as string);
+        // Simulate cloud model succeeding
+        return { content: "cloud ok", usage: { inputTokens: 5, outputTokens: 10 }, latencyMs: 80 };
+      },
+    );
+
+    await engine.execute(cloudModelGraph(), /* localOnly */ false);
+
+    // The first call should have been made with the original cloud model ID
+    expect(calledWith[0]).toBe("anthropic:claude-sonnet-4");
+  });
 });
 
 // ---------------------------------------------------------------------------

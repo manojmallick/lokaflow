@@ -140,11 +140,12 @@ export default function MeshScreen() {
     } catch {
       setOffline(true);
       // Keep stale health data visible if available; fall back to mock only on first load.
-      if (!health) setHealth(MOCK_HEALTH);
+      // Use functional updater to avoid closing over `health` and causing an infinite effect loop.
+      setHealth((prev) => prev ?? MOCK_HEALTH);
     } finally {
       setLoading(false);
     }
-  }, [health]);
+  }, []);
 
   useEffect(() => {
     load();

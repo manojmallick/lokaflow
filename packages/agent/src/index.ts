@@ -173,14 +173,15 @@ export class LokaAgent {
     if (isTrivial) {
       // No decomposition — build a single-node graph
       const nodeId = "t1";
+      const graphId = crypto.randomUUID();
       graph = {
-        id: crypto.randomUUID(),
+        id: graphId,
         originalPrompt: cleanPrompt,
         intent,
         nodes: [
           {
             id: nodeId,
-            graphId: "direct",
+            graphId: graphId,
             depth: 0,
             description: cleanPrompt,
             inputContext: "",

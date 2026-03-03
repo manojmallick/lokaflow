@@ -144,9 +144,10 @@ export class ExecutionEngine {
     const effectiveNode: TaskNode = needsLocalRedirect
       ? {
           ...node,
-          assignedModel: node.fallbackModel.startsWith("ollama:")
-            ? node.fallbackModel
-            : DEFAULT_NANO_MODEL,
+          assignedModel:
+            node.fallbackModel?.startsWith("ollama:") === true
+              ? node.fallbackModel
+              : DEFAULT_NANO_MODEL,
         }
       : node;
 
