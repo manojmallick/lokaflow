@@ -241,9 +241,9 @@ export class LokaAgent {
     // ── Stage 7: QualityGate (embedded inside ExecutionEngine per node) ────
     const qualityGates: QualityGateTrace[] = [...nodeResults.values()].map((r) => ({
       nodeId: r.nodeId,
-      passed: !r.escalated,
+      passed: r.qualityPassed === true,
       score: r.qualityScore ?? 0,
-      failedChecks: [],
+      failedChecks: r.qualityFailedReason ? [r.qualityFailedReason] : [],
     }));
 
     const executionNodes: ExecutionNodeTrace[] = [...nodeResults.values()].map((r) => ({

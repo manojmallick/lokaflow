@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 function findTsFiles(dir, fileList = []) {
   if (!fs.existsSync(dir)) return fileList;
@@ -9,41 +9,44 @@ function findTsFiles(dir, fileList = []) {
     const fullPath = path.join(dir, file);
     // Normalise to forward-slashes so the check works on Windows too (where
     // path.join returns back-slash separated paths).
-    const normalizedFullPath = fullPath.split(path.sep).join('/');
-    if (file === 'node_modules' || file === 'dist' || normalizedFullPath.includes('packages/route')) continue;
+    const normalizedFullPath = fullPath.split(path.sep).join("/");
+    if (file === "node_modules" || file === "dist" || normalizedFullPath.includes("packages/route"))
+      continue;
 
     if (fs.statSync(fullPath).isDirectory()) {
       findTsFiles(fullPath, fileList);
-    } else if (fullPath.endsWith('.ts')) {
+    } else if (fullPath.endsWith(".ts")) {
       fileList.push(fullPath);
     }
   }
   return fileList;
 }
 
-const allTsFiles = [
-  ...findTsFiles('src'),
-  ...findTsFiles('packages'),
-  ...findTsFiles('tests')
-];
+const allTsFiles = [...findTsFiles("src"), ...findTsFiles("packages"), ...findTsFiles("tests")];
 
-allTsFiles.forEach(file => {
-  let content = fs.readFileSync(file, 'utf8');
+allTsFiles.forEach((file) => {
+  let content = fs.readFileSync(file, "utf8");
   let changed = false;
 
   // We are looking for any import or export that contains "/router/"
   // and we will dynamically resolve it
-  const regex = /(?:import|export)\s+.*from\s+['"](\..*\/router\/.*)['"]]/g;
-  let newContent = content.replace(regex, (match, capture) => {
+  const regex = /(?:import|export)\s+.*from\s+(['"])(\..*\/router\/.*)\1/g;
+  let newContent = content.replace(regex, (match, _quote, capture) => {
     const dir = path.dirname(file);
     const targetPath = path.resolve(dir, capture);
-    const targetIsRouter = targetPath.includes('/src/router/');
+    // Normalize to POSIX-style separators so string checks are cross-platform.
+    const normalizedTargetPath = targetPath.split(path.sep).join("/");
+    const targetIsRouter = normalizedTargetPath.includes("/src/router/");
 
     if (targetIsRouter) {
       // It points to the old src/router, re-route to packages/route/src/router
-      const destPath = targetPath.replace('/src/router/', '/packages/route/src/router/');
-      let newRel = path.relative(dir, destPath);
-      if (!newRel.startsWith('.')) newRel = './' + newRel;
+      const normalizedDestPath = normalizedTargetPath.replace(
+        "/src/router/",
+        "/packages/route/src/router/",
+      );
+      const destPath = path.normalize(normalizedDestPath);
+      let newRel = path.relative(dir, destPath).split(path.sep).join("/");
+      if (!newRel.startsWith(".")) newRel = "./" + newRel;
 
       changed = true;
       let repl = match.replace(capture, newRel);
@@ -53,7 +56,7 @@ allTsFiles.forEach(file => {
   });
 
   if (changed) {
-    fs.writeFileSync(file, newContent, 'utf8');
+    fs.writeFileSync(file, newContent, "utf8");
     console.log(`Updated imports in ${file}`);
   }
 });

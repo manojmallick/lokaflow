@@ -200,6 +200,11 @@ export interface NodeResult {
   latencyMs: number;
   packedTokens?: number;
   qualityScore?: number;
+  /** True when the local quality gate passed (or a retry passed). False when
+   * validation failed regardless of whether cloud escalation occurred. */
+  qualityPassed?: boolean;
+  /** Reason string from the quality gate when qualityPassed is false. */
+  qualityFailedReason?: string;
   escalated?: boolean;
 }
 

@@ -220,6 +220,7 @@ export function PromptLibrary() {
             <button
               className="prompt-icon-btn"
               title={tpl.pinned ? "Unpin" : "Pin"}
+              aria-label={tpl.pinned ? "Unpin prompt" : "Pin prompt"}
               onClick={() => togglePin(tpl.id)}
             >
               {tpl.pinned ? <PinOff size={14} /> : <Pin size={14} />}
@@ -228,6 +229,7 @@ export function PromptLibrary() {
               <button
                 className="prompt-icon-btn"
                 title="Delete"
+                aria-label="Delete prompt"
                 onClick={() => deleteTemplate(tpl.id)}
               >
                 <Trash2 size={14} />

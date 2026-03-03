@@ -215,6 +215,7 @@ export class ExecutionEngine {
       latencyMs: raw.latencyMs,
       packedTokens: packed.totalTokens,
       qualityScore: validated.score,
+      qualityPassed: true,
       escalated: false,
     };
   }
@@ -256,6 +257,7 @@ export class ExecutionEngine {
             latencyMs: retry.latencyMs,
             packedTokens,
             qualityScore: revalidated.score,
+            qualityPassed: true,
             escalated: false,
           };
         }
@@ -277,6 +279,10 @@ export class ExecutionEngine {
         latencyMs: raw.latencyMs,
         packedTokens,
         qualityScore: validation.score,
+        qualityPassed: false,
+        ...(validation.failedReason !== undefined && {
+          qualityFailedReason: validation.failedReason,
+        }),
         escalated: false,
       };
     }
@@ -296,6 +302,10 @@ export class ExecutionEngine {
         latencyMs: cloudRaw.latencyMs,
         packedTokens,
         qualityScore: validation.score,
+        qualityPassed: false,
+        ...(validation.failedReason !== undefined && {
+          qualityFailedReason: validation.failedReason,
+        }),
         escalated: true,
       };
     } catch {
@@ -309,6 +319,10 @@ export class ExecutionEngine {
         latencyMs: raw.latencyMs,
         packedTokens,
         qualityScore: validation.score,
+        qualityPassed: false,
+        ...(validation.failedReason !== undefined && {
+          qualityFailedReason: validation.failedReason,
+        }),
         escalated: false,
       };
     }

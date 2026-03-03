@@ -60,7 +60,7 @@ export function assertNoCycle(graph: TaskGraph): void {
     const node = nodeMap.get(nodeId);
     if (node) {
       for (const dep of node.dependsOn) {
-        if (dfs(dep)) throw new DecompositionCycleError(nodeId);
+        if (dfs(dep)) throw new DecompositionCycleError(dep);
       }
     }
     stack.delete(nodeId);

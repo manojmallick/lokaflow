@@ -57,7 +57,7 @@ function fmtDate(ts: number): string {
 
 function fmtEur(v: number): string {
   if (v === 0) return "€0.00";
-  if (v < 0.01) return `€${(v * 100).toFixed(2)}¢`;
+  if (v < 0.01) return `${(v * 100).toFixed(2)}¢`;
   return `€${v.toFixed(3)}`;
 }
 

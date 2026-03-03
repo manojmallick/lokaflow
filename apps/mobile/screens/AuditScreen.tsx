@@ -35,7 +35,7 @@ interface CategoryBreakdown {
 function fmtEur(v: number): string {
   if (v >= 1) return `€${v.toFixed(2)}`;
   if (v === 0) return "€0.00";
-  return `€${(v * 100).toFixed(1)}¢`;
+  return `${(v * 100).toFixed(1)}¢`;
 }
 function fmtPct(v: number) {
   return `${v.toFixed(1)}%`;
