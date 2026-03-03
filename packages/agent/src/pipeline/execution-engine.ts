@@ -230,9 +230,16 @@ export class ExecutionEngine {
   ): Promise<ModelOutput> {
     const start = Date.now();
 
-    // Cloud models not handled by OllamaClient — signal failure so the caller can fall back
+    // Cloud models are not handled by OllamaClient in this engine.
+    // Return a structured "unavailable" result instead of throwing so the caller
+    // (handleFailure) can apply its own fallback/degradation logic rather than
+    // aborting the whole graph execution.
     if (!modelId.startsWith("ollama:")) {
-      throw new Error(`Cloud model '${modelId}' is not available via OllamaClient (offline mode).`);
+      return {
+        content: `Model '${modelId}' is not available in this ExecutionEngine (Ollama-only offline mode).`,
+        usage: { inputTokens: 0, outputTokens: 0 },
+        latencyMs: Date.now() - start,
+      };
     }
 
     const result = await this.ollama.complete({

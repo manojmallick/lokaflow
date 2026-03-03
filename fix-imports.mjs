@@ -5,14 +5,12 @@ function findTsFiles(dir, fileList = []) {
   if (!fs.existsSync(dir)) return fileList;
   const files = fs.readdirSync(dir);
   for (const file of files) {
-    if (file === 'node_modules' || file === 'dist' || file === 'packages/route') continue;
-
+    // Compute fullPath first so exclusion comparisons are path-based and consistent.
     const fullPath = path.join(dir, file);
+    if (file === 'node_modules' || file === 'dist' || fullPath.includes('packages/route')) continue;
+
     if (fs.statSync(fullPath).isDirectory()) {
-      // Don't go into packages/route
-      if (!fullPath.includes('packages/route')) {
-        findTsFiles(fullPath, fileList);
-      }
+      findTsFiles(fullPath, fileList);
     } else if (fullPath.endsWith('.ts')) {
       fileList.push(fullPath);
     }

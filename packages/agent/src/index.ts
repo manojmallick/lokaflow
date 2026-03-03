@@ -320,7 +320,9 @@ export class LokaAgent {
     guardTrace: PromptGuardTrace,
     start: number,
   ): AgentResponse {
-    return buildErrorResponse(question, guardTrace, start);
+    // A clarification is NOT a policy block — use a distinct gate decision so
+    // downstream consumers can distinguish "clarify" from "blocked".
+    return buildErrorResponse(question, guardTrace, start, "clarify");
   }
 }
 
@@ -332,6 +334,7 @@ function buildErrorResponse(
   content: string,
   guardTrace: PromptGuardTrace,
   start: number,
+  gateDecision: "blocked" | "clarify" = "blocked",
 ): AgentResponse {
   const emptyDimensions = {
     reasoning: 0,
@@ -347,7 +350,7 @@ function buildErrorResponse(
     decomposition: {
       subtaskCount: 0,
       depth: 0,
-      gateDecision: "blocked",
+      gateDecision,
       intentPreserved: false,
       nodes: [],
     },

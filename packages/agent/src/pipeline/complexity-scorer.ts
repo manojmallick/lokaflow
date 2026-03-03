@@ -134,16 +134,26 @@ export class ComplexityScorer {
         .trim();
       const parsed = JSON.parse(jsonStr) as Record<string, number>;
 
+      // Parse each dimension safely: validate it is a finite number in [0,1];
+      // fall back to the heuristic value if the model returned NaN/null/string.
+      const safeDim = (key: string, fallback: number): number => {
+        const v = Number(parsed[key]);
+        return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : fallback;
+      };
+
       const modelDimensions: ComplexityDimensions = {
-        reasoning: Number(parsed["reasoning"] ?? heuristic.reasoning),
-        domain: Number(parsed["domain"] ?? heuristic.domain),
-        creativity: Number(parsed["creativity"] ?? heuristic.creativity),
-        context: Number(parsed["context"] ?? heuristic.context),
-        precision: Number(parsed["precision"] ?? heuristic.precision),
+        reasoning: safeDim("reasoning", heuristic.reasoning),
+        domain: safeDim("domain", heuristic.domain),
+        creativity: safeDim("creativity", heuristic.creativity),
+        context: safeDim("context", heuristic.context),
+        precision: safeDim("precision", heuristic.precision),
         interdependence: 0,
       };
 
-      const confidence = Number(parsed["confidence"] ?? 0.8);
+      const rawConfidence = Number(parsed["confidence"]);
+      const confidence = Number.isFinite(rawConfidence)
+        ? Math.max(0, Math.min(1, rawConfidence))
+        : 0.8;
       const index = dimensionsToIndex(modelDimensions);
       return { index, dimensions: modelDimensions, confidence };
     } catch {

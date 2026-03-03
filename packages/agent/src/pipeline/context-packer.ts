@@ -65,9 +65,18 @@ export class ContextPacker {
       tokenSoFar += tokens;
     }
 
-    // Relevant context (original document / conversation) — take what fits
-    const relevantContext = "";
-    const total = tokenSoFar + estimateTokens(relevantContext);
+    // Relevant context: use the decomposer-provided inputContext for this node.
+    // Compress it if needed so it fits in the remaining input budget.
+    let relevantContext = "";
+    if (node.inputContext) {
+      const remainingBudget = inputBudget - tokenSoFar;
+      if (remainingBudget > 0) {
+        const compressedContext = await this.compress(node.inputContext, remainingBudget);
+        relevantContext = compressedContext;
+        tokenSoFar += estimateTokens(compressedContext);
+      }
+    }
+    const total = tokenSoFar;
 
     return {
       systemPrompt,
