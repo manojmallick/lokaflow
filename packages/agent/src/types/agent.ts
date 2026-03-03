@@ -110,6 +110,7 @@ export interface ComplexityScore {
   index: number; // 0.0–1.0
   dimensions: ComplexityDimensions;
   confidence: number;
+  source?: "heuristic" | "model"; // how the score was produced
 }
 
 // ---------------------------------------------------------------------------

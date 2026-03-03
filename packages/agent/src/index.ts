@@ -159,7 +159,9 @@ export class LokaAgent {
       dimensions: complexity.dimensions,
       confidence: complexity.confidence,
       usedModelCall:
-        complexity.confidence < heuristicThreshold && !this.config.heuristicOnlyScoring,
+        "source" in complexity
+          ? complexity.source === "model"
+          : complexity.confidence < heuristicThreshold && !this.config.heuristicOnlyScoring,
     };
 
     // Trivial bypass: complexity < threshold → hand off to simple local routing
@@ -205,11 +207,11 @@ export class LokaAgent {
       };
       nodeOrder = [nodeId];
       decompositionTrace = {
-        subtaskCount: 0,
+        subtaskCount: 1,
         depth: 0,
         gateDecision: "bypassed_trivial",
         intentPreserved: true,
-        nodes: [],
+        nodes: [{ id: nodeId, depth: 0 }],
       };
     } else {
       // ── Stage 3: TaskSplitter ─────────────────────────────────────────────

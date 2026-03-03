@@ -106,6 +106,7 @@ export class ComplexityScorer {
         index,
         dimensions: heuristic,
         confidence: heuristic.confidence,
+        source: "heuristic" as const,
       };
     }
 
@@ -155,13 +156,14 @@ export class ComplexityScorer {
         ? Math.max(0, Math.min(1, rawConfidence))
         : 0.8;
       const index = dimensionsToIndex(modelDimensions);
-      return { index, dimensions: modelDimensions, confidence };
+      return { index, dimensions: modelDimensions, confidence, source: "model" as const };
     } catch {
       // Fall back to heuristic on model failure
       return {
         index: dimensionsToIndex(heuristic),
         dimensions: heuristic,
         confidence: heuristic.confidence * 0.8, // lower confidence
+        source: "heuristic" as const,
       };
     }
   }

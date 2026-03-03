@@ -143,18 +143,22 @@ export class Assembler {
       (s, n) => s + n.tokensUsed.inputTokens + n.tokensUsed.outputTokens,
       0,
     );
-    const cloudEquiv = (localTokens + cloudTokens) * 1.0; // estimate: if all cloud
-    const savingPercent = cloudEquiv > 0 ? ((cloudEquiv - cloudTokens) / cloudEquiv) * 100 : 0;
+    // Compute cost-equivalent savings: baseline = everything billed at cloud rate
+    const CLOUD_PRICE_EUR_PER_K = 0.003; // EUR per 1,000 tokens (cloud inference)
+    const cloudEquivCostEur = ((localTokens + cloudTokens) / 1000) * CLOUD_PRICE_EUR_PER_K;
+    const actualCostEur = (cloudTokens / 1000) * CLOUD_PRICE_EUR_PER_K;
+    const savingEur = cloudEquivCostEur - actualCostEur;
+    const savingPercent = cloudEquivCostEur > 0 ? (savingEur / cloudEquivCostEur) * 100 : 0;
     return {
       totalNodes: nodes.length,
       localNodes: nodes.length - escalated.length,
       cloudNodes: escalated.length,
       escalatedNodes: escalated.length,
-      cloudEquivalentTokens: cloudEquiv,
+      cloudEquivalentTokens: localTokens + cloudTokens,
       actualLocalTokens: localTokens,
       actualCloudTokens: cloudTokens,
       savingPercent,
-      savingEur: (localTokens / 1000) * 0.0 + (cloudTokens / 1000) * 0.003,
+      savingEur,
     };
   }
 

@@ -155,7 +155,7 @@ export function MeshCluster() {
           aria-label={`${p.name} details`}
           onClick={() => setExpandedNode(isExpanded ? null : key)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
+            if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
               e.preventDefault();
               setExpandedNode(isExpanded ? null : key);
             }
