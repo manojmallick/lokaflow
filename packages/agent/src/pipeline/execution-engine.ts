@@ -61,7 +61,8 @@ export class ExecutionEngine {
     assertNoCycle(graph);
 
     const results = new Map<string, NodeResult>();
-    const layers = topologicalSort(graph);
+    // Cycle check already performed above — skip the redundant DFS inside topologicalSort.
+    const layers = topologicalSort(graph, { skipCycleCheck: true });
     let _parallelBatches = 0;
 
     for (let i = 0; i < layers.length; i++) {

@@ -15,10 +15,17 @@ import { assertNoCycle } from "./cycle-detector.js";
  * Layer 0 = nodes with no dependencies (run first, all in parallel).
  * Layer N = nodes whose dependencies are all in layers 0..N-1.
  *
- * @throws DecompositionCycleError if the graph has a cycle.
+ * @param options.skipCycleCheck - Set to `true` when the caller has already
+ *   run `assertNoCycle` on this graph, avoiding a redundant O(V+E) DFS.
+ * @throws DecompositionCycleError if the graph has a cycle (unless skipCycleCheck is true).
  */
-export function topologicalSort(graph: TaskGraph): TaskNode[][] {
-  assertNoCycle(graph);
+export function topologicalSort(
+  graph: TaskGraph,
+  options?: { skipCycleCheck?: boolean },
+): TaskNode[][] {
+  if (!options?.skipCycleCheck) {
+    assertNoCycle(graph);
+  }
 
   const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
   // inDegree: how many un-resolved dependencies each node has
