@@ -9,6 +9,18 @@ import type { TaskGraph, TaskNode } from "../types/agent.js";
 import { assertNoCycle } from "./cycle-detector.js";
 
 /**
+ * Thrown when a node's dependsOn references an id that does not exist in the graph.
+ */
+export class UnknownDependencyError extends Error {
+  constructor(nodeId: string, depId: string) {
+    super(
+      `Unknown dependency: node '${nodeId}' depends on '${depId}' which does not exist in the graph.`,
+    );
+    this.name = "UnknownDependencyError";
+  }
+}
+
+/**
  * Returns an array of layers, where each layer is an array of nodes
  * that can be executed in parallel.
  *
@@ -35,9 +47,7 @@ export function topologicalSort(
   for (const node of graph.nodes) {
     for (const depId of node.dependsOn) {
       if (!nodeMap.has(depId)) {
-        throw new Error(
-          `Unknown dependency: node '${node.id}' depends on '${depId}' which does not exist in the graph.`,
-        );
+        throw new UnknownDependencyError(node.id, depId);
       }
     }
   }

@@ -72,10 +72,13 @@ const DEMO_BENCHMARK: BenchmarkEntry[] = [
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
   return (
-    <div style={{ display: "flex", gap: 2 }}>
+    <div role="radiogroup" aria-label="Rating" style={{ display: "flex", gap: 2 }}>
       {[1, 2, 3, 4, 5].map((s) => (
         <button
           key={s}
+          role="radio"
+          aria-checked={(hover || value) >= s}
+          aria-label={`Rate ${s} out of 5`}
           style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
           onMouseEnter={() => setHover(s)}
           onMouseLeave={() => setHover(0)}

@@ -73,12 +73,12 @@ export class ExecutionEngine {
     const results = new Map<string, NodeResult>();
     // Cycle check already performed above — skip the redundant DFS inside topologicalSort.
     const layers = topologicalSort(graph, { skipCycleCheck: true });
-    let _parallelBatches = 0;
+    let parallelBatches = 0;
 
     for (let i = 0; i < layers.length; i++) {
       const layer = layers[i];
       if (!layer || layer.length === 0) continue;
-      _parallelBatches++;
+      parallelBatches++;
 
       // Pre-warm all distinct models in the next layer while current layer runs.
       // Capped at 3 to avoid flooding Ollama with concurrent load requests.
@@ -95,7 +95,10 @@ export class ExecutionEngine {
       // priority order) to avoid concurrent side-effects.
       const hasNonParallel = layer.some((n) => n.canRunParallel === false);
       if (hasNonParallel) {
-        for (const node of layer) {
+        // Sort deterministically by node id to ensure stable execution order
+        // regardless of how the decomposer ordered the layer.
+        const sortedLayer = [...layer].sort((a, b) => a.id.localeCompare(b.id));
+        for (const node of sortedLayer) {
           const r = await this.executeNode(node, results, localOnly);
           results.set(r.nodeId, r);
         }
@@ -121,7 +124,7 @@ export class ExecutionEngine {
     return {
       nodeResults: results,
       totalTokens: { inputTokens: totalInputTokens, outputTokens: totalOutputTokens },
-      parallelBatches: _parallelBatches,
+      parallelBatches,
     };
   }
 
