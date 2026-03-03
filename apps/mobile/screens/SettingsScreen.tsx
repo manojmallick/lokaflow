@@ -126,7 +126,7 @@ export default function SettingsScreen() {
   async function testConnection() {
     setTestStatus("testing");
     try {
-      const res = await fetch(`${apiUrl}/health`);
+      const res = await fetch(`${apiUrl}/v1/health`);
       if (!res.ok) throw new Error();
       setTestStatus("ok");
     } catch {

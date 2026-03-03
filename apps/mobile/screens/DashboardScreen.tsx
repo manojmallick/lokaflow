@@ -152,7 +152,7 @@ export default function DashboardScreen({ navigation }: any) {
     try {
       const [costRes, healthRes, histRes] = await Promise.allSettled([
         fetch(`${base}/v1/cost/stats`).then((r) => r.json()),
-        fetch(`${base}/health`).then((r) => r.json()),
+        fetch(`${base}/v1/health`).then((r) => r.json()),
         fetch(`${base}/v1/routing/history?limit=5`).then((r) => r.json()),
       ]);
       setCost(costRes.status === "fulfilled" ? costRes.value : MOCK_COST);
