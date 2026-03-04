@@ -99,7 +99,7 @@ distribution. The following license types are permitted:
 
 ### AI Provider SDKs
 
-#### [@anthropic-ai/sdk](https://github.com/anthropic-ai/sdk-python)
+#### [@anthropic-ai/sdk](https://github.com/anthropic-ai/anthropic-sdk-typescript)
 
 | Field    | Value                                                |
 | -------- | ---------------------------------------------------- |

@@ -68,6 +68,5 @@ task_timeout_ms: 120000 # max 120s per task
 green:
   enabled: true
   zone: NL # ElectricityMaps zone code (NL, DE, FR, GB, ...)
-  carbon_api_key:
-    "" # optional: electricitymap.org free-tier API key
-    # Without key: uses EU average 295 gCO₂/kWh
+  carbon_api_key: "" # optional: electricitymap.org free-tier API key
+  # Without key: uses EU average 295 gCO₂/kWh

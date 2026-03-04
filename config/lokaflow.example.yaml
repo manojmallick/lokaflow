@@ -24,7 +24,8 @@ budget:
 # ── Local models (Ollama) ─────────────────────────────────────────────────────
 local:
   provider: ollama
-  base_url: http://localhost:11434
+  base_urls:
+    - http://localhost:11434
   default_model: mistral:7b # score < 0.35 — used for direct local execution
   timeout_seconds: 60
 

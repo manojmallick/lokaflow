@@ -140,7 +140,7 @@ export function PromptLibrary() {
         !t.pinned &&
         (t.title.toLowerCase().includes(q) ||
           t.body.toLowerCase().includes(q) ||
-          t.tags.some((tag) => tag.includes(q))),
+          t.tags.some((tag) => tag.toLowerCase().includes(q))),
     );
   }, [myTemplates, query]);
 
@@ -151,7 +151,7 @@ export function PromptLibrary() {
         !t.pinned &&
         (t.title.toLowerCase().includes(q) ||
           t.body.toLowerCase().includes(q) ||
-          t.tags.some((tag) => tag.includes(q))),
+          t.tags.some((tag) => tag.toLowerCase().includes(q))),
     );
   }, [communityPacks, query]);
 
