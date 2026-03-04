@@ -9,10 +9,10 @@
 LokaFlow™ is currently in pre-release. Security fixes are applied to the
 latest development version only.
 
-| Version | Supported |
-|---------|-----------|
-| `main` (pre-release) | Yes |
-| Older snapshots | No |
+| Version              | Supported |
+| -------------------- | --------- |
+| `main` (pre-release) | Yes       |
+| Older snapshots      | No        |
 
 ---
 
@@ -21,6 +21,7 @@ latest development version only.
 **Do not open a public GitHub issue for security vulnerabilities.**
 
 Report privately using **GitHub's private vulnerability reporting**:
+
 > [github.com/manojmallick/lokaflow/security/advisories/new](https://github.com/manojmallick/lokaflow/security/advisories/new)
 
 Or by email: [security@learnhubplay.nl](mailto:security@learnhubplay.nl)
@@ -41,12 +42,12 @@ Reports without reproduction steps may be deprioritised.
 
 ### Response timeline
 
-| Stage | Target |
-|-------|--------|
-| Acknowledgement | Within 48 hours |
-| Triage & severity assessment | Within 5 business days |
-| Fix or mitigation | Within 14 days for Critical/High |
-| Public disclosure | After fix is released |
+| Stage                        | Target                           |
+| ---------------------------- | -------------------------------- |
+| Acknowledgement              | Within 48 hours                  |
+| Triage & severity assessment | Within 5 business days           |
+| Fix or mitigation            | Within 14 days for Critical/High |
+| Public disclosure            | After fix is released            |
 
 ---
 
@@ -120,6 +121,7 @@ are from established open-source providers.
 
 Cloud API keys (Anthropic, OpenAI, Gemini, Groq, etc.) are stored in
 your local `.env` file or environment variables. LokaFlow never:
+
 - Stores keys in any database
 - Transmits keys to external services
 - Logs keys in output or routing logs
@@ -171,6 +173,6 @@ Responsible disclosure is appreciated — the best contribution is a patch.
 
 ---
 
-*LearnHubPlay BV · KvK: 97741825 · Netherlands*
-*LokaFlow™ — [lokaflow.com](https://lokaflow.com)*
+_LearnHubPlay BV · KvK: 97741825 · Netherlands_
+_LokaFlow™ — [lokaflow.com](https://lokaflow.com)_
 *security@learnhubplay.nl*

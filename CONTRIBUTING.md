@@ -82,6 +82,7 @@ licensed under CC0 (public domain).
 ### What We Prioritise
 
 We merge changes that:
+
 - Improve routing intelligence, accuracy, or cost efficiency
 - Add support for new local or cloud model providers
 - Improve privacy, security, or cost transparency for users
@@ -91,6 +92,7 @@ We merge changes that:
 - Improve documentation, especially for non-English speakers
 
 We do not merge:
+
 - Changes that introduce cloud dependencies for core routing logic
 - Features that send additional user data to external services by default
 - PRs without tests for new routing behaviour
@@ -173,5 +175,5 @@ Partnerships (telcos, NGOs, educational institutions):
 
 ---
 
-*© 2026 LearnHubPlay BV · LokaFlow™ is a trademark of LearnHubPlay BV*
-*AI for everyone. Waste for no one.*
+_© 2026 LearnHubPlay BV · LokaFlow™ is a trademark of LearnHubPlay BV_
+_AI for everyone. Waste for no one._

@@ -1,6 +1,6 @@
 # LokaFlow™ — Vision
 
-*by LearnHubPlay BV · Netherlands · March 2026*
+_by LearnHubPlay BV · Netherlands · March 2026_
 
 ---
 
@@ -99,39 +99,45 @@ All products are modules or modes of ONE codebase. Not separate apps.
 Not separate teams. Not separate pricing pages.
 
 ### 🌊 LokaFlow — The Infrastructure
-*Free for everyone, forever.*
+
+_Free for everyone, forever._
 The core routing engine, dashboard, cost analytics, privacy controls,
 and model management. This is the product. Everything else extends it.
 
 ### 🤖 LokaAgent™ — Automation
-*Free for everyone, forever.*
+
+_Free for everyone, forever._
 8-stage DAG orchestration pipeline: PromptGuard → ComplexityScorer →
 TaskSplitter → ModelMatcher → ContextPacker → ExecutionEngine →
 QualityGate → Assembler. Complex multi-step workflows at local cost.
 
 ### 🛡️ LokaGuard™ — Compliance
-*Module inside LokaFlow. Unlocked for Business and Enterprise tiers.*
+
+_Module inside LokaFlow. Unlocked for Business and Enterprise tiers._
 DORA Article 11, SOX Section 404, GDPR Article 30 compliance.
 Automated audit trail, PDF report generation, PII custom rules,
 data residency enforcement. For regulated industries that need to
 prove their AI is compliant — not just hope it is.
 
 ### 🏢 LokaEnterprise — Corporate Deployment
-*Docker deployment mode + admin panel. Enterprise tier.*
+
+_Docker deployment mode + admin panel. Enterprise tier._
 On-premise installation inside corporate networks. Air-gapped mode
 for zero external data flow. SSO (Entra ID, Google Workspace, SAML).
 Department routing policies. White-label capability. Admin panel.
 
 ### 🎓 LokaLearn — Education
-*Content pack. Free for everyone.*
+
+_Content pack. Free for everyone._
 30+ prompt templates for coding education, essay writing, mathematics,
 language learning, research, and exam preparation. Pre-installed for
 schools and NGOs. Works offline after setup. Available in 50+ languages
 via local Qwen 2.5 multilingual models.
-*Future (grant-funded): native Android app for offline mobile access.*
+_Future (grant-funded): native Android app for offline mobile access._
 
 ### 🌍 LokaAccess — Global Access Initiative
-*Partnership programme. Mobile build 2028.*
+
+_Partnership programme. Mobile build 2028._
 AI for people with limited internet. Works on 4-year-old Android phones.
 No credit card. No data cost after initial setup. Target: telco and NGO
 partnerships to reach populations that current AI tools cannot.
@@ -141,6 +147,7 @@ partnerships to reach populations that current AI tools cannot.
 ## What We Will Build
 
 ### Phase 1 — Core (2026 Q1–Q2) ← Now
+
 - ✅ Intelligent three-tier router (local → specialist → cloud)
 - ✅ Ollama integration (qwen2.5, qwen2.5-coder, mistral, llama3)
 - ✅ 11 cloud provider adapters (Claude, GPT-4, Gemini, Groq, xAI, DeepSeek, Mistral, Together, Cohere, Cloudflare, OpenRouter)
@@ -155,6 +162,7 @@ partnerships to reach populations that current AI tools cannot.
 - 🔧 LokaLearn prompt pack (30+ education templates)
 
 ### Phase 2 — Compliance + Enterprise (2026 Q2–Q3)
+
 - LokaGuard™ module (DORA/SOX/GDPR audit trail + PDF reports)
 - LokaEnterprise Docker deployment (on-premise + air-gapped)
 - Admin panel (user management, department routing policies)
@@ -163,6 +171,7 @@ partnerships to reach populations that current AI tools cannot.
 - Licence key management + tier enforcement
 
 ### Phase 3 — Developer Experience (2026 Q3–Q4)
+
 - VS Code extension (local code completion, routing-aware)
 - Python and TypeScript SDKs
 - OpenAI-compatible proxy (drop-in replacement, just change base URL)
@@ -170,12 +179,14 @@ partnerships to reach populations that current AI tools cannot.
 - Public API documentation
 
 ### Phase 4 — Scale (2027–2028)
+
 - LokaMobile React Native app
 - LokaAccess Android (offline-first, llama.cpp, telco partnership)
 - LokaLearn native mobile (if grant-funded)
 - Community governance model
 
 ### Phase 5 — Open (2030)
+
 - Convert to Apache 2.0 license on January 1, 2030
 - EUIPO trademark maintained
 - Full open-source governance
@@ -231,6 +242,7 @@ LokaFlow is built in the open. Contributions are welcome under the terms
 of the [Contributor License Agreement](./CONTRIBUTING.md).
 
 We merge changes that:
+
 - Improve routing intelligence or accuracy
 - Add support for new local or cloud model providers
 - Improve privacy, security, or cost transparency
@@ -238,6 +250,7 @@ We merge changes that:
 - Extend LokaLearn education templates (no CLA required for content packs)
 
 We do not merge:
+
 - Changes that introduce cloud dependencies for core routing logic
 - Features that send additional data to external services by default
 - PRs without tests for new routing behaviour
@@ -245,6 +258,6 @@ We do not merge:
 
 ---
 
-*LokaFlow™ · LearnHubPlay BV · KvK 97741825 · Netherlands*
-*[lokaflow.com](https://lokaflow.com) · [info@learnhubplay.nl](mailto:info@learnhubplay.nl)*
-*AI for everyone. Waste for no one.*
+_LokaFlow™ · LearnHubPlay BV · KvK 97741825 · Netherlands_
+_[lokaflow.com](https://lokaflow.com) · [info@learnhubplay.nl](mailto:info@learnhubplay.nl)_
+_AI for everyone. Waste for no one._

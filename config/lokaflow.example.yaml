@@ -32,8 +32,8 @@ local:
 # The specialist breaks medium-complexity tasks into subtasks and delegates them
 # to local workers for parallel execution. Omit to fall back to local round-robin.
 specialist:
-  provider: ollama              # ollama | claude | openai (any configured provider)
-  model: llama3.3:70b           # a capable model — 70B recommended for planning
+  provider: ollama # ollama | claude | openai (any configured provider)
+  model: llama3.3:70b # a capable model — 70B recommended for planning
 
 # ── Cloud providers ──────────────────────────────────────────────────────────
 cloud:
@@ -43,11 +43,11 @@ cloud:
   openai_model: gpt-4o
   gemini_model: gemini-2.0-flash
   groq_model: llama-3.3-70b-versatile
-  mistral_model: mistral-large-latest                      # requires MISTRAL_API_KEY
+  mistral_model: mistral-large-latest # requires MISTRAL_API_KEY
   together_model: meta-llama/Llama-3.3-70B-Instruct-Turbo # requires TOGETHER_API_KEY
-  perplexity_model: llama-3.1-sonar-large-128k-online      # requires PERPLEXITY_API_KEY — adds €0.005/req search cost
-  azure_deployment: gpt-4o                                 # requires AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT
-  cohere_model: command-r-plus                             # requires COHERE_API_KEY
+  perplexity_model: llama-3.1-sonar-large-128k-online # requires PERPLEXITY_API_KEY — adds €0.005/req search cost
+  azure_deployment: gpt-4o # requires AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT
+  cohere_model: command-r-plus # requires COHERE_API_KEY
 
 # ── Privacy ──────────────────────────────────────────────────────────────────
 privacy:

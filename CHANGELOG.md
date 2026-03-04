@@ -15,7 +15,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   organisation with < 100 employees OR < €1M annual revenue. Both conditions
   must be exceeded simultaneously to require a commercial license.
 
-- **LokaGuard™ module** (`packages/guard/`) — *In progress*
+- **LokaGuard™ module** (`packages/guard/`) — _In progress_
   DORA Article 11 / SOX Section 404 / GDPR Article 30 compliance module
   for Business and Enterprise tiers. Single SQLite table (`audit_log`) appended
   to existing `lokaflow.db`. Planned components:
@@ -30,7 +30,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Dashboard tab: compliance status, report generator, audit log viewer
   - Feature-flagged: `lokaGuard.enabled` in `lokaflow.yaml`
 
-- **LokaEnterprise deployment** (`packages/enterprise/`, `docker/`) — *Planned*
+- **LokaEnterprise deployment** (`packages/enterprise/`, `docker/`) — _Planned_
   Corporate on-premise deployment mode. Not a separate product — same codebase,
   different deployment configuration. Planned components:
   - `docker/docker-compose.yml` — full stack (api + web + ollama + postgres)
@@ -42,7 +42,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - `packages/enterprise/src/white-label/` — branding config (name, logo, colours)
   - Postgres support (replaces SQLite for enterprise multi-user deployments)
 
-- **LokaLearn content pack** (`packages/content/packs/lokalearn.json`) — *Planned*
+- **LokaLearn content pack** (`packages/content/packs/lokalearn.json`) — _Planned_
   Education prompt pack. 30+ templates across:
   - Coding education (explain code, debug guide, coding exercises)
   - Essay writing (feedback, outline builder, citation helper)
@@ -50,14 +50,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Language learning (translation + explain, conversation practice)
   - Science and research (ELI5, research starter, study plan)
   - Exam preparation (flashcard creator, quiz generator, revision guide)
-  Free for all users. Pre-installed for NGO and School tier.
-  Offline-capable via local Qwen 2.5 multilingual models (29 languages).
+    Free for all users. Pre-installed for NGO and School tier.
+    Offline-capable via local Qwen 2.5 multilingual models (29 languages).
 
-- **Prompt pack system** (`packages/core/src/prompts/pack.ts`) — *Planned*
+- **Prompt pack system** (`packages/core/src/prompts/pack.ts`) — _Planned_
   Pack install/list/remove API for distributing curated prompt template
   collections. Enables community packs from registry URL.
 
-- **LokaAccess initiative** (`docs/partnerships/`, `docs/mobile/`) — *Planned 2028*
+- **LokaAccess initiative** (`docs/partnerships/`, `docs/mobile/`) — _Planned 2028_
   Global access programme for users with limited internet or mobile-only access.
   2026 deliverables: landing page (lokaaccess.io), partnership brief for telcos/NGOs,
   Android technical spike document. Mobile build deferred to 2028.
@@ -83,7 +83,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - 8 unit tests
 
 - `packages/mesh/` — `@lokaflow/mesh` v0.1.0: LokaMesh™ distributed compute layer
-  - `discovery/`: MdnsDiscovery (_lokaflow._tcp.local), NodeRegistry
+  - `discovery/`: MdnsDiscovery (\_lokaflow.\_tcp.local), NodeRegistry
   - `scheduler/`: MeshScheduler (score = tokensPerSec×0.40 + alwaysOnBonus - batteryStress×0.20)
   - `executor/`: RemoteExecutor, health checks
   - `power/`: WolSender (magic packet), SleepStateMachine (ONLINE→LIGHT_SLEEP→DEEP_SLEEP)
@@ -153,6 +153,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - 115 unit tests across 9 packages
 
 ### Fixed
+
 - `src/router/router.ts` — routing log rotates at 10 MB to prevent unbounded disk growth
 - `src/config.ts` — Zod `CloudSchema` validates all 11 provider model fields
 - `src/config.ts` — `RouterSchema` includes `specialistProvider` and `specialistModel`
@@ -161,6 +162,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Router Step 2b: search pipeline runs between token estimate and complexity classification
 
 ### Planned
+
 - `@lokaflow/guard` — LokaGuard compliance module (4 weeks)
 - `@lokaflow/enterprise` — admin panel, SSO, licence management (3 weeks)
 - `@lokaflow/content` — prompt pack system + LokaLearn pack (1 week)
@@ -174,6 +176,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.1.0-pre] — 2026-02-27
 
 ### Added
+
 - Repository initialised under Business Source License 1.1
 - `COPYRIGHT.md` — EU copyright notice (LearnHubPlay BV, KvK 97741825)
 - `LICENSE` — BUSL 1.1, converts to Apache 2.0 on 2030-01-01
@@ -185,6 +188,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `.gitignore` — Excludes OS files, secrets, model weights, confidential docs
 
 ### Legal
+
 - Domains registered: `lokaflow.com` and `lokaflow.nl`
 - Copyright established across EU (Dutch Auteurswet + EU Directive 2019/790)
 - IP assignment to LearnHubPlay BV pending formal agreement

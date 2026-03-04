@@ -10,7 +10,7 @@ function findTsFiles(dir, fileList = []) {
     const fullPath = path.join(dir, file);
     if (fs.statSync(fullPath).isDirectory()) {
       findTsFiles(fullPath, fileList);
-    } else if (fullPath.endsWith(".ts")) {
+    } else if ([".ts", ".tsx", ".mts", ".cts"].some((ext) => fullPath.endsWith(ext))) {
       fileList.push(fullPath);
     }
   }

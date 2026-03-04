@@ -1,17 +1,65 @@
 [
-  { "query": "What is the capital of France?",             "expectedTier": "local-trivial",    "maxScore": 0.30 },
-  { "query": "Hello!",                                    "expectedTier": "local-trivial",    "maxScore": 0.25 },
-  { "query": "What is 2 + 2?",                            "expectedTier": "local-trivial",    "maxScore": 0.25 },
-  { "query": "What year was the Eiffel Tower built?",     "expectedTier": "local-trivial",    "maxScore": 0.30 },
-  { "query": "Write a function to reverse a string in Python", "expectedTier": "local-capable", "maxScore": 0.55 },
-  { "query": "Explain the difference between TCP and UDP", "expectedTier": "local-capable",   "maxScore": 0.55 },
-  { "query": "Write unit tests for this TypeScript module", "expectedTier": "local-capable",  "maxScore": 0.55 },
-  { "query": "Summarise the following 10-page legal contract and identify key obligations", "expectedTier": "cloud-capable", "minScore": 0.55 },
-  { "query": "Design a microservices architecture for a high-volume e-commerce platform handling 1M daily active users with CQRS, event sourcing, and distributed tracing", "expectedTier": "cloud-capable", "minScore": 0.60 },
-  { "query": "Analyse DORA Article 11 TLPT requirements and map our current controls to achieve compliance by Q3 2025", "expectedTier": "cloud-frontier", "minScore": 0.85 },
-  { "query": "Review this 250-page SOX audit trail and identify non-compliant transactions, referencing PCAOB AS 2201", "expectedTier": "cloud-frontier", "minScore": 0.85 },
-  { "query": "Our medical device software has these security vulnerabilities (CVE-2024-XXXX). Provide a remediation plan", "expectedTier": "cloud-frontier", "minScore": 0.85 },
-  { "query": "Compare quantum computing approaches: gate-based vs annealing vs photonic, and project commercialisation timelines", "expectedTier": "cloud-frontier", "minScore": 0.80 },
-  { "query": "Translate 'Good morning' to Spanish",        "expectedTier": "local-trivial",    "maxScore": 0.30 },
-  { "query": "What is the boiling point of water?",       "expectedTier": "local-trivial",    "maxScore": 0.25 }
+  { "query": "What is the capital of France?", "expectedTier": "local-trivial", "maxScore": 0.3 },
+  { "query": "Hello!", "expectedTier": "local-trivial", "maxScore": 0.25 },
+  { "query": "What is 2 + 2?", "expectedTier": "local-trivial", "maxScore": 0.25 },
+  {
+    "query": "What year was the Eiffel Tower built?",
+    "expectedTier": "local-trivial",
+    "maxScore": 0.3
+  },
+  {
+    "query": "Write a function to reverse a string in Python",
+    "expectedTier": "local-capable",
+    "maxScore": 0.55
+  },
+  {
+    "query": "Explain the difference between TCP and UDP",
+    "expectedTier": "local-capable",
+    "maxScore": 0.55
+  },
+  {
+    "query": "Write unit tests for this TypeScript module",
+    "expectedTier": "local-capable",
+    "maxScore": 0.55
+  },
+  {
+    "query": "Summarise the following 10-page legal contract and identify key obligations",
+    "expectedTier": "cloud-capable",
+    "minScore": 0.55
+  },
+  {
+    "query": "Design a microservices architecture for a high-volume e-commerce platform handling 1M daily active users with CQRS, event sourcing, and distributed tracing",
+    "expectedTier": "cloud-capable",
+    "minScore": 0.6
+  },
+  {
+    "query": "Analyse DORA Article 11 TLPT requirements and map our current controls to achieve compliance by Q3 2025",
+    "expectedTier": "cloud-frontier",
+    "minScore": 0.85
+  },
+  {
+    "query": "Review this 250-page SOX audit trail and identify non-compliant transactions, referencing PCAOB AS 2201",
+    "expectedTier": "cloud-frontier",
+    "minScore": 0.85
+  },
+  {
+    "query": "Our medical device software has these security vulnerabilities (CVE-2024-XXXX). Provide a remediation plan",
+    "expectedTier": "cloud-frontier",
+    "minScore": 0.85
+  },
+  {
+    "query": "Compare quantum computing approaches: gate-based vs annealing vs photonic, and project commercialisation timelines",
+    "expectedTier": "cloud-frontier",
+    "minScore": 0.8
+  },
+  {
+    "query": "Translate 'Good morning' to Spanish",
+    "expectedTier": "local-trivial",
+    "maxScore": 0.3
+  },
+  {
+    "query": "What is the boiling point of water?",
+    "expectedTier": "local-trivial",
+    "maxScore": 0.25
+  }
 ]

@@ -100,7 +100,7 @@ export function History() {
           (msg.role === "assistant" && msg.trace?.tier === tierFilter) ||
           (tierFilter === "local" && msg.role === "user");
 
-        if (!tierOk && msg.role === "assistant") continue;
+        if (!tierOk) continue;
 
         const text = msg.content.toLowerCase();
         let score = 0;

@@ -457,22 +457,22 @@ Output:
 
 ## 5. Build Order — Status
 
-| Step | Feature | Package | Status |
-|---|---|---|---|
-| V1 | **Core router** (PII, classify, budget, providers) | `packages/core/` | ✅ Done |
-| V1 | **CLI** (chat, cost, supporters) | `packages/cli/` | ✅ Done |
-| V2.1 | **REST API** (OpenAI-compatible proxy on :4141) | `packages/api/` | ✅ Done |
-| V2.2 | **LokaRoute** (intelligent proxy + savings tracker) | `packages/route/` | ✅ Done |
-| V2.3 | **LokaAgent** (8-stage DAG orchestration pipeline) | `packages/agent/` | ✅ Done |
-| V2.4 | **LokaOrchestrator** (task decomposition + DAG execution) | `packages/orchestrator/` | ✅ Done |
-| V2.5 | **LokaMesh** (mDNS discovery, WoL, battery, carbon) | `packages/mesh/` | ✅ Done |
-| V2.6 | **LokaAudit** (ChatGPT/Claude subscription analyser) | `packages/audit/` | ✅ Done |
-| V2.7 | **LokaCommons** (cooperative compute, credits ledger) | `packages/commons/` | ✅ Done |
-| V2.8 | **LokaSwap** (token exchange, group purchasing) | `packages/swap/` | ✅ Done |
-| V2.9 | **Web UI** (dashboard + chat) | `apps/web/` | 🔧 In progress |
-| V2.10 | **VS Code plugin** | `packages/vscode/` | 🔧 Scaffold |
-| V2.11 | **LokaLLM** (fine-tuned Phi-3 Mini INT4) | `packages/lokallm/` | 🔧 In progress |
-| V2.12 | **LokaMobile** (React Native + llama.cpp) | `apps/mobile/` | 🔧 Scaffold |
+| Step  | Feature                                                   | Package                  | Status         |
+| ----- | --------------------------------------------------------- | ------------------------ | -------------- |
+| V1    | **Core router** (PII, classify, budget, providers)        | `packages/core/`         | ✅ Done        |
+| V1    | **CLI** (chat, cost, supporters)                          | `packages/cli/`          | ✅ Done        |
+| V2.1  | **REST API** (OpenAI-compatible proxy on :4141)           | `packages/api/`          | ✅ Done        |
+| V2.2  | **LokaRoute** (intelligent proxy + savings tracker)       | `packages/route/`        | ✅ Done        |
+| V2.3  | **LokaAgent** (8-stage DAG orchestration pipeline)        | `packages/agent/`        | ✅ Done        |
+| V2.4  | **LokaOrchestrator** (task decomposition + DAG execution) | `packages/orchestrator/` | ✅ Done        |
+| V2.5  | **LokaMesh** (mDNS discovery, WoL, battery, carbon)       | `packages/mesh/`         | ✅ Done        |
+| V2.6  | **LokaAudit** (ChatGPT/Claude subscription analyser)      | `packages/audit/`        | ✅ Done        |
+| V2.7  | **LokaCommons** (cooperative compute, credits ledger)     | `packages/commons/`      | ✅ Done        |
+| V2.8  | **LokaSwap** (token exchange, group purchasing)           | `packages/swap/`         | ✅ Done        |
+| V2.9  | **Web UI** (dashboard + chat)                             | `apps/web/`              | 🔧 In progress |
+| V2.10 | **VS Code plugin**                                        | `packages/vscode/`       | 🔧 Scaffold    |
+| V2.11 | **LokaLLM** (fine-tuned Phi-3 Mini INT4)                  | `packages/lokallm/`      | 🔧 In progress |
+| V2.12 | **LokaMobile** (React Native + llama.cpp)                 | `apps/mobile/`           | 🔧 Scaffold    |
 
 ---
 
@@ -487,7 +487,7 @@ local:
   timeout_seconds: 120
 
 router:
-  specialist_provider: gemini          # gemini | ollama | openai
+  specialist_provider: gemini # gemini | ollama | openai
   specialist_model: "gemini-2.0-flash"
   complexity_local_threshold: 0.35
   complexity_cloud_threshold: 0.65
@@ -506,14 +506,14 @@ budget:
   warn_at_percent: 80
 
 search:
-  enabled: false        # opt-in — enable with BRAVE_API_KEY
+  enabled: false # opt-in — enable with BRAVE_API_KEY
   brave_enabled: true
   arxiv_enabled: true
   max_results: 5
   filter_threshold: 5.0
 
 memory:
-  enabled: false        # opt-in
+  enabled: false # opt-in
   top_k: 4
   session_id: "default"
 ```
@@ -529,40 +529,40 @@ nodes:
     models: ["qwen2.5-coder:7b", "mistral:7b"]
     ram_gb: 8
     inference_watts: 10
-    gpu_acceleration: true      # Apple Silicon Metal
+    gpu_acceleration: true # Apple Silicon Metal
     always_on: true
 
   - id: macbook-air-m4
     role: orchestrator
-    ip: auto                    # auto-discovered via mDNS
+    ip: auto # auto-discovered via mDNS
     models: ["qwen2.5-coder:7b", "phi3:mini"]
     ram_gb: 16
     sleep:
       enabled: true
       idle_minutes: 15
-      wol: false                 # no WoL on laptop (lid close)
+      wol: false # no WoL on laptop (lid close)
 
   - id: desktop-i5
     role: storage
     ip: auto
-    models: []                   # no inference — storage only
+    models: [] # no inference — storage only
     ram_gb: 32
     mac_address: "xx:xx:xx:xx:xx:xx"
     sleep:
       enabled: true
       idle_minutes: 30
-      wol: true                  # WoL for burst demand
+      wol: true # WoL for burst demand
 ```
 
 ---
 
 ## 7. Complexity Score — Quick Reference
 
-| Score | Tier | Provider | Example queries |
-|---|---|---|---|
-| 0.00–0.35 | LOCAL | Ollama (round-robin) | "What is 2+2?", "Format this JSON" |
-| 0.35–0.65 | SPECIALIST → DELEGATED | Gemini (planner) + Local (workers) | "Review this function", "Summarise this doc" |
-| 0.65–1.00 | CLOUD | Gemini / Claude / OpenAI | "Design an auth architecture", "DORA compliance analysis" |
+| Score     | Tier                   | Provider                           | Example queries                                           |
+| --------- | ---------------------- | ---------------------------------- | --------------------------------------------------------- |
+| 0.00–0.35 | LOCAL                  | Ollama (round-robin)               | "What is 2+2?", "Format this JSON"                        |
+| 0.35–0.65 | SPECIALIST → DELEGATED | Gemini (planner) + Local (workers) | "Review this function", "Summarise this doc"              |
+| 0.65–1.00 | CLOUD                  | Gemini / Claude / OpenAI           | "Design an auth architecture", "DORA compliance analysis" |
 
 **Fallback chain (cloud unavailable / no API key):**
 `CLOUD → SPECIALIST → LOCAL` — always graceful, never crashes.
@@ -571,23 +571,23 @@ nodes:
 
 ## 8. Cost Model
 
-| Provider | Input (EUR/1K) | Output (EUR/1K) | Tier |
-|---|---|---|---|
-| Ollama (local) | €0.00 | €0.00 | LOCAL |
-| Gemini 2.0 Flash | €0.00069 | €0.00276 | SPECIALIST/CLOUD |
-| Groq Llama 70B | €0.00053 | €0.00071 | CLOUD |
-| Claude Sonnet | €0.0028 | €0.014 | CLOUD |
-| OpenAI GPT-4o | €0.0046 | €0.0138 | CLOUD |
-| Claude Opus | €0.015 | €0.075 | CLOUD_PREMIUM |
+| Provider         | Input (EUR/1K) | Output (EUR/1K) | Tier             |
+| ---------------- | -------------- | --------------- | ---------------- |
+| Ollama (local)   | €0.00          | €0.00           | LOCAL            |
+| Gemini 2.0 Flash | €0.00069       | €0.00276        | SPECIALIST/CLOUD |
+| Groq Llama 70B   | €0.00053       | €0.00071        | CLOUD            |
+| Claude Sonnet    | €0.0028        | €0.014          | CLOUD            |
+| OpenAI GPT-4o    | €0.0046        | €0.0138         | CLOUD            |
+| Claude Opus      | €0.015         | €0.075          | CLOUD_PREMIUM    |
 
 **V2 blended saving target:**
+
 ```
 total_saving% = local_route%(60–70%)
               + orchestrator_reduction%(30–65% of cloud queries)
               + subscription_maximiser%(35–60% of premium tokens)
 = 80–95% vs naive all-cloud approach
 ```
-
 
 ---
 
@@ -614,6 +614,7 @@ Unlocked by licence tier check in `packages/enterprise/src/licence/tier.ts`.
 Free users see the tab greyed out. Business and Enterprise unlock it fully.
 
 **New package layout:**
+
 ```
 packages/guard/
   src/
@@ -636,6 +637,7 @@ packages/guard/
 ```
 
 **SQL schema (appended to existing `~/.lokaflow/lokaflow.db`):**
+
 ```sql
 CREATE TABLE IF NOT EXISTS audit_log (
   id TEXT PRIMARY KEY,
@@ -658,21 +660,23 @@ CREATE TABLE IF NOT EXISTS audit_log (
 ```
 
 **Router integration (zero breaking change):**
+
 ```typescript
 // packages/core/src/router/router.ts — add after Step 5
 if (this.config.lokaGuard?.enabled) {
-  await this.auditTrail.record({ ...routingDecision, piiDetected, complianceFlags })
+  await this.auditTrail.record({ ...routingDecision, piiDetected, complianceFlags });
 }
 ```
 
 **Config:**
+
 ```yaml
 lokaGuard:
   enabled: true
   frameworks: [DORA, GDPR]
   dataResidency: EU
-  reportSchedule: "0 9 1 * *"    # first of month 09:00
-  auditRetentionDays: 2555        # 7 years (DORA requirement)
+  reportSchedule: "0 9 1 * *" # first of month 09:00
+  auditRetentionDays: 2555 # 7 years (DORA requirement)
   customPIIRules: []
 ```
 
@@ -684,6 +688,7 @@ Same codebase. Different deployment. Docker compose wraps the existing
 `@lokaflow/api` and `apps/web` images with Postgres, Nginx, and Ollama.
 
 **Docker layout:**
+
 ```
 docker/
   docker-compose.yml              Full stack: api + web + ollama + postgres + nginx
@@ -696,6 +701,7 @@ docker/
 ```
 
 **Admin panel routes (new in `packages/enterprise/src/admin/`):**
+
 ```
 GET  /admin/users               List org users + department + last active
 POST /admin/users/invite        Invite user (email hash only)
@@ -706,6 +712,7 @@ GET  /admin/usage               Usage analytics per department
 ```
 
 **SSO providers (`packages/enterprise/src/sso/`):**
+
 ```
 EntraSSO    — @azure/msal-node (MIT)  → Entra ID / Azure AD
 GoogleSSO   — passport-google-oauth20 (MIT) → Google Workspace
@@ -713,6 +720,7 @@ SAMLProvider — passport-saml (MIT)   → Okta, ADFS, PingFederate
 ```
 
 **White-label config (15 minutes to deploy under client brand):**
+
 ```yaml
 enterprise:
   whiteLabelEnabled: true
@@ -732,6 +740,7 @@ A JSON prompt template pack. Not a separate app. Installed from the
 prompt library in `apps/web`. Pre-installed for NGO/School tier.
 
 **Pack structure:**
+
 ```
 packages/content/
   packs/
@@ -744,6 +753,7 @@ packages/content/
 ```
 
 **Pack categories (lokalearn.json):**
+
 ```
 Coding education    8 templates  explain-code, debug-guide, coding-exercise, ...
 Essay writing       6 templates  feedback, outline, citation-helper, ...
@@ -763,11 +773,13 @@ via Qwen 2.5 (29 languages) without any API key.
 Not a build task for 2026. A positioning and partnership document.
 
 **2026 deliverables:**
+
 - `docs/partnerships/LokaAccess_Partnership_Brief.pdf` — 1-page brief for telcos/NGOs
 - `docs/mobile/android-spike.md` — Android technical feasibility (React Native + llama.cpp)
 - Landing page at lokaaccess.io → routes to lokaflow.com download
 
 **2028 build (when telco/NGO partnership secured):**
+
 - React Native + llama.cpp Android app (minimum: Android 9+, 4GB RAM)
 - Offline-first: models downloaded once, zero data cost after setup
 - Target models: tinyllama:1.1b (638MB), llama3.2:1b (1.3GB)
@@ -783,26 +795,26 @@ and injected into the React context. Feature flags gate UI sections and API rout
 ```typescript
 // Licence tier resolution
 interface LicenceTier {
-  tier: 'individual' | 'ngo' | 'startup' | 'small_business' | 'business' | 'enterprise'
-  lokaGuardEnabled: boolean
-  adminPanelEnabled: boolean
-  ssoEnabled: boolean
-  whiteLabelEnabled: boolean
-  maxSeats: number | 'unlimited'
+  tier: "individual" | "ngo" | "startup" | "small_business" | "business" | "enterprise";
+  lokaGuardEnabled: boolean;
+  adminPanelEnabled: boolean;
+  ssoEnabled: boolean;
+  whiteLabelEnabled: boolean;
+  maxSeats: number | "unlimited";
 }
 
 // Free if EITHER condition is false:
 function resolveTier(employees: number, revenueEur: number): LicenceTier {
   if (employees <= 100 || revenueEur <= 1_000_000) {
-    return FREE_TIER  // regardless of which condition was false
+    return FREE_TIER; // regardless of which condition was false
   }
   // Both exceeded — determine paid tier by employee count
-  if (employees <= 499)  return SMALL_BUSINESS_TIER  // €49/mo
-  if (employees <= 2000) return BUSINESS_TIER         // €199/mo (LokaGuard included)
-  return ENTERPRISE_TIER                              // €999+/mo (all features)
+  if (employees <= 499) return SMALL_BUSINESS_TIER; // €49/mo
+  if (employees <= 2000) return BUSINESS_TIER; // €199/mo (LokaGuard included)
+  return ENTERPRISE_TIER; // €999+/mo (all features)
 }
 ```
 
 ---
 
-*© 2026 LearnHubPlay BV · LokaFlow™ · BUSL 1.1 → Apache 2.0 (2030-01-01) · lokaflow.io*
+_© 2026 LearnHubPlay BV · LokaFlow™ · BUSL 1.1 → Apache 2.0 (2030-01-01) · lokaflow.io_

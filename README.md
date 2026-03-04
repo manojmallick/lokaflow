@@ -14,14 +14,14 @@ Gemini) based on task complexity, token cost, and data sensitivity.
 
 ## Why LokaFlow?
 
-| Without LokaFlow | With LokaFlow |
-|-----------------|---------------|
-| $110/mo for multiple AI subscriptions | $0–10/mo in cloud API credits |
-| Rate limits on every platform | Unlimited local execution |
-| Sensitive data sent to cloud | PII stays on your machine |
-| Manual model switching | Automatic intelligent routing |
-| 1× query capacity | 10× more queries possible |
-| Only for people who can afford it | Free for every person on earth |
+| Without LokaFlow                      | With LokaFlow                  |
+| ------------------------------------- | ------------------------------ |
+| $110/mo for multiple AI subscriptions | $0–10/mo in cloud API credits  |
+| Rate limits on every platform         | Unlimited local execution      |
+| Sensitive data sent to cloud          | PII stays on your machine      |
+| Manual model switching                | Automatic intelligent routing  |
+| 1× query capacity                     | 10× more queries possible      |
+| Only for people who can afford it     | Free for every person on earth |
 
 ---
 
@@ -59,7 +59,7 @@ User Task
 - **LokaAgent™** — 8-stage orchestration pipeline (decompose → plan → execute → assemble)
 - **LokaMesh™** — distributed compute across your devices (mDNS discovery, WoL, battery-aware)
 - **LokaAudit™** — analyse your current AI subscriptions and find overpay
-- **LokaGuard™** — compliance module: DORA, SOX, GDPR audit trail + PDF reports *(Business+)*
+- **LokaGuard™** — compliance module: DORA, SOX, GDPR audit trail + PDF reports _(Business+)_
 - **Batch Processing** — run large document pipelines overnight at near-zero cost
 - **Web Search** — Brave Search API or self-hosted SearXNG integration
 - **Memory + RAG** — SQLite-based conversation memory with TF-IDF retrieval
@@ -69,19 +69,23 @@ User Task
 ## Who LokaFlow Is For
 
 ### Every person — €0 forever
+
 A student in Nairobi with a laptop gets the same full product as an engineer
 in Amsterdam. Local AI does not cost us anything to serve you. The product
 is free because the value comes from your own hardware.
 
 ### Every school, NGO, open-source project — €0 forever
+
 Any size. Any country. Education and social good are never behind a paywall.
 LokaLearn prompt pack included.
 
 ### Every startup under 100 people — €0 until you grow
+
 Build your product on LokaFlow. When you cross 100 employees AND €1M
 revenue, you are profitable enough to give back.
 
 ### Companies that can afford it — fair pricing
+
 The threshold is simple: **100+ employees AND €1M+ annual revenue**.
 If either condition is missing, you are still free. Both must be true to pay.
 
@@ -89,14 +93,14 @@ If either condition is missing, you are still free. Both must be true to pay.
 
 ## Pricing
 
-| Tier | Who | Price |
-|------|-----|-------|
-| **Individual** | Every person on earth | **€0 forever** |
-| **NGO / School** | Education, charities, any size | **€0 forever** |
-| **Startup** | < 100 employees OR < €1M revenue | **€0** |
-| **Small Business** | 100–499 employees AND > €1M ARR | **€49/month** |
-| **Business** | 500–2,000 employees AND > €1M ARR | **€199/month** *(includes LokaGuard)* |
-| **Enterprise** | 2,000+ employees AND > €1M ARR | **€999+/month** |
+| Tier               | Who                               | Price                                 |
+| ------------------ | --------------------------------- | ------------------------------------- |
+| **Individual**     | Every person on earth             | **€0 forever**                        |
+| **NGO / School**   | Education, charities, any size    | **€0 forever**                        |
+| **Startup**        | < 100 employees OR < €1M revenue  | **€0**                                |
+| **Small Business** | 100–499 employees AND > €1M ARR   | **€49/month**                         |
+| **Business**       | 500–2,000 employees AND > €1M ARR | **€199/month** _(includes LokaGuard)_ |
+| **Enterprise**     | 2,000+ employees AND > €1M ARR    | **€999+/month**                       |
 
 > **The rule in one sentence:** If you cannot afford it, you do not pay.
 > We measure that by revenue — not headcount alone.
@@ -110,14 +114,14 @@ Full pricing details: [lokaflow.com/pricing](https://lokaflow.com/pricing)
 Running LokaFlow on your own hardware replaces $135–175/month of paid
 AI subscriptions with $0–10/month of targeted cloud API usage:
 
-| Capability | Monthly Cost | Equivalent Paid Value |
-|------------|-------------|----------------------|
-| Unlimited local queries (Ollama + qwen2.5) | €0 | $40–60/mo |
-| Deep reasoning (routed to Claude / Gemini) | €2–5/mo | $20/mo |
-| Code completion (local qwen2.5-coder) | €0 | $10/mo |
-| Document analysis pipelines | €1–3/mo | $20/mo |
-| Web search + AI synthesis | €0 | $20/mo |
-| **Total** | **€0–10/mo** | **$110–130/mo** |
+| Capability                                 | Monthly Cost | Equivalent Paid Value |
+| ------------------------------------------ | ------------ | --------------------- |
+| Unlimited local queries (Ollama + qwen2.5) | €0           | $40–60/mo             |
+| Deep reasoning (routed to Claude / Gemini) | €2–5/mo      | $20/mo                |
+| Code completion (local qwen2.5-coder)      | €0           | $10/mo                |
+| Document analysis pipelines                | €1–3/mo      | $20/mo                |
+| Web search + AI synthesis                  | €0           | $20/mo                |
+| **Total**                                  | **€0–10/mo** | **$110–130/mo**       |
 
 Free cloud API keys (Gemini, Groq, xAI) provide 7.3 million tokens/day —
 more than any individual will ever use. Most users pay €0 for cloud too.
@@ -128,14 +132,14 @@ more than any individual will ever use. Most users pay €0 for cloud too.
 
 All products are modules or deployment modes of ONE codebase — not separate apps.
 
-| Product | What it is | Who it's for |
-|---------|-----------|-------------|
-| 🌊 **LokaFlow** | Core infrastructure, routing, dashboard | Everyone (free) |
-| 🤖 **LokaAgent™** | 8-stage AI orchestration pipeline | Everyone (free) |
-| 🛡️ **LokaGuard™** | DORA/SOX/GDPR compliance module | Business + Enterprise |
-| 🏢 **LokaEnterprise** | On-premise Docker deployment + admin panel | Enterprise |
-| 🎓 **LokaLearn** | Education prompt pack (30+ templates) | Students, schools (free) |
-| 🌍 **LokaAccess** | Global access initiative — mobile 2028 | Partnership programme |
+| Product               | What it is                                 | Who it's for             |
+| --------------------- | ------------------------------------------ | ------------------------ |
+| 🌊 **LokaFlow**       | Core infrastructure, routing, dashboard    | Everyone (free)          |
+| 🤖 **LokaAgent™**     | 8-stage AI orchestration pipeline          | Everyone (free)          |
+| 🛡️ **LokaGuard™**     | DORA/SOX/GDPR compliance module            | Business + Enterprise    |
+| 🏢 **LokaEnterprise** | On-premise Docker deployment + admin panel | Enterprise               |
+| 🎓 **LokaLearn**      | Education prompt pack (30+ templates)      | Students, schools (free) |
+| 🌍 **LokaAccess**     | Global access initiative — mobile 2028     | Partnership programme    |
 
 ---
 
@@ -145,25 +149,25 @@ All products are modules or deployment modes of ONE codebase — not separate ap
 
 ### Packages
 
-| Package | Name | Status |
-|---------|------|--------|
-| `@lokaflow/core` | Router, providers (11), PII scanner, classifier, budget, search, memory | ✅ Working |
-| `@lokaflow/cli` | `lokaflow chat`, `lokaflow cost`, `--supporters` | ✅ Working |
-| `@lokaflow/api` | REST API + OpenAI-compatible proxy on `:4141` | ✅ Working |
-| `@lokaflow/route` | Intelligent LLM proxy router + savings tracker | ✅ Working |
-| `@lokaflow/agent` | 8-stage DAG orchestration (decompose → execute → assemble) | ✅ Working |
-| `@lokaflow/orchestrator` | Task DAG decomposition + complexity measurement | ✅ Working |
-| `@lokaflow/mesh` | mDNS cluster discovery, WoL, battery-aware scheduling | ✅ Working |
-| `@lokaflow/audit` | ChatGPT / Claude GDPR export subscription analyser | ✅ Working |
-| `@lokaflow/commons` | Cooperative compute P2P exchange, credits ledger | ✅ Working |
-| `@lokaflow/swap` | Token exchange + group purchasing marketplace | ✅ Working |
-| `@lokaflow/guard` | LokaGuard compliance module (DORA/SOX/GDPR) | 🔧 In progress |
-| `@lokaflow/enterprise` | Admin panel, SSO, on-premise config | 🔧 Planned |
-| `@lokaflow/content` | Prompt packs including LokaLearn | 🔧 Planned |
-| `lokaflow-vscode` | VS Code extension | 🔧 Scaffold |
-| `apps/web` | Web UI dashboard + chat interface | 🔧 In progress |
-| `apps/mobile` | LokaMobile — React Native + llama.cpp (2028) | 🔧 Scaffold |
-| `@lokaflow/lokallm` | Fine-tuned Phi-3 Mini complexity scorer | 🔧 In progress |
+| Package                  | Name                                                                    | Status         |
+| ------------------------ | ----------------------------------------------------------------------- | -------------- |
+| `@lokaflow/core`         | Router, providers (11), PII scanner, classifier, budget, search, memory | ✅ Working     |
+| `@lokaflow/cli`          | `lokaflow chat`, `lokaflow cost`, `--supporters`                        | ✅ Working     |
+| `@lokaflow/api`          | REST API + OpenAI-compatible proxy on `:4141`                           | ✅ Working     |
+| `@lokaflow/route`        | Intelligent LLM proxy router + savings tracker                          | ✅ Working     |
+| `@lokaflow/agent`        | 8-stage DAG orchestration (decompose → execute → assemble)              | ✅ Working     |
+| `@lokaflow/orchestrator` | Task DAG decomposition + complexity measurement                         | ✅ Working     |
+| `@lokaflow/mesh`         | mDNS cluster discovery, WoL, battery-aware scheduling                   | ✅ Working     |
+| `@lokaflow/audit`        | ChatGPT / Claude GDPR export subscription analyser                      | ✅ Working     |
+| `@lokaflow/commons`      | Cooperative compute P2P exchange, credits ledger                        | ✅ Working     |
+| `@lokaflow/swap`         | Token exchange + group purchasing marketplace                           | ✅ Working     |
+| `@lokaflow/guard`        | LokaGuard compliance module (DORA/SOX/GDPR)                             | 🔧 In progress |
+| `@lokaflow/enterprise`   | Admin panel, SSO, on-premise config                                     | 🔧 Planned     |
+| `@lokaflow/content`      | Prompt packs including LokaLearn                                        | 🔧 Planned     |
+| `lokaflow-vscode`        | VS Code extension                                                       | 🔧 Scaffold    |
+| `apps/web`               | Web UI dashboard + chat interface                                       | 🔧 In progress |
+| `apps/mobile`            | LokaMobile — React Native + llama.cpp (2028)                            | 🔧 Scaffold    |
+| `@lokaflow/lokallm`      | Fine-tuned Phi-3 Mini complexity scorer                                 | 🔧 In progress |
 
 ### Test Coverage
 
@@ -226,6 +230,7 @@ docker compose up -d
 ```
 
 Air-gapped deployment (zero external network):
+
 ```bash
 docker compose -f docker-compose.air-gap.yml up -d
 ```
@@ -267,7 +272,7 @@ before submitting a pull request.
 
 ---
 
-*© 2026 LearnHubPlay BV (KvK: 97741825) · Netherlands*
-*LokaFlow™ is a trademark of LearnHubPlay BV*
-*Licensed under BUSL 1.1 · Free for individuals and organisations under 100 employees*
-*Commercial licensing: [info@learnhubplay.nl](mailto:info@learnhubplay.nl)*
+_© 2026 LearnHubPlay BV (KvK: 97741825) · Netherlands_
+_LokaFlow™ is a trademark of LearnHubPlay BV_
+_Licensed under BUSL 1.1 · Free for individuals and organisations under 100 employees_
+_Commercial licensing: [info@learnhubplay.nl](mailto:info@learnhubplay.nl)_

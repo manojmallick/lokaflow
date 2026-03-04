@@ -29,34 +29,47 @@ export class UnknownDependencyError extends Error {
 }
 
 /**
- * Returns true if the task graph contains a dependency cycle.
- * Uses DFS with a recursion stack (back-edge detection).
+ * Shared DFS traversal used by both hasCycle and assertNoCycle.
+ * Returns the ID of the first node that forms a back-edge (cycle), or null.
  * @throws UnknownDependencyError if a dependsOn edge references a node not in the graph.
  */
-export function hasCycle(graph: TaskGraph): boolean {
+function findCycleNode(graph: TaskGraph): string | null {
   const visited = new Set<string>();
   const stack = new Set<string>();
-
   const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
 
-  function dfs(nodeId: string): boolean {
-    if (stack.has(nodeId)) return true; // back edge = cycle
-    if (visited.has(nodeId)) return false;
+  function dfs(nodeId: string): string | null {
+    if (stack.has(nodeId)) return nodeId; // back edge = cycle
+    if (visited.has(nodeId)) return null;
 
     stack.add(nodeId);
     const node = nodeMap.get(nodeId);
     if (node) {
       for (const dep of node.dependsOn) {
         if (!nodeMap.has(dep)) throw new UnknownDependencyError(nodeId, dep);
-        if (dfs(dep)) return true;
+        const found = dfs(dep);
+        if (found !== null) return found;
       }
     }
     stack.delete(nodeId);
     visited.add(nodeId);
-    return false;
+    return null;
   }
 
-  return graph.nodes.some((n) => dfs(n.id));
+  for (const n of graph.nodes) {
+    const found = dfs(n.id);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+/**
+ * Returns true if the task graph contains a dependency cycle.
+ * Uses DFS with a recursion stack (back-edge detection).
+ * @throws UnknownDependencyError if a dependsOn edge references a node not in the graph.
+ */
+export function hasCycle(graph: TaskGraph): boolean {
+  return findCycleNode(graph) !== null;
 }
 
 /**
@@ -66,26 +79,8 @@ export function hasCycle(graph: TaskGraph): boolean {
  * Use before executing any task graph.
  */
 export function assertNoCycle(graph: TaskGraph): void {
-  const visited = new Set<string>();
-  const stack = new Set<string>();
-  const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
-
-  function dfs(nodeId: string): boolean {
-    if (stack.has(nodeId)) return true;
-    if (visited.has(nodeId)) return false;
-
-    stack.add(nodeId);
-    const node = nodeMap.get(nodeId);
-    if (node) {
-      for (const dep of node.dependsOn) {
-        if (!nodeMap.has(dep)) throw new UnknownDependencyError(nodeId, dep);
-        if (dfs(dep)) throw new DecompositionCycleError(dep);
-      }
-    }
-    stack.delete(nodeId);
-    visited.add(nodeId);
-    return false;
+  const cycleNodeId = findCycleNode(graph);
+  if (cycleNodeId !== null) {
+    throw new DecompositionCycleError(cycleNodeId);
   }
-
-  graph.nodes.forEach((n) => dfs(n.id));
 }

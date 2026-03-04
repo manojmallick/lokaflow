@@ -5,16 +5,16 @@ Copyright (c) 2026 LearnHubPlay BV
 All rights reserved.
 ```
 
-| Field          | Value                                         |
-|----------------|-----------------------------------------------|
-| Company        | LearnHubPlay BV                               |
-| KvK Number     | 97741825                                      |
-| Registered     | Netherlands                                   |
-| Product        | LokaFlow™ Platform                            |
+| Field          | Value                                                                      |
+| -------------- | -------------------------------------------------------------------------- |
+| Company        | LearnHubPlay BV                                                            |
+| KvK Number     | 97741825                                                                   |
+| Registered     | Netherlands                                                                |
+| Product        | LokaFlow™ Platform                                                         |
 | Product Family | LokaFlow · LokaAgent · LokaGuard · LokaEnterprise · LokaLearn · LokaAccess |
-| First Created  | February 2026                                 |
-| Website        | https://lokaflow.com                          |
-| Contact        | info@learnhubplay.nl                          |
+| First Created  | February 2026                                                              |
+| Website        | https://lokaflow.com                                                       |
+| Contact        | info@learnhubplay.nl                                                       |
 
 ---
 
@@ -33,6 +33,7 @@ This software is licensed under the **Business Source License 1.1** (BUSL-1.1).
 See [LICENSE](./LICENSE) for full terms.
 
 Commercial use requires a license only for organisations with both:
+
 - 100 or more employees, AND
 - €1,000,000 or more in annual revenue
 
@@ -81,5 +82,5 @@ such component is used under its respective license. See
 
 ---
 
-*LokaFlow™ Product Family · LearnHubPlay BV · March 2026*
-*AI for everyone. Waste for no one.*
+_LokaFlow™ Product Family · LearnHubPlay BV · March 2026_
+_AI for everyone. Waste for no one._
