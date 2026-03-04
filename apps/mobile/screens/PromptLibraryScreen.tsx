@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import * as Clipboard from "expo-clipboard";
 import {
   StyleSheet,
   Text,
@@ -106,7 +107,14 @@ export default function PromptLibraryScreen() {
 
   useEffect(() => {
     AsyncStorage.getItem(LS_KEY).then((raw: string | null) => {
-      const mine: PromptTemplate[] = raw ? JSON.parse(raw) : [];
+      let mine: PromptTemplate[] = [];
+      if (raw) {
+        try {
+          mine = JSON.parse(raw) as PromptTemplate[];
+        } catch {
+          console.warn("[PromptLibrary] Failed to parse stored templates, resetting to empty.");
+        }
+      }
       setTemplates([...mine, ...COMMUNITY_PACKS]);
     });
   }, []);
@@ -313,7 +321,10 @@ export default function PromptLibraryScreen() {
             <View style={s.modalFooter}>
               <TouchableOpacity
                 style={s.copyBtn}
-                onPress={() => {
+                onPress={async () => {
+                  if (detailModal?.body) {
+                    await Clipboard.setStringAsync(detailModal.body);
+                  }
                   Alert.alert("Copied", "Prompt copied to clipboard");
                   setDetailModal(null);
                 }}

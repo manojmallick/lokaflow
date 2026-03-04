@@ -8,8 +8,8 @@
 import type { TaskGraph } from "../types/agent.js";
 
 export class DecompositionCycleError extends Error {
-  constructor(cycleNodeId: string) {
-    super(`Cycle detected in TaskGraph at node: ${cycleNodeId}`);
+  constructor(cycleNodeId: string, message?: string) {
+    super(message ?? `Cycle detected in TaskGraph at node: ${cycleNodeId}`);
     this.name = "DecompositionCycleError";
   }
 }

@@ -96,12 +96,14 @@ async function mockRun(model: string, prompt: string, apiBase: string): Promise<
   const baseLatency = isCloudModel ? 8000 + Math.random() * 15000 : 1500 + Math.random() * 5000;
   const tokens = Math.ceil(prompt.length / 3) + Math.floor(Math.random() * 300) + 100;
   const costEur = isCloudModel ? (tokens / 1000) * 0.002 : 0;
+  const serverLabel =
+    apiBase && apiBase.trim().length > 0 ? apiBase.trim() : "your LokaFlow server";
 
   return new Promise((resolve) => {
     setTimeout(
       () => {
         resolve({
-          output: `[Mock — ${model}]\n\nSimulated response to:\n"${prompt.slice(0, 60)}…"\n\nConnect to a real LokaFlow server for live inference.`,
+          output: `[Mock — ${model}]\n\nSimulated response to:\n"${prompt.slice(0, 60)}…"\n\nConnect to a real LokaFlow server at ${serverLabel} for live inference.`,
           latencyMs: Math.round(baseLatency),
           tokens,
           costEur,

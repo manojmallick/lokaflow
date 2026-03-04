@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import { FlaskConical, Loader2, RotateCcw, Send, Star, Trophy } from "lucide-react";
 
 interface RunResult {
@@ -105,7 +105,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
             btnRefs.current[idx] = el;
           }}
           role="radio"
-          aria-checked={(hover || value) >= s}
+          aria-checked={value === s}
           aria-label={`Rate ${s} out of 5`}
           tabIndex={idx === tabbableIdx ? 0 : -1}
           style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}

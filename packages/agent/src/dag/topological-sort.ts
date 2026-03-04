@@ -6,7 +6,7 @@
 // Kahn's algorithm — returns execution layers (nodes in each layer can run in parallel).
 
 import type { TaskGraph, TaskNode } from "../types/agent.js";
-import { assertNoCycle } from "./cycle-detector.js";
+import { assertNoCycle, DecompositionCycleError } from "./cycle-detector.js";
 
 /**
  * Thrown when a node's dependsOn references an id that does not exist in the graph.
@@ -96,7 +96,8 @@ export function topologicalSort(
   // deficit here can only be caused by a cycle that slipped past assertNoCycle.
   const placed = layers.flat().length;
   if (placed !== graph.nodes.length) {
-    throw new Error(
+    throw new DecompositionCycleError(
+      "__topo_overflow__",
       `Topological sort incomplete: ${placed} of ${graph.nodes.length} nodes placed. Cycle detected.`,
     );
   }
