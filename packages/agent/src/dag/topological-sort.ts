@@ -56,7 +56,8 @@ export function topologicalSort(
 
   const layers: TaskNode[][] = [];
   // Build adjacency list: nodeId → list of node IDs that depend on it.
-  // This makes the inner loop O(E) per layer instead of O(V²).
+  // Together with the in-degree pass above this gives O(V+E) overall,
+  // vs the naive O(V²) approach of scanning all edges on every layer.
   const dependentsOf = new Map<string, string[]>();
   for (const node of graph.nodes) {
     for (const dep of node.dependsOn) {
@@ -90,7 +91,9 @@ export function topologicalSort(
   // Sanity: every node must be in exactly one layer.
   // At this point all dependency IDs are known-valid (checked above), so a
   // deficit here can only be caused by a cycle that slipped past assertNoCycle.
-  const placed = layers.flat().length;
+  // Count without allocating a flattened intermediate array.
+  let placed = 0;
+  for (const layer of layers) placed += layer.length;
   if (placed !== graph.nodes.length) {
     throw new DecompositionCycleError(
       "__topo_overflow__",

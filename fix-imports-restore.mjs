@@ -38,6 +38,7 @@ allTsFiles.forEach((file) => {
       );
       const destPath = normalizedDestPath.split("/").join(path.sep);
       let newRel = path.relative(dir, destPath);
+      newRel = newRel.split(path.sep).join("/"); // normalise to POSIX separators for import specifiers
       if (!newRel.startsWith(".")) newRel = "./" + newRel;
 
       changed = true;

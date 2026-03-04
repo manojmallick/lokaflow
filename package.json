@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "postinstall": "husky install",
-    "format:check": "prettier --check \"packages/**/*.{ts,tsx}\" \"apps/**/*.{ts,tsx}\" --ignore-unknown",
-    "format": "prettier --write \"packages/**/*.{ts,tsx}\" \"apps/**/*.{ts,tsx}\" --ignore-unknown",
-    "lint": "eslint \"packages/**/*.{ts,tsx}\" \"apps/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\" --ignore-unknown",
+    "format": "prettier --write \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\" --ignore-unknown",
+    "lint": "eslint \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\"",
     "test": "pnpm -r run test",
     "test:cov": "vitest run --coverage",
     "typecheck": "pnpm -r run typecheck",

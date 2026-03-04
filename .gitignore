@@ -133,6 +133,9 @@ temp/
 # ──────────────────────────────
 # LokaFlow runtime data
 # ──────────────────────────────
+# lokaflow.yaml contains machine-specific settings (LAN IPs, pii_scan overrides).
+# Use config/lokaflow.example.yaml as the committed template.
+lokaflow.yaml
 .lokaflow/
 task_graphs/output/
 cache/
