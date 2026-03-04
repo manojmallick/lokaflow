@@ -7,6 +7,7 @@ import {
   hasCycle,
   assertNoCycle,
   DecompositionCycleError,
+  UnknownDependencyError,
 } from "../../../src/dag/cycle-detector.js";
 import { topologicalSort } from "../../../src/dag/topological-sort.js";
 import type { TaskGraph, TaskNode, IntentProfile } from "../../../src/types/agent.js";
@@ -87,6 +88,16 @@ describe("CycleDetector", () => {
     const graph = makeGraph([makeNode("t1"), makeNode("t2", ["t1"])]);
     expect(() => assertNoCycle(graph)).not.toThrow();
   });
+
+  it("hasCycle throws UnknownDependencyError for an unknown dep", () => {
+    const graph = makeGraph([makeNode("t1", ["ghost"])]);
+    expect(() => hasCycle(graph)).toThrow(UnknownDependencyError);
+  });
+
+  it("assertNoCycle throws UnknownDependencyError for an unknown dep", () => {
+    const graph = makeGraph([makeNode("t1", ["ghost"])]);
+    expect(() => assertNoCycle(graph)).toThrow(UnknownDependencyError);
+  });
 });
 
 describe("TopologicalSort", () => {
@@ -136,5 +147,31 @@ describe("TopologicalSort", () => {
   it("throws DecompositionCycleError for a cyclic graph", () => {
     const graph = makeGraph([makeNode("t1", ["t2"]), makeNode("t2", ["t1"])]);
     expect(() => topologicalSort(graph)).toThrow(DecompositionCycleError);
+  });
+
+  it("throws UnknownDependencyError when a dep id is not in the graph", () => {
+    const graph = makeGraph([makeNode("t1"), makeNode("t2", ["t1"]), makeNode("t3", ["missing"])]);
+    expect(() => topologicalSort(graph)).toThrow(UnknownDependencyError);
+  });
+
+  it("throws UnknownDependencyError with correct node and dep ids", () => {
+    const graph = makeGraph([makeNode("t1", ["ghost"])]);
+    expect(() => topologicalSort(graph)).toThrowError(/node 't1'.*'ghost'/);
+  });
+
+  it("produces correct layers for a fan-out then fan-in diamond graph", () => {
+    // t1 → t2, t1 → t3, t2 → t4, t3 → t4  (diamond)
+    const graph = makeGraph([
+      makeNode("t1"),
+      makeNode("t2", ["t1"]),
+      makeNode("t3", ["t1"]),
+      makeNode("t4", ["t2", "t3"]),
+    ]);
+    const layers = topologicalSort(graph);
+    // layer 0: t1 only; layer 1: t2+t3 (parallel); layer 2: t4
+    expect(layers).toHaveLength(3);
+    expect(layers[0]!.map((n) => n.id)).toEqual(["t1"]);
+    expect(layers[1]!.map((n) => n.id).sort()).toEqual(["t2", "t3"].sort());
+    expect(layers[2]!.map((n) => n.id)).toEqual(["t4"]);
   });
 });

@@ -6,19 +6,14 @@
 // Kahn's algorithm — returns execution layers (nodes in each layer can run in parallel).
 
 import type { TaskGraph, TaskNode } from "../types/agent.js";
-import { assertNoCycle, DecompositionCycleError } from "./cycle-detector.js";
+import {
+  assertNoCycle,
+  DecompositionCycleError,
+  UnknownDependencyError,
+} from "./cycle-detector.js";
 
-/**
- * Thrown when a node's dependsOn references an id that does not exist in the graph.
- */
-export class UnknownDependencyError extends Error {
-  constructor(nodeId: string, depId: string) {
-    super(
-      `Unknown dependency: node '${nodeId}' depends on '${depId}' which does not exist in the graph.`,
-    );
-    this.name = "UnknownDependencyError";
-  }
-}
+// Re-export so callers can import UnknownDependencyError from either module.
+export { UnknownDependencyError };
 
 /**
  * Returns an array of layers, where each layer is an array of nodes
@@ -30,6 +25,7 @@ export class UnknownDependencyError extends Error {
  * @param options.skipCycleCheck - Set to `true` when the caller has already
  *   run `assertNoCycle` on this graph, avoiding a redundant O(V+E) DFS.
  * @throws DecompositionCycleError if the graph has a cycle (unless skipCycleCheck is true).
+ * @throws UnknownDependencyError if any node depends on an id that does not exist in the graph.
  */
 export function topologicalSort(
   graph: TaskGraph,

@@ -155,9 +155,14 @@ export function LogViewer(): JSX.Element {
   const displayLines = filteredLines.slice(-lineLimit);
 
   async function copyAll() {
-    await navigator.clipboard.writeText(displayLines.map((l) => l.text).join("\n"));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    try {
+      await navigator.clipboard.writeText(displayLines.map((l) => l.text).join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (err) {
+      // clipboard API can reject in non-secure contexts or when permission is denied.
+      console.error("Failed to copy logs to clipboard:", err);
+    }
   }
 
   return (
