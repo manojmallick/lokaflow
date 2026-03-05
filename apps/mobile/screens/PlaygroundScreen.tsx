@@ -99,19 +99,17 @@ async function mockRun(model: string, prompt: string, apiBase: string): Promise<
   const serverLabel =
     apiBase && apiBase.trim().length > 0 ? apiBase.trim() : "your LokaFlow server";
 
+  const actualLatency = Math.min(baseLatency, 2000);
   return new Promise((resolve) => {
-    setTimeout(
-      () => {
-        resolve({
-          output: `[Mock — ${model}]\n\nSimulated response to:\n"${prompt.slice(0, 60)}…"\n\nConnect to a real LokaFlow server at ${serverLabel} for live inference.`,
-          latencyMs: Math.round(baseLatency),
-          tokens,
-          costEur,
-          rating: 0,
-        });
-      },
-      Math.min(baseLatency, 2000),
-    );
+    setTimeout(() => {
+      resolve({
+        output: `[Mock — ${model}]\n\nSimulated response to:\n"${prompt.slice(0, 60)}…"\n\nConnect to a real LokaFlow server at ${serverLabel} for live inference.`,
+        latencyMs: Math.round(actualLatency),
+        tokens,
+        costEur,
+        rating: 0,
+      });
+    }, actualLatency);
   });
 }
 
