@@ -8,7 +8,13 @@ function findTsFiles(dir, fileList = []) {
     if (file === "node_modules" || file === "dist") continue;
 
     const fullPath = path.join(dir, file);
-    if (fs.statSync(fullPath).isDirectory()) {
+    let stat;
+    try {
+      stat = fs.statSync(fullPath);
+    } catch {
+      continue; // skip unreadable paths or broken symlinks
+    }
+    if (stat.isDirectory()) {
       findTsFiles(fullPath, fileList);
     } else if ([".ts", ".tsx", ".mts", ".cts"].some((ext) => fullPath.endsWith(ext))) {
       fileList.push(fullPath);

@@ -140,12 +140,6 @@ importers:
       tsx:
         specifier: ^4.16.0
         version: 4.21.0
-      typescript:
-        specifier: ^5.5.0
-        version: 5.9.3
-      vitest:
-        specifier: ^2.0.0
-        version: 2.1.9(@types/node@22.19.13)(terser@5.46.0)
 
   packages/api:
     dependencies:
