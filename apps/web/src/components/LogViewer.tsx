@@ -268,11 +268,22 @@ export function LogViewer(): JSX.Element {
               placeholder="Filter lines…"
             />
             {filter && (
-              <X
-                size={12}
-                style={{ cursor: "pointer", color: "#666" }}
+              <button
+                type="button"
                 onClick={() => setFilter("")}
-              />
+                aria-label="Clear filter"
+                title="Clear filter"
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  margin: 0,
+                  cursor: "pointer",
+                  display: "flex",
+                }}
+              >
+                <X size={12} style={{ color: "#666" }} />
+              </button>
             )}
           </div>
 

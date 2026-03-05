@@ -135,7 +135,7 @@ function mockRun(model: string, prompt: string): Promise<RunResult> {
       () => {
         resolve({
           output: `[Mock output from ${model}]\n\nHere is the analysis of your prompt:\n\n${prompt.slice(0, 80)}...\n\nKey points:\n- This is a simulated response from ${model}\n- Connect to a real LokaFlow server to get live outputs\n- Compare quality by rating both responses below`,
-          latencyMs: Math.round(baseLatency),
+          latencyMs: Math.round(Math.min(baseLatency, 2000)),
           tokens,
           costEur,
           rating: 0,
@@ -203,7 +203,13 @@ export function Playground() {
                 ...b,
                 queryCount: b.queryCount + 1,
                 winner: winnerModel,
-                avgRating: (b.avgRating + Math.max(resultA.rating, resultB.rating)) / 2,
+                avgRating:
+                  (b.avgRating * b.queryCount + Math.max(resultA.rating, resultB.rating)) /
+                  (b.queryCount + 1),
+                avgLatencyMs: Math.round(
+                  (b.avgLatencyMs * b.queryCount + (resultA.latencyMs + resultB.latencyMs) / 2) /
+                    (b.queryCount + 1),
+                ),
               }
             : b,
         );

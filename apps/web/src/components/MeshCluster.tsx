@@ -139,8 +139,8 @@ export function MeshCluster() {
         )
       : null;
 
-  function renderProviderCard(p: Provider, i: number) {
-    const key = `${p.name}_${i}`;
+  function renderProviderCard(p: Provider, _i: number) {
+    const key = p.name;
     const isExpanded = expandedNode === key;
     const modelState = p.latencyMs > 0 && p.status === "ok" ? "warm" : "cold";
 

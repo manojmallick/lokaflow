@@ -172,7 +172,13 @@ export default function PlaygroundScreen() {
                 ...b,
                 winner,
                 queryCount: b.queryCount + 1,
-                avgRating: Math.max(resultA.rating, resultB.rating),
+                avgRating:
+                  (b.avgRating * b.queryCount + Math.max(resultA.rating, resultB.rating)) /
+                  (b.queryCount + 1),
+                avgLatencyMs: Math.round(
+                  (b.avgLatencyMs * b.queryCount + (resultA.latencyMs + resultB.latencyMs) / 2) /
+                    (b.queryCount + 1),
+                ),
               }
             : b,
         ),
