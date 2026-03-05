@@ -386,10 +386,21 @@ export function PromptLibrary() {
 
       {showModal && (
         <div className="prompt-modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="prompt-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="prompt-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-prompt-template-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h2>New Prompt Template</h2>
-              <button className="prompt-icon-btn" onClick={() => setShowModal(false)}>
+              <h2 id="new-prompt-template-title">New Prompt Template</h2>
+              <button
+                className="prompt-icon-btn"
+                type="button"
+                aria-label="Close dialog"
+                onClick={() => setShowModal(false)}
+              >
                 <X size={18} />
               </button>
             </div>

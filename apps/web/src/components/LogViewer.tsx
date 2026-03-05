@@ -21,7 +21,10 @@ import {
   FileText,
 } from "lucide-react";
 
-const API_BASE = (): string => localStorage.getItem("lf_api_url") || "http://127.0.0.1:4141";
+const API_BASE = (): string => {
+  const raw = localStorage.getItem("lf_api_url") || "http://127.0.0.1:4141";
+  return raw.trim().replace(/\/+$/, "");
+};
 
 const MAX_BUFFER = 2000;
 

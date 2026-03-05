@@ -198,7 +198,7 @@ export default function PlaygroundScreen() {
   }
 
   const bothDone = resultA && resultB;
-  const rated = (resultA?.rating ?? 0) > 0 || (resultB?.rating ?? 0) > 0;
+  const rated = (resultA?.rating ?? 0) > 0 && (resultB?.rating ?? 0) > 0;
 
   return (
     <SafeAreaView style={s.container}>

@@ -91,7 +91,10 @@ function MiniBar({ pct, color = "var(--accent)" }: { pct: number; color?: string
   );
 }
 
-const API_BASE = () => localStorage.getItem("lf_api_url") || "http://127.0.0.1:4141";
+const API_BASE = () => {
+  const raw = localStorage.getItem("lf_api_url") || "http://127.0.0.1:4141";
+  return raw.trim().replace(/\/+$/, "");
+};
 
 export function MeshCluster() {
   const [health, setHealth] = useState<HealthData | null>(null);
