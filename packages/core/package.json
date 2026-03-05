@@ -4,7 +4,14 @@
   "description": "LokaFlow orchestration engine and router core layer",
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc --build",
     "typecheck": "tsc --noEmit"
