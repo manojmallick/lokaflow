@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Clock, Download, Filter, Hash, MessageSquare, Search, X } from "lucide-react";
 
 interface Message {
@@ -39,7 +39,7 @@ interface SearchResult {
   score: number;
 }
 
-function highlight(text: string, query: string): React.ReactNode {
+function highlight(text: string, query: string): ReactNode {
   if (!query.trim()) return text;
   const idx = text.toLowerCase().indexOf(query.toLowerCase());
   if (idx === -1) return text.length > 120 ? text.slice(0, 120) + "…" : text;

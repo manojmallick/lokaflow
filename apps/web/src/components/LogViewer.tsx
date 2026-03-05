@@ -162,7 +162,9 @@ export function LogViewer(): JSX.Element {
       setTimeout(() => setCopied(false), 1800);
     } catch (err) {
       // clipboard API can reject in non-secure contexts or when permission is denied.
-      console.error("Failed to copy logs to clipboard:", err);
+      if (process.env.NODE_ENV !== "production") {
+        console.error("Failed to copy logs to clipboard:", err);
+      }
     }
   }
 
