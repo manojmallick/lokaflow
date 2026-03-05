@@ -8,10 +8,10 @@
     "format:check": "prettier --check \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\" \"**/*.{json,md,yaml,yml}\" --ignore-unknown",
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\" \"**/*.{json,md,yaml,yml}\" --ignore-unknown",
     "lint": "eslint \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\"",
-    "test": "pnpm -r run test",
-    "test:cov": "pnpm -r run test -- --coverage",
-    "typecheck": "pnpm -r run typecheck",
-    "build": "pnpm -r run build",
+    "test": "pnpm -r --if-present run test",
+    "test:cov": "pnpm -r --if-present run test -- --coverage",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "build": "pnpm -r --if-present run build",
     "start": "pnpm --filter @lokaflow/cli start"
   },
   "devDependencies": {

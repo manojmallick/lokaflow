@@ -212,25 +212,16 @@ export function PromptLibrary() {
     const isExpanded = expandedId === tpl.id;
 
     return (
-      <div
-        key={tpl.id}
-        className="prompt-card"
-        role="button"
-        tabIndex={0}
-        aria-expanded={isExpanded}
-        onClick={() => setExpandedId(isExpanded ? null : tpl.id)}
-        onKeyDown={(e) => {
-          if (e.currentTarget !== e.target) return;
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setExpandedId(isExpanded ? null : tpl.id);
-          }
-        }}
-      >
-        <div className="prompt-card-title">
+      <div key={tpl.id} className="prompt-card">
+        <button
+          type="button"
+          className="prompt-card-title"
+          aria-expanded={isExpanded}
+          onClick={() => setExpandedId(isExpanded ? null : tpl.id)}
+        >
           {tpl.pinned && <span className="prompt-card-pin">📌</span>}
           {tpl.title}
-        </div>
+        </button>
         <div className="prompt-card-body">{tpl.body}</div>
         <div className="prompt-card-footer">
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
@@ -240,7 +231,7 @@ export function PromptLibrary() {
               </span>
             ))}
           </div>
-          <div className="prompt-card-actions" onClick={(e) => e.stopPropagation()}>
+          <div className="prompt-card-actions">
             <button
               className="prompt-icon-btn"
               title={tpl.pinned ? "Unpin" : "Pin"}

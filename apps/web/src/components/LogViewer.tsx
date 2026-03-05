@@ -67,7 +67,7 @@ export function LogViewer(): JSX.Element {
   // Each entry carries a monotonically increasing seq so React can use it as a
   // stable key even when displayLines is sliced or re-filtered.
   const seqRef = useRef(0);
-  const [lines, setLines] = useState<{ seq: number; text: string }[]>([]);
+  const [lines, setLines] = useState<{ seq: number; text: string; cls: string }[]>([]);
   const [filter, setFilter] = useState("");
   const [live, setLive] = useState(true);
   const [connected, setConnected] = useState(false);
@@ -92,7 +92,7 @@ export function LogViewer(): JSX.Element {
       try {
         const { line } = JSON.parse(evt.data) as { line: string };
         setLines((prev) => {
-          const next = [...prev, { seq: ++seqRef.current, text: line }];
+          const next = [...prev, { seq: ++seqRef.current, text: line, cls: lineClass(line) }];
           return next.length > MAX_BUFFER ? next.slice(-MAX_BUFFER) : next;
         });
       } catch {
@@ -126,6 +126,7 @@ export function LogViewer(): JSX.Element {
           (Array.isArray(d.lines) ? d.lines : []).map((text) => ({
             seq: ++seqRef.current,
             text,
+            cls: lineClass(text),
           })),
         ),
       )
@@ -334,8 +335,8 @@ export function LogViewer(): JSX.Element {
               </span>
             </div>
           ) : (
-            displayLines.map(({ seq, text }, i) => (
-              <div key={seq} className={`lv-line ${lineClass(text)}`}>
+            displayLines.map(({ seq, text, cls }, i) => (
+              <div key={seq} className={`lv-line ${cls}`}>
                 <span className="lv-lnum">{i + 1}</span>
                 <span className="lv-text">{text}</span>
               </div>
