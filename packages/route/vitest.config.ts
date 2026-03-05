@@ -15,6 +15,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@lokaflow/core": resolve(__dirname, "../core/src/index.ts"),
+      "@lokaflow/agent": resolve(__dirname, "../agent/src/index.ts"),
     },
     extensionAlias: {
       ".js": [".ts", ".js"],
