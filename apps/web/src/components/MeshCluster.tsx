@@ -149,20 +149,12 @@ export function MeshCluster() {
 
     return (
       <div key={key} className={`provider-card ${p.status}`}>
-        <div
+        <button
+          type="button"
           className="provider-card-top"
-          style={{ cursor: "pointer" }}
-          role="button"
-          tabIndex={0}
           aria-expanded={isExpanded}
           aria-label={`${p.name} details`}
           onClick={() => setExpandedNode(isExpanded ? null : key)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
-              e.preventDefault();
-              setExpandedNode(isExpanded ? null : key);
-            }
-          }}
         >
           <StatusDot status={p.status} />
           <TierIcon tier={p.tier} />
@@ -178,7 +170,7 @@ export function MeshCluster() {
           ) : (
             <ChevronRight size={13} style={{ color: "var(--text-muted)" }} />
           )}
-        </div>
+        </button>
 
         <div className="provider-card-bottom">
           <span className={`provider-status-label ${p.status}`}>

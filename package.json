@@ -4,7 +4,7 @@
   "description": "LokaFlow Engine Monolithic Orchestrator",
   "private": true,
   "scripts": {
-    "postinstall": "husky install",
+    "prepare": "husky install",
     "format:check": "prettier --check \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\" \"**/*.{json,md,yaml,yml}\" --ignore-unknown",
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\" \"**/*.{json,md,yaml,yml}\" --ignore-unknown",
     "lint": "eslint \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\"",
