@@ -44,7 +44,7 @@ repos:
         language: node
         entry: pnpm run lint
         pass_filenames: false
-        types: [ts]
+        types_or: [ts, tsx]
 
   # ── TypeScript: type check ────────────────────────────────────────────────
   - repo: local
@@ -54,4 +54,4 @@ repos:
         language: node
         entry: pnpm run typecheck
         pass_filenames: false
-        types: [ts]
+        types_or: [ts, tsx]

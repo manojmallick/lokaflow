@@ -72,6 +72,10 @@ export function LogViewer(): JSX.Element {
   // stable key even when displayLines is sliced or re-filtered.
   const seqRef = useRef(0);
   const [lines, setLines] = useState<{ seq: number; text: string; cls: string }[]>([]);
+  // Incoming SSE lines are buffered here and flushed to state in a single
+  // requestAnimationFrame callback, batching many rapid messages into one render.
+  const pendingRef = useRef<{ seq: number; text: string; cls: string }[]>([]);
+  const rafRef = useRef<number | null>(null);
   const [filter, setFilter] = useState("");
   const [live, setLive] = useState(true);
   const [connected, setConnected] = useState(false);
@@ -95,10 +99,18 @@ export function LogViewer(): JSX.Element {
     es.onmessage = (evt) => {
       try {
         const { line } = JSON.parse(evt.data) as { line: string };
-        setLines((prev) => {
-          const next = [...prev, { seq: ++seqRef.current, text: line, cls: lineClass(line) }];
-          return next.length > MAX_BUFFER ? next.slice(-MAX_BUFFER) : next;
-        });
+        pendingRef.current.push({ seq: ++seqRef.current, text: line, cls: lineClass(line) });
+        if (rafRef.current === null) {
+          rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = null;
+            const batch = pendingRef.current.splice(0);
+            if (batch.length === 0) return;
+            setLines((prev) => {
+              const next = [...prev, ...batch];
+              return next.length > MAX_BUFFER ? next.slice(-MAX_BUFFER) : next;
+            });
+          });
+        }
       } catch {
         // ignore malformed SSE frames
       }
@@ -114,6 +126,11 @@ export function LogViewer(): JSX.Element {
     }
     return () => {
       esRef.current?.close();
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      pendingRef.current = [];
     };
   }, [live, connect]);
 

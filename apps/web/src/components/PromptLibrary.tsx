@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { BookOpen, Pin, PinOff, Plus, Search, Send, Trash2, X } from "lucide-react";
 
 interface PromptTemplate {
@@ -116,6 +116,25 @@ export function PromptLibrary() {
   const [testInput, setTestInput] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const modalTitleInputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+
+  // Focus the title input when modal opens; restore focus when it closes
+  useEffect(() => {
+    if (showModal) {
+      modalTitleInputRef.current?.focus();
+    } else if (triggerRef.current) {
+      triggerRef.current.focus();
+      triggerRef.current = null;
+    }
+  }, [showModal]);
+
+  const openModal = useCallback(() => {
+    triggerRef.current = document.activeElement as HTMLElement;
+    setShowModal(true);
+  }, []);
+
+  const closeModal = useCallback(() => setShowModal(false), []);
 
   useEffect(() => {
     saveTemplates(myTemplates);
@@ -350,7 +369,7 @@ export function PromptLibrary() {
           <button
             className="btn-primary"
             style={{ display: "flex", alignItems: "center", gap: 6 }}
-            onClick={() => setShowModal(true)}
+            onClick={openModal}
           >
             <Plus size={15} /> New Prompt
           </button>
@@ -389,7 +408,13 @@ export function PromptLibrary() {
       </div>
 
       {showModal && (
-        <div className="prompt-modal-backdrop" onClick={() => setShowModal(false)}>
+        <div
+          className="prompt-modal-backdrop"
+          onClick={closeModal}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") closeModal();
+          }}
+        >
           <div
             className="prompt-modal"
             role="dialog"
@@ -411,6 +436,7 @@ export function PromptLibrary() {
             <div>
               <label>Title</label>
               <input
+                ref={modalTitleInputRef}
                 placeholder="e.g. Summarise legal clause"
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
