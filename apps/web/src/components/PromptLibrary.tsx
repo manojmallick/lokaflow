@@ -156,8 +156,12 @@ export function PromptLibrary() {
   }, [communityPacks, query]);
 
   function togglePin(id: string) {
-    setMyTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t)));
-    setCommunityPacks((prev) => prev.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t)));
+    const existsInMine = myTemplates.some((t) => t.id === id);
+    if (existsInMine) {
+      setMyTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t)));
+    } else {
+      setCommunityPacks((prev) => prev.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t)));
+    }
   }
 
   function deleteTemplate(id: string) {
