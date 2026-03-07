@@ -32,18 +32,18 @@ allTsFiles.forEach((file) => {
 
     // Find imports pointing to packages/route/src/router back to src/router
     const regex =
-      /(import|export)\s+[^'"]*from\s+(["'])([^"']*\/packages\/route\/src\/router\/[^"']*?)\2/g;
+      /(import|export)\s+[^'"]*from\s+(["'])([^"']*\/packages\/route\/src\/router(?:\/[^"']*?)?)\2/g;
     let newContent = content.replace(regex, (match, _type, _quote, capture) => {
       const dir = path.dirname(file);
       const targetPath = path.resolve(dir, capture);
       const normalizedTargetPath = targetPath.split(path.sep).join("/");
-      const targetIsBadRouter = normalizedTargetPath.includes("/packages/route/src/router/");
+      const badRouterPrefix = "/packages/route/src/router";
+      const targetIsBadRouter =
+        normalizedTargetPath === badRouterPrefix ||
+        normalizedTargetPath.startsWith(badRouterPrefix + "/");
 
       if (targetIsBadRouter) {
-        const normalizedDestPath = normalizedTargetPath.replace(
-          "/packages/route/src/router/",
-          "/src/router/",
-        );
+        const normalizedDestPath = normalizedTargetPath.replace(badRouterPrefix, "/src/router");
         const destPath = normalizedDestPath.split("/").join(path.sep);
         let newRel = path.relative(dir, destPath);
         newRel = newRel.split(path.sep).join("/"); // normalise to POSIX separators for import specifiers

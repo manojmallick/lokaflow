@@ -35,22 +35,21 @@ allTsFiles.forEach((file) => {
     let content = fs.readFileSync(file, "utf8");
     let changed = false;
 
-    // We are looking for any import or export that contains "/router/"
-    // and we will dynamically resolve it
-    const regex = /(?:import|export)\s+[^'"]*from\s+(['"])(\.[^'"]*\/router\/[^'"]*?)\1/g;
+    // We are looking for any import or export that contains "/router"
+    // (optionally followed by further path segments) and we will dynamically resolve it
+    const regex = /(?:import|export)\s+[^'"]*from\s+(['"])(\.[^'"]*\/router(?:\/[^'"]*)??)\1/g;
     let newContent = content.replace(regex, (match, _quote, capture) => {
       const dir = path.dirname(file);
       const targetPath = path.resolve(dir, capture);
       // Normalize to POSIX-style separators so string checks are cross-platform.
       const normalizedTargetPath = targetPath.split(path.sep).join("/");
-      const targetIsRouter = normalizedTargetPath.includes("/src/router/");
+      const targetIsRouter = /\/src\/router(?:\/|$)/.test(normalizedTargetPath);
 
       if (targetIsRouter) {
         // It points to the old src/router, re-route to packages/route/src/router
-        const normalizedDestPath = normalizedTargetPath.replace(
-          "/src/router/",
-          "/packages/route/src/router/",
-        );
+        const normalizedDestPath = normalizedTargetPath.includes("/src/router/")
+          ? normalizedTargetPath.replace("/src/router/", "/packages/route/src/router/")
+          : normalizedTargetPath.replace("/src/router", "/packages/route/src/router");
         const destPath = path.normalize(normalizedDestPath);
         let newRel = path.relative(dir, destPath).split(path.sep).join("/");
         if (!newRel.startsWith(".")) newRel = "./" + newRel;

@@ -216,6 +216,7 @@ export function LogViewer(): JSX.Element {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter lines…"
+            aria-label="Filter log lines"
           />
           {filter && (
             <button

@@ -90,7 +90,7 @@ function buildTrend(monthTotal: number): { day: string; cost: number; savings: n
     const dayLabel = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
     const progressFactor = (i + 1) / 14;
     const baseCost = (monthTotal / 30) * (1 - progressFactor * 0.5 + Math.random() * 0.2);
-    const savings = baseCost * 120;
+    const savings = baseCost * 0.8;
     return { day: dayLabel, cost: baseCost, savings };
   });
 }
