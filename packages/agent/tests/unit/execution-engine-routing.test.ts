@@ -1,0 +1,213 @@
+// © 2026 LearnHubPlay BV. All rights reserved.
+// Licensed under BUSL 1.1 — see LICENSE for details.
+// LokaFlow™ — lokaflow.io
+
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { ExecutionEngine } from "../../src/pipeline/execution-engine.js";
+import { CLOUD_FALLBACK_MODEL } from "../../src/registry/interim-models.js";
+import type { TaskGraph } from "../../src/types/agent.js";
+
+// ---------------------------------------------------------------------------
+// Minimal mock registry \u2014 satisfies ModelCapabilityRegistry interface
+// ---------------------------------------------------------------------------
+const mockRegistry = {
+  getCapabilities: vi.fn(() => ({
+    contextWindow: 4096,
+    strengths: ["code"],
+    supportsStreaming: false,
+  })),
+  contextTokens: vi.fn(() => 4096),
+  listModels: vi.fn(() => []),
+} as unknown as import("../../src/registry/model-registry.js").ModelCapabilityRegistry;
+
+const engineConfig = {
+  defaultTimeoutMs: 5_000,
+  maxTimeoutMs: 10_000,
+  preWarmNextModel: false,
+  ollamaBaseUrl: "http://localhost:11434",
+} as const;
+
+// ---------------------------------------------------------------------------
+// Minimal single-node graph (all required TaskNode fields provided)
+// ---------------------------------------------------------------------------
+function makeGraph(
+  modelId = "ollama:tinyllama:1.1b",
+  fallbackModel = "ollama:tinyllama:1.1b",
+): TaskGraph {
+  return {
+    nodes: [
+      {
+        id: "n1",
+        description: "Do something",
+        assignedModel: modelId,
+        fallbackModel,
+        dependsOn: [],
+        inputContext: "",
+        outputSchema: { format: "text", maxTokens: 200, requiredElements: [] },
+        qualityThreshold: 0.3,
+        priority: 1,
+        complexity: 0.2,
+        tokenBudget: { inputMax: 1000, outputMax: 200 },
+      },
+    ],
+    meta: { createdAt: Date.now(), totalBudgetTokens: 2000 },
+  };
+}
+
+/** Mock ContextPacker.pack on the engine so we don't need a real Ollama connection. */
+function stubPacker(engine: ExecutionEngine): void {
+  vi.spyOn((engine as unknown as { packer: { pack: unknown } }).packer, "pack").mockResolvedValue({
+    systemPrompt: "system",
+    userPrompt: "user",
+    packedTokens: 100,
+    totalTokens: 100,
+    dependencyOutputs: [],
+    relevantContext: "",
+  });
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+// ---------------------------------------------------------------------------
+// effectiveNode redirect: model selection for localOnly / cloudEscalation
+// ---------------------------------------------------------------------------
+describe("ExecutionEngine — effectiveNode model redirect", () => {
+  const cloudModelGraph = () => makeGraph("anthropic:claude-sonnet-4", "ollama:qwen2.5:0.5b"); // non-ollama assigned, ollama fallback
+
+  it("(1) localOnly=true: non-ollama assigned model is redirected to a local model", async () => {
+    const engine = new ExecutionEngine(mockRegistry, engineConfig);
+    stubPacker(engine);
+
+    const calledWith: string[] = [];
+    vi.spyOn(engine as unknown as { callModel: unknown }, "callModel").mockImplementation(
+      async (modelId: unknown) => {
+        calledWith.push(modelId as string);
+        return { content: "ok", usage: { inputTokens: 5, outputTokens: 5 }, latencyMs: 10 };
+      },
+    );
+
+    await engine.execute(cloudModelGraph(), /* localOnly */ true);
+
+    // Should have been redirected — no cloud model ID should have been called
+    expect(calledWith.every((id) => (id as string).startsWith("ollama:"))).toBe(true);
+  });
+
+  it("(2) cloudEscalation=false (default): non-ollama assigned model is redirected to a local model", async () => {
+    // engineConfig has no cloudEscalation field, so it defaults to false/undefined
+    const engine = new ExecutionEngine(mockRegistry, engineConfig);
+    stubPacker(engine);
+
+    const calledWith: string[] = [];
+    vi.spyOn(engine as unknown as { callModel: unknown }, "callModel").mockImplementation(
+      async (modelId: unknown) => {
+        calledWith.push(modelId as string);
+        return { content: "ok", usage: { inputTokens: 5, outputTokens: 5 }, latencyMs: 10 };
+      },
+    );
+
+    await engine.execute(cloudModelGraph(), /* localOnly */ false);
+
+    expect(calledWith.every((id) => (id as string).startsWith("ollama:"))).toBe(true);
+  });
+
+  it("(3) cloudEscalation=true: non-ollama assigned model is NOT redirected (cloud path is live)", async () => {
+    const engine = new ExecutionEngine(mockRegistry, {
+      ...engineConfig,
+      cloudEscalation: true,
+      // Supply a stub ModelCaller to satisfy the constructor guard; callModel is
+      // mocked below so this stub will not actually be invoked during the test.
+      cloudModelCaller: { call: vi.fn() },
+    });
+    stubPacker(engine);
+
+    const calledWith: string[] = [];
+    vi.spyOn(engine as unknown as { callModel: unknown }, "callModel").mockImplementation(
+      async (modelId: unknown) => {
+        calledWith.push(modelId as string);
+        // Simulate cloud model succeeding
+        return { content: "cloud ok", usage: { inputTokens: 5, outputTokens: 10 }, latencyMs: 80 };
+      },
+    );
+
+    await engine.execute(cloudModelGraph(), /* localOnly */ false);
+
+    // The first call should have been made with the original cloud model ID
+    expect(calledWith[0]).toBe("anthropic:claude-sonnet-4");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// localOnly: cloud escalation must never be attempted
+// ---------------------------------------------------------------------------
+describe("ExecutionEngine — localOnly flag", () => {
+  it("does not escalate to cloud when localOnly=true, even on model failure", async () => {
+    const engine = new ExecutionEngine(mockRegistry, engineConfig);
+    stubPacker(engine);
+
+    // Force the Ollama call to fail so handleFailure is triggered
+    vi.spyOn(engine as unknown as { callModel: unknown }, "callModel").mockRejectedValue(
+      new Error("ollama offline"),
+    );
+
+    const result = await engine.execute(makeGraph(), /* localOnly */ true);
+    const results = [...result.nodeResults.values()];
+
+    // All node results should have escalated=false
+    expect(results.every((r) => r.escalated === false)).toBe(true);
+    // No result should reference the cloud model
+    expect(results.every((r) => r.model !== CLOUD_FALLBACK_MODEL)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Non-Ollama model: callModel must throw, handleFailure must degrade honestly
+// ---------------------------------------------------------------------------
+describe("ExecutionEngine — non-Ollama model graceful degradation", () => {
+  it("returns escalated=false when cloud model throws (offline mode)", async () => {
+    const engine = new ExecutionEngine(mockRegistry, engineConfig);
+    stubPacker(engine);
+
+    // Both local and cloud calls fail (simulates fully offline mode)
+    vi.spyOn(engine as unknown as { callModel: unknown }, "callModel").mockRejectedValue(
+      new Error("network error"),
+    );
+
+    const result = await engine.execute(makeGraph(), /* localOnly */ false);
+    const results = [...result.nodeResults.values()];
+
+    expect(results.every((r) => r.escalated === false)).toBe(true);
+  });
+
+  it("returns escalated=true when cloud fallback succeeds", async () => {
+    // cloudEscalation must be explicitly enabled — offline-only mode is the default.
+    const engine = new ExecutionEngine(mockRegistry, {
+      ...engineConfig,
+      cloudEscalation: true,
+      // Supply a stub ModelCaller; callModel is mocked below so this won't be called.
+      cloudModelCaller: { call: vi.fn() },
+    });
+    stubPacker(engine);
+
+    let callCount = 0;
+    vi.spyOn(engine as unknown as { callModel: unknown }, "callModel").mockImplementation(
+      async () => {
+        callCount++;
+        if (callCount === 1) throw new Error("local model failed"); // first call: local
+        // second call: cloud succeeds
+        return {
+          content: "cloud result",
+          usage: { inputTokens: 10, outputTokens: 20 },
+          latencyMs: 50,
+        };
+      },
+    );
+
+    const result = await engine.execute(makeGraph(), /* localOnly */ false);
+
+    const node = result.nodeResults.get("n1");
+    expect(node?.escalated).toBe(true);
+    expect(node?.model).toBe(CLOUD_FALLBACK_MODEL);
+  });
+});

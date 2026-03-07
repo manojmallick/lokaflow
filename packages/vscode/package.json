@@ -1,0 +1,105 @@
+{
+  "name": "lokaflow-vscode",
+  "displayName": "LokaFlow",
+  "description": "LokaFlow Local-First AI Routing for VS Code",
+  "version": "0.1.0",
+  "publisher": "learnhubplay",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/learnhubplay/lokaflow"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Programming Languages"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "lokaflow.chat",
+        "title": "LokaFlow: Open Chat",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "lokaflow.explainCode",
+        "title": "LokaFlow: Explain Selected Code",
+        "icon": "$(lightbulb)"
+      },
+      {
+        "command": "lokaflow.showHistory",
+        "title": "LokaFlow: Show Routing History",
+        "icon": "$(history)"
+      },
+      {
+        "command": "lokaflow.refreshHistory",
+        "title": "LokaFlow: Refresh History",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "lokaflow.openDashboard",
+        "title": "LokaFlow: Open Savings Dashboard",
+        "icon": "$(graph)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "lokaflow",
+          "title": "LokaFlow",
+          "icon": "$(circuit-board)"
+        }
+      ]
+    },
+    "views": {
+      "lokaflow": [
+        {
+          "id": "lokaflow.history",
+          "name": "Routing History",
+          "icon": "$(history)",
+          "contextualTitle": "LokaFlow Routing History"
+        }
+      ]
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "lokaflow.explainCode",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "lokaflow.refreshHistory",
+          "when": "view == lokaflow.history",
+          "group": "navigation"
+        },
+        {
+          "command": "lokaflow.openDashboard",
+          "when": "view == lokaflow.history",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "package-watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "20.x",
+    "esbuild": "^0.21.5",
+    "typescript": "^5.5.0",
+    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/parser": "^7.11.0",
+    "eslint": "^8.57.0"
+  }
+}

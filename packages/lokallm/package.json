@@ -1,0 +1,32 @@
+{
+  "name": "@lokaflow/lokallm",
+  "version": "0.1.0",
+  "description": "LokaLLM™ — local fine-tuning pipeline (QLoRA) + GGUF export + Node.js orchestration bridge",
+  "type": "module",
+  "license": "BUSL-1.1",
+  "author": "LearnHubPlay BV <info@learnhubplay.nl>",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "train": "python src/train/lora.py",
+    "export": "python src/export/gguf.py",
+    "generate": "python src/data/generate.py"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}

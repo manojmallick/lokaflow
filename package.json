@@ -1,0 +1,44 @@
+{
+  "name": "lokaflow",
+  "version": "1.0.0",
+  "description": "LokaFlow Engine Monolithic Orchestrator",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install",
+    "format:check": "prettier --check \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\" \"**/*.{json,md,yaml,yml}\" --ignore-unknown",
+    "format": "prettier --write \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\" \"**/*.{json,md,yaml,yml}\" --ignore-unknown",
+    "lint": "eslint \"packages/**/*.{ts,tsx,js,mjs,cjs}\" \"apps/**/*.{ts,tsx,js,mjs,cjs}\" \"*.{js,mjs,cjs}\"",
+    "test": "pnpm -r --if-present run test",
+    "test:cov": "pnpm -r --if-present run test -- --coverage",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "build": "pnpm -r --if-present run build",
+    "start": "pnpm --filter @lokaflow/cli start"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^2.1.1",
+    "eslint": "^9.0.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^16.3.1",
+    "prettier": "^3.3.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ]
+  }
+}

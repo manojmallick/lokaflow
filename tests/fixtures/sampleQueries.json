@@ -1,0 +1,23 @@
+[
+  { "query": "What is 2+2?", "expectedTier": "local" },
+  { "query": "List 5 programming languages", "expectedTier": "local" },
+  { "query": "What does HTTP stand for?", "expectedTier": "local" },
+  { "query": "Format this JSON as YAML", "expectedTier": "local" },
+  { "query": "Write a git commit message for fixing a null pointer bug", "expectedTier": "local" },
+  {
+    "query": "Explain this stack trace and suggest a fix:\nTypeError: Cannot read properties of undefined\n  at processRequest (/app/handler.ts:42)",
+    "expectedTier": "specialist"
+  },
+  {
+    "query": "Review this function for potential security vulnerabilities and explain any issues",
+    "expectedTier": "specialist"
+  },
+  {
+    "query": "Compare these architecture patterns and analyse their trade-offs for a distributed system. Evaluate scalability, fault tolerance, and maintenance complexity. Why would you choose event sourcing versus CQRS?",
+    "expectedTier": "cloud"
+  },
+  {
+    "query": "Synthesise recent research on RAG versus fine-tuning for domain-specific LLMs. Analyse cost, accuracy, latency, and maintenance burden with trade-offs for a healthcare privacy use case.",
+    "expectedTier": "cloud"
+  }
+]

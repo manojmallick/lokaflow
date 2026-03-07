@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# ── Commit-msg: enforce Conventional Commits (CLAUDE.md requirement) ──────────
+# Format: <type>[optional scope][optional !]: <description>
+# Valid types: feat | fix | docs | chore | refactor | test | perf | build | ci | style | revert
+
+commit_msg=$(cat "$1")
+
+# Allow merge commits and revert commits unchanged
+case "$commit_msg" in
+  Merge\ *|Revert\ \"*) exit 0 ;;
+esac
+
+pattern="^(feat|fix|docs|chore|refactor|test|perf|build|ci|style|revert)(\([^)]+\))?(!)?: .+"
+
+if ! echo "$commit_msg" | grep -qE "$pattern"; then
+  echo ""
+  echo "  ❌  Commit message does not follow Conventional Commits format."
+  echo ""
+  echo "     Required : <type>[optional scope]: <short description>"
+  echo "     Examples :"
+  echo "       feat(api): add streaming endpoint"
+  echo "       fix: handle empty response from Gemini"
+  echo "       docs: update CLAUDE.md architecture section"
+  echo "       chore: upgrade anthropic-sdk to v0.40"
+  echo ""
+  echo "     Valid types: feat | fix | docs | chore | refactor | test | perf |"
+  echo "                  build | ci | style | revert"
+  echo ""
+  exit 1
+fi

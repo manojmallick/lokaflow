@@ -8,6 +8,11 @@
 *.pdf
 *.pptx
 *.xlsx
+**/*.docx
+**/*.pdf
+**/*.pptx
+**/*.xlsx
+tracker.md
 
 # ──────────────────────────────
 # OS
@@ -25,6 +30,9 @@ Desktop.ini
 # Claude Code (AI assistant)
 # ──────────────────────────────
 CLAUDE.md
+CLAUDE*.md
+**/CLAUDE*.md
+impl/**
 
 # ──────────────────────────────
 # Editor / IDE
@@ -67,13 +75,18 @@ coverage.xml
 node_modules/
 .npm
 .yarn/
+.pnpm-store/
 yarn-error.log
 package-lock.json
 .next/
 .nuxt/
+.vite/
 dist/
+out/
+build/
 .cache/
 *.tsbuildinfo
+.eslintcache
 
 # ──────────────────────────────
 # Rust
@@ -103,6 +116,9 @@ config/local.*
 *.safetensors
 models/
 weights/
+# Un-ignore source-code directories that happen to be named "models"
+!packages/*/src/models/
+!packages/*/src/models/**
 
 # ──────────────────────────────
 # Logs & temp files
@@ -110,12 +126,19 @@ weights/
 *.log
 logs/
 tmp/
+coverage/
 temp/
 .tmp/
 
 # ──────────────────────────────
 # LokaFlow runtime data
 # ──────────────────────────────
+# lokaflow.yaml contains machine-specific settings (LAN IPs, pii_scan overrides).
+# Use config/lokaflow.example.yaml as the committed template.
+lokaflow.yaml
 .lokaflow/
 task_graphs/output/
 cache/
+
+# Expo — machine-specific, must not be committed (see apps/mobile/.expo/README.md)
+apps/mobile/.expo/

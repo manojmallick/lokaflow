@@ -47,12 +47,14 @@
 ## Testing
 
 **Environment:**
+
 - OS:
 - Hardware:
 - Local model:
 - LokaFlow version:
 
 **Steps to verify:**
+
 1.
 2.
 3.
@@ -60,6 +62,7 @@
 **Expected result:**
 
 **Evidence** (at least one required):
+
 - [ ] Test output / logs
 - [ ] Screenshot
 - [ ] Manual verification description

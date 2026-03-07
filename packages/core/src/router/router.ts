@@ -1,0 +1,659 @@
+// © 2026 LearnHubPlay BV. All rights reserved.
+// Licensed under BUSL 1.1 — see LICENSE for details.
+/* eslint-disable no-console */
+
+/**
+ * Router — the core orchestration engine.
+ * Every query passes through this pipeline in under 50ms (excluding LLM latency).
+ *
+ * Pipeline:
+ *   1. PII scan → force local if PII detected
+ *   2. Token estimate → force local if > maxLocalTokens
+ *   3. Complexity score → select tier (local / specialist / cloud)
+ *   4. Budget check → downgrade to local if cap exceeded
+ *   5. Execute on chosen provider
+ *   6. Record cost
+ *   7. Return RoutingDecision
+ */
+
+import { BudgetExceededError, ProviderUnavailableError } from "../exceptions.js";
+import type {
+  CompletionOptions,
+  LLMResponse,
+  LokaFlowConfig,
+  Message,
+  RouterProviders,
+  RoutingDecision,
+  RoutingReason,
+  RoutingTier,
+} from "../types.js";
+import { BaseProvider } from "../providers/base.js";
+import { TaskClassifier, scoreTier } from "./classifier.js";
+import { PIIScanner } from "./piiScanner.js";
+import { BudgetTracker } from "./budget.js";
+import { appendFileSync, statSync, renameSync } from "fs";
+import { SearchEngine } from "../search/engine.js";
+import { MemoryManager } from "../memory/rag.js";
+import { LokaAgent } from "@lokaflow/agent";
+
+const LOG_FILE = "lokaflow-routing.log";
+const LOG_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+
+function appendLog(content: string): void {
+  try {
+    try {
+      if (statSync(LOG_FILE).size >= LOG_MAX_BYTES) {
+        renameSync(LOG_FILE, `${LOG_FILE}.1`);
+      }
+    } catch {
+      // file doesn't exist yet — that's fine
+    }
+    appendFileSync(LOG_FILE, content, "utf8");
+  } catch {
+    // silently fail if we can't write (permissions, read-only FS, etc.)
+  }
+}
+
+export class Router {
+  private readonly classifier: TaskClassifier;
+  private readonly piiScanner: PIIScanner;
+  private readonly budget: BudgetTracker;
+  private readonly providers: RouterProviders;
+  private readonly config: LokaFlowConfig;
+  private readonly searchEngine?: SearchEngine;
+  private readonly memoryManager?: MemoryManager;
+  private readonly agent: LokaAgent;
+
+  constructor(providers: RouterProviders, config: LokaFlowConfig) {
+    this.providers = providers;
+    this.config = config;
+    this.classifier = new TaskClassifier(config);
+    this.piiScanner = new PIIScanner();
+    this.budget = new BudgetTracker(
+      config.budget.dailyEur,
+      config.budget.monthlyEur,
+      config.budget.warnAtPercent,
+    );
+    if (config.search.enabled) {
+      this.searchEngine = new SearchEngine(providers.local[0]!, config.search);
+    }
+    if (config.memory.enabled) {
+      this.memoryManager = new MemoryManager();
+    }
+    this.agent = new LokaAgent({
+      ollamaBaseUrl: config.local.baseUrls[0] ?? "http://localhost:11434",
+      complexityThresholds: {
+        trivialBypass: config.router.complexityLocalThreshold,
+        cloudEscalate: config.router.complexityCloudThreshold,
+      },
+      taskSplitter: { maxSubtasks: 6, maxDepth: 3, minSubtaskTokens: 150 },
+    });
+  }
+
+  /** Expose providers so API layers (health check, model listing) can inspect them. */
+  getProviders(): RouterProviders {
+    return this.providers;
+  }
+
+  /**
+   * Route a conversation and return the full RoutingDecision with response.
+   */
+  async route(_messages: Message[], options: CompletionOptions = {}): Promise<RoutingDecision> {
+    const text = _messages.map((m) => m.content).join(" ");
+    const trace: string[] = [];
+    const timestamp = new Date().toISOString();
+    trace.push(`[${timestamp}] ─── NEW ROUTING REQUEST ───`);
+
+    trace.push(
+      `config: local=[${this.providers.local.map((p) => p.name).join(",")}], specialist=${
+        this.providers.specialist?.name ?? "none"
+      }, cloud=${this.providers.cloud.name}`,
+    );
+
+    // ── Step 0: Memory recall (opt-in) ───────────────────────────────────────
+    let messages: Message[] = _messages;
+    if (this.memoryManager && this.config.memory.enabled) {
+      try {
+        const recalled = await this.memoryManager.recall(text, this.config.memory.sessionId, {
+          topK: this.config.memory.topK,
+        });
+        if (recalled.length > 0) {
+          messages = [...recalled, ..._messages];
+          trace.push(`step 0: memory recalled (${recalled.length} context message(s))`);
+        } else {
+          trace.push(`step 0: memory empty — no recall`);
+        }
+      } catch {
+        trace.push(`step 0: memory recall failed — proceeding without context`);
+      }
+    } else {
+      trace.push(`step 0: memory disabled`);
+    }
+
+    // ── Step 1: PII scan ─────────────────────────────────────────────────────
+    if (this.config.router.piiScan) {
+      const pii = await this.piiScanner.scan(text);
+      if (pii.containsPii) {
+        trace.push(`step 1: PII detected, forcing local`);
+        return this.execute(
+          messages,
+          "local",
+          "pii_detected",
+          0.0,
+          this.providers.local[0]!,
+          options,
+          trace,
+        );
+      }
+      trace.push(`step 1: PII scan clean`);
+    } else {
+      trace.push(`step 1: PII scan skipped (disabled)`);
+    }
+
+    // ── Step 2: Token estimate ────────────────────────────────────────────────
+    const estimatedTokens = Math.round(text.split(/\s+/).filter(Boolean).length * 1.3);
+    if (estimatedTokens > this.config.router.maxLocalTokens) {
+      trace.push(
+        `step 2: max tokens exceeded (${estimatedTokens} > ${this.config.router.maxLocalTokens}), forcing local context mode`,
+      );
+      return this.execute(
+        messages,
+        "local",
+        "token_limit",
+        0.0,
+        this.providers.local[0]!,
+        options,
+        trace,
+      );
+    }
+    trace.push(`step 2: token estimate (${estimatedTokens}) within bounds`);
+
+    // ── Step 2b: Search augmentation (opt-in) ────────────────────────────────
+    let augmentedMessages = messages;
+    let searchAugmented = false;
+    if (this.searchEngine && this.config.search.enabled) {
+      try {
+        const results = await this.searchEngine.search(text);
+        if (results.length > 0) {
+          const context = SearchEngine.formatAsContext(results);
+          augmentedMessages = [{ role: "system", content: context }, ...messages];
+          searchAugmented = true;
+          trace.push(
+            `step 2b: search augmented (${results.length} results from: ${this.searchEngine.activeSources.join(", ")})`,
+          );
+        } else {
+          trace.push(`step 2b: search returned 0 results — proceeding without augmentation`);
+        }
+      } catch (err) {
+        trace.push(`step 2b: search failed (${String(err)}) — proceeding without augmentation`);
+      }
+    } else {
+      trace.push(`step 2b: search disabled`);
+    }
+
+    // ── Step 3: Classify complexity ──────────────────────────────────────────
+    const { score, tier } = this.classifier.classify(text);
+    const reason = tierToReason(tier);
+    trace.push(`step 3: complexity score=${score.toFixed(3)} → target tier=${tier}`);
+
+    // ── Step 4: Select provider + budget check ────────────────────────────────
+    const provider = this.selectProvider(tier);
+    trace.push(`step 4: mapped tier '${tier}' to provider '${provider.name}'`);
+
+    // Warn if cloud tier was requested but fell back to specialist (happens when no
+    // cloud API key is configured and specialist is a real API provider like Gemini)
+    if (
+      tier === "cloud" &&
+      this.providers.cloud.costPer1kInputTokens === 0 &&
+      this.providers.specialist &&
+      this.providers.specialist.costPer1kInputTokens > 0
+    ) {
+      trace.push(
+        `step 4: NOTE: cloud provider '${this.providers.cloud.name}' has no API key → ` +
+          `routing to specialist '${provider.name}' instead`,
+      );
+    }
+
+    if (tier !== "local") {
+      try {
+        // Estimate cost (provider cost × rough token estimate)
+        const estimatedCost =
+          (estimatedTokens / 1000) * provider.costPer1kInputTokens +
+          (Math.round(estimatedTokens * 0.7) / 1000) * provider.costPer1kOutputTokens;
+
+        this.budget.checkAndRecord({
+          model: provider.name,
+          inputTokens: 0, // updated after completion
+          outputTokens: 0,
+          costEur: estimatedCost,
+          routingTier: tier,
+        });
+        trace.push(`step 4(b): budget check passed (est. cost €${estimatedCost.toFixed(5)})`);
+      } catch (err) {
+        if (err instanceof BudgetExceededError) {
+          trace.push(
+            `step 4(b): BUDGET EXCEEDED! FallbackToLocal=${this.config.router.fallbackToLocal}`,
+          );
+          if (this.config.router.fallbackToLocal) {
+            return this.execute(
+              augmentedMessages,
+              "local",
+              "budget_exceeded",
+              score,
+              this.providers.local[0]!,
+              options,
+              trace,
+            );
+          }
+          throw err;
+        }
+        throw err;
+      }
+    } else {
+      trace.push(`step 4(b): budget check skipped (local models are free)`);
+    }
+
+    // ── Step 5: Execute ──────────────────────────────────────────────────────
+    const finalReason: RoutingReason = searchAugmented ? "search_augmented" : reason;
+    trace.push(`step 5: dispatching request to ${provider.name}`);
+    return this.execute(augmentedMessages, tier, finalReason, score, provider, options, trace);
+  }
+
+  private async execute(
+    messages: Message[],
+    tier: RoutingTier,
+    reason: RoutingReason,
+    score: number,
+    provider: BaseProvider,
+    options: CompletionOptions,
+    trace: string[],
+  ): Promise<RoutingDecision> {
+    let response: LLMResponse;
+    let actualTier = tier;
+
+    try {
+      if (
+        (tier === "specialist" || tier === "cloud") &&
+        this.config.router.delegationEnabled === true
+      ) {
+        // ── LokaAgent 8-stage pipeline ─────────────────────────────────────
+        // Stage flow: PromptGuard → ComplexityScorer → TaskSplitter (DAG) →
+        //             ModelMatcher → ContextPacker → ExecutionEngine →
+        //             QualityGate (per-node, escalates failing nodes to cloud) →
+        //             Assembler (intent-aware merge strategy)
+        trace.push(
+          `[AGENT] Handing off to LokaAgent pipeline (tier=${tier}, score=${score.toFixed(2)})...`,
+        );
+
+        const agentResp = await this.agent.process({
+          prompt: messages.at(-1)?.content ?? messages.map((m) => m.content).join(" "),
+          conversationHistory: messages.slice(0, -1).map((m) => ({
+            role: m.role as "user" | "assistant" | "system",
+            content: m.content,
+          })),
+          localOnly: false,
+          qualityPreference: score > 0.85 ? "QUALITY" : "BALANCED",
+        });
+
+        // Emit subtask traces in the existing format so TracePanel renders them
+        const execNodes = agentResp.trace.execution.nodes;
+        const depthMap = new Map(agentResp.trace.decomposition.nodes.map((n) => [n.id, n.depth]));
+
+        trace.push(`  → Distributing ${execNodes.length} sub-tasks recursively (maxDepth=3)...`);
+        if (options.onStream) {
+          options.onStream(
+            `> ⚡ *Distributing ${execNodes.length} sub-tasks across LokaAgent worker tree...*\n\n`,
+          );
+        }
+
+        execNodes.forEach((n, i) => {
+          const depth = depthMap.get(n.id) ?? 0;
+          const escalatedTag = n.escalated ? " [ESCALATED→cloud]" : "";
+          trace.push(
+            `      ↪ [Depth ${depth}] Subtask ${i} completed by ${n.model}${escalatedTag} [model=${n.model}] in ${(n.latencyMs / 1000).toFixed(1)}s (In: ${n.tokensInput}, Out: ${n.tokensOutput}).`,
+          );
+        });
+
+        // Quality gate summary
+        const gatesPassed = agentResp.trace.qualityGates.filter((g) => g.passed).length;
+        const gatesTotal = agentResp.trace.qualityGates.length;
+        trace.push(`[AGENT] QualityGate: ${gatesPassed}/${gatesTotal} nodes passed.`);
+        if (agentResp.partial) {
+          trace.push(
+            `[AGENT] Some nodes were escalated to cloud (quality gate failed local output).`,
+          );
+        }
+
+        // Telemetry block
+        const sv = agentResp.trace.savings;
+        const m = agentResp.metrics;
+
+        // Token % breakdown ─ planner (local decomposer) + local workers + cloud workers
+        const plannerTotal = m.plannerInputTokens + m.plannerOutputTokens;
+        const localTotal = sv.actualLocalTokens;
+        const cloudTotal = sv.actualCloudTokens;
+        const grandTotal = plannerTotal + localTotal + cloudTotal || 1; // avoid ÷0
+        const pctOf = (n: number): string => ((n / grandTotal) * 100).toFixed(1);
+
+        let telemetryStr = `\n---\n### 📊 LokaAgent Telemetry\n`;
+        telemetryStr += `- **Nodes**: ${sv.totalNodes} total · ${sv.localNodes} local · ${sv.cloudNodes} cloud · ${sv.escalatedNodes} escalated\n`;
+        telemetryStr += `- **Token breakdown** (in+out):\n`;
+        telemetryStr += `  - 🧠 Specialist/Planner: **${plannerTotal}** (${m.plannerInputTokens} in · ${m.plannerOutputTokens} out) — **${pctOf(plannerTotal)}%**\n`;
+        telemetryStr += `  - 🖥️ Local workers: **${localTotal}** — **${pctOf(localTotal)}%**\n`;
+        if (cloudTotal > 0) {
+          telemetryStr += `  - ☁️ Cloud workers: **${cloudTotal}** — **${pctOf(cloudTotal)}%**\n`;
+        }
+        telemetryStr += `  - 📦 Total: **${grandTotal}** tokens\n`;
+        telemetryStr += `- **Savings**: ${sv.savingPercent.toFixed(1)}% · **€${sv.savingEur.toFixed(5)}** vs pure-cloud\n`;
+        telemetryStr += `- **Assembly strategy**: ${agentResp.trace.assembly.strategy}\n`;
+
+        if (options.onStream) {
+          options.onStream(agentResp.content);
+          options.onStream(telemetryStr);
+        }
+
+        response = {
+          content: agentResp.content + telemetryStr,
+          model: `agent-pipeline`,
+          inputTokens: agentResp.metrics.totalInputTokens,
+          outputTokens: agentResp.metrics.totalOutputTokens,
+          costEur: agentResp.metrics.estimatedCostEur,
+          latencyMs: agentResp.metrics.totalLatencyMs,
+        };
+
+        actualTier = "delegated";
+        trace.push(
+          `[AGENT] Pipeline complete. Nodes=${agentResp.metrics.nodesExecuted}, Escalated=${agentResp.metrics.nodesEscalated}, Cost=€${agentResp.metrics.estimatedCostEur.toFixed(5)}.`,
+        );
+      } else {
+        // Standard execution — local tier or delegation disabled
+        response = await provider.complete(messages, options);
+      }
+    } catch (err) {
+      trace.push(`error: provider '${provider.name}' failed: ${String(err)}`);
+      // Fallback to local if cloud fails and fallback is enabled
+      if (tier !== "local" && this.config.router.fallbackToLocal) {
+        console.warn(
+          `[LokaFlow] ${provider.name} unavailable: ${String(err)}. Falling back to local.`,
+        );
+        const fallbackTarget = this.providers.local[0]!;
+        trace.push(`fallback: trying local provider '${fallbackTarget.name}' instead`);
+        response = await fallbackTarget.complete(messages, options);
+        actualTier = "local";
+      } else {
+        appendLog(trace.join("\n") + "\n\n");
+        throw err instanceof ProviderUnavailableError
+          ? err
+          : new ProviderUnavailableError(provider.name, String(err));
+      }
+    }
+
+    // Record actual cost for local tier (zero cost — non-blocking)
+    if (actualTier === "local") {
+      this.budget.record({
+        model: response.model,
+        inputTokens: response.inputTokens,
+        outputTokens: response.outputTokens,
+        costEur: 0.0,
+        routingTier: actualTier,
+      });
+    }
+
+    trace.push(`result: success.`);
+    trace.push(
+      `decision: TIER=${actualTier} | MODEL=${response.model} | REASON=${reason} | SCORE=${score.toFixed(
+        2,
+      )} | COST=€${response.costEur.toFixed(5)} | LATENCY=${response.latencyMs}ms\n`,
+    );
+
+    appendLog(trace.join("\n") + "\n");
+
+    return {
+      tier: actualTier,
+      model: response.model,
+      reason,
+      complexityScore: score,
+      response,
+      trace,
+    };
+  }
+
+  private async executeRecursiveSubtask(
+    subtask: string,
+    history: Message[],
+    options: CompletionOptions,
+    trace: string[],
+    currentDepth: number,
+    maxDepth: number,
+    index: number,
+  ): Promise<{
+    stepResponse: LLMResponse;
+    index: number;
+    workerName: string;
+    latencyMs: number;
+    depth: number;
+  }> {
+    const { score, tier } = this.classifier.classify(subtask);
+    const start = Date.now();
+
+    // Subtask specialist handoff threshold: if a subtask still scores above this
+    // after being split off, it is too complex for a local worker and the specialist
+    // must handle it directly (regardless of remaining depth budget).
+    const SUBTASK_SPECIALIST_THRESHOLD = 0.65;
+
+    // 1. Execute directly if:
+    //    a) task is local-tier (simple), OR
+    //    b) task is specialist-tier (medium complexity) — but score <= 0.65 so local is fine, OR
+    //    c) we've hit the recursion depth cap
+    // Only recurse into the planner for genuinely cloud-tier (very complex) subtasks.
+    if (tier !== "cloud" || currentDepth >= maxDepth) {
+      let worker: BaseProvider;
+
+      // If score > 0.65 the subtask is still too hard for a local model — hand off
+      // to the specialist provider regardless of how deep we are in the DAG.
+      if (score > SUBTASK_SPECIALIST_THRESHOLD && this.providers.specialist) {
+        worker = this.providers.specialist;
+        trace.push(
+          `  [Depth ${currentDepth}] Subtask ${index} score=${score.toFixed(2)} > ${SUBTASK_SPECIALIST_THRESHOLD} → Specialist takeover.`,
+        );
+      } else if (tier !== "local" && currentDepth >= maxDepth && this.providers.specialist) {
+        // Safety net: hit max depth and still complex — force Specialist to avoid gibberish
+        worker = this.providers.specialist;
+        trace.push(
+          `  [Depth ${currentDepth}] Subtask ${index} is STILL complex (score=${score.toFixed(2)}) at maxDepth. Forcing Specialist execution.`,
+        );
+      } else {
+        worker = this.providers.local[index % this.providers.local.length]!;
+        trace.push(
+          `  [Depth ${currentDepth}] Subtask ${index} routing to Local (score=${score.toFixed(2)}).`,
+        );
+      }
+
+      const workerContext: Message[] = [
+        ...history,
+        {
+          role: "user",
+          content: `Please execute this specific sub-task based on the earlier context: ${subtask}`,
+        },
+      ];
+
+      let stepResponse!: LLMResponse;
+      let retries = 0;
+      const maxRetries = 2;
+
+      while (retries <= maxRetries) {
+        try {
+          stepResponse = await worker.complete(
+            workerContext,
+            Object.assign({}, options, { onStream: undefined }),
+          );
+          break;
+        } catch (error) {
+          if (retries === maxRetries) {
+            trace.push(
+              `      [Depth ${currentDepth}] Subtask ${index} final failure on ${worker.name}: ${String(error)}.`,
+            );
+            throw error;
+          }
+          retries++;
+          trace.push(
+            `      [Depth ${currentDepth}] Subtask ${index} failed on ${worker.name} (${String(error)}). Retrying (${retries}/${maxRetries})...`,
+          );
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      }
+
+      const latencyMs = Date.now() - start;
+      trace.push(
+        `      ↪ [Depth ${currentDepth}] Subtask ${index} completed by ${worker.name} [model=${stepResponse.model}] in ${(latencyMs / 1000).toFixed(1)}s (In: ${stepResponse.inputTokens}, Out: ${stepResponse.outputTokens}).`,
+      );
+      return { stepResponse, index, workerName: worker.name, latencyMs, depth: currentDepth };
+    }
+
+    // 2. If it is complex, recursively ask Specialist to break it down further!
+    trace.push(
+      `  [Depth ${currentDepth}] Subtask ${index} is too complex (score=${score.toFixed(2)}). Asking Planner to decompose...`,
+    );
+    const planner = this.providers.specialist ?? this.providers.local[0]!;
+
+    const planContext: Message[] = [
+      ...history,
+      {
+        role: "user",
+        content: `The following sub-task is too complex to execute directly. Break it down into 1-3 smaller, strictly defined, and extremely easy-to-implement JSON sub-tasks.\n\nSub-task: ${subtask}`,
+      },
+      {
+        role: "system",
+        content:
+          'Output ONLY valid JSON matching schema: { "subtasks": ["task 1", "task 2"] } without markdown blocks.',
+      },
+    ];
+
+    const planResponse = await planner.complete(
+      planContext,
+      Object.assign({}, options, { onStream: undefined }),
+    );
+    let nestedPlan: import("../types.js").ExecutionPlan | null = null;
+
+    try {
+      // Robust fence stripping + first-JSON-object extraction (same as top-level plan parser)
+      let cleanedJson = planResponse.content
+        .replace(/```[a-z]*\n?/g, "")
+        .replace(/```/g, "")
+        .trim();
+      const jsonBlock = cleanedJson.match(/\{[\s\S]*\}/);
+      if (jsonBlock) cleanedJson = jsonBlock[0]!;
+      nestedPlan = JSON.parse(cleanedJson);
+    } catch {
+      trace.push(
+        `  [Depth ${currentDepth}] Failed to parse nested JSON plan. Forcing execution...`,
+      );
+    }
+
+    // 3. If nested breakdown succeeds, execute the nested tasks!
+    if (nestedPlan && Array.isArray(nestedPlan.subtasks) && nestedPlan.subtasks.length > 0) {
+      const nestedPromises = nestedPlan.subtasks.map((nestedSubtask, i) =>
+        this.executeRecursiveSubtask(
+          nestedSubtask,
+          history,
+          options,
+          trace,
+          currentDepth + 1,
+          maxDepth,
+          i,
+        ),
+      );
+      const nestedResults = await Promise.all(nestedPromises);
+
+      // Aggregate the nested results into one massive response block so it mimics a single stepResponse
+      let aggregatedContent = "";
+      let totalInput = planResponse.inputTokens;
+      let totalOutput = planResponse.outputTokens;
+      let maxLatency = planResponse.latencyMs;
+
+      nestedResults.forEach((res) => {
+        aggregatedContent += res.stepResponse.content + "\n\n";
+        totalInput += res.stepResponse.inputTokens;
+        totalOutput += res.stepResponse.outputTokens;
+        maxLatency = Math.max(maxLatency, res.latencyMs);
+      });
+
+      const stepResponse: LLMResponse = {
+        content: aggregatedContent.trim(),
+        model: `planned-by:${planResponse.model},executed-by:nested`,
+        inputTokens: totalInput,
+        outputTokens: totalOutput,
+        costEur: planResponse.costEur,
+        latencyMs: maxLatency,
+      };
+
+      return {
+        stepResponse,
+        index,
+        workerName: "Recursive-Tree",
+        latencyMs: maxLatency,
+        depth: currentDepth + 1,
+      };
+    }
+
+    // 4. Fallback: If breakdown failed or returned 0 tasks, execute on Specialist
+    const fallbackContext: Message[] = [
+      ...history,
+      {
+        role: "user",
+        content: `Please execute this specific sub-task based on the earlier context: ${subtask}`,
+      },
+    ];
+    const stepResponse = await planner.complete(
+      fallbackContext,
+      Object.assign({}, options, { onStream: undefined }),
+    );
+    const latencyMs = Date.now() - start;
+    trace.push(
+      `      ↪ [Depth ${currentDepth}] Subtask ${index} executed via Fallback by ${planner.name} [model=${stepResponse.model}] in ${(latencyMs / 1000).toFixed(1)}s (In: ${stepResponse.inputTokens}, Out: ${stepResponse.outputTokens}).`,
+    );
+    return { stepResponse, index, workerName: planner.name, latencyMs, depth: currentDepth };
+  }
+
+  private selectProvider(tier: RoutingTier): BaseProvider {
+    const randomLocal =
+      this.providers.local[Math.floor(Math.random() * this.providers.local.length)]!;
+    switch (tier) {
+      case "local":
+        return randomLocal;
+      case "specialist":
+        return this.providers.specialist ?? randomLocal;
+      case "cloud": {
+        const cloud = this.providers.cloud;
+        // If the "cloud" provider is actually a local Ollama instance (no real cloud API
+        // key was available at startup — indicated by zero cost-per-token), fall back to
+        // specialist instead, so high-complexity queries reach the best real API model
+        // (e.g. Gemini) rather than silently downgrading to Ollama.
+        const cloudIsLocal = cloud.costPer1kInputTokens === 0;
+        const specialistIsReal =
+          this.providers.specialist !== undefined &&
+          this.providers.specialist.costPer1kInputTokens > 0;
+        if (cloudIsLocal && specialistIsReal) {
+          return this.providers.specialist!;
+        }
+        return cloud;
+      }
+      case "delegated":
+        return this.providers.specialist ?? randomLocal;
+    }
+  }
+}
+
+function tierToReason(tier: RoutingTier): RoutingReason {
+  switch (tier) {
+    case "local":
+      return "low_complexity";
+    case "specialist":
+    case "delegated":
+      return "medium_complexity";
+    case "cloud":
+      return "high_complexity";
+  }
+}
+
+export { scoreTier };

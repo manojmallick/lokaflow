@@ -1,0 +1,31 @@
+{
+  "name": "@lokaflow/cli",
+  "version": "1.0.0",
+  "description": "LokaFlow command line interface",
+  "type": "module",
+  "bin": {
+    "lokaflow": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "@lokaflow/core": "workspace:*",
+    "@lokaflow/route": "workspace:*",
+    "@lokaflow/mesh": "workspace:*",
+    "@lokaflow/swap": "workspace:*",
+    "@lokaflow/commons": "workspace:*",
+    "@lokaflow/audit": "workspace:*",
+    "@lokaflow/orchestrator": "workspace:*",
+    "@lokaflow/api": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.5"
+  }
+}

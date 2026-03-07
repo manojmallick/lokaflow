@@ -10,15 +10,34 @@ Licensed Work:        LokaFlow™ Platform
                       The Licensed Work is made available under the terms
                       of this License.
 
-Additional Use Grant: You may use the Licensed Work for:
-                      - Personal, non-commercial use
-                      - Evaluation and testing for up to 30 days
-                      - Open-source projects (with attribution to
-                        LearnHubPlay BV and a link to lokaflow.com)
+Additional Use Grant: You may use the Licensed Work for free, including
+                      for production use, if you meet ANY of the following:
 
-                      Commercial use by any organization that generates
-                      revenue or has 3 or more employees requires a
-                      commercial license from LearnHubPlay BV.
+                      (a) Personal, non-commercial individual use
+
+                      (b) Educational use by a school, university, college,
+                          training institution, or non-profit educational
+                          programme, regardless of size
+
+                      (c) Use by a registered charity, NGO, open-source
+                          project, or religious organisation, regardless
+                          of headcount
+
+                      (d) Use by any organisation that EITHER:
+                          — has fewer than 100 employees, OR
+                          — has annual revenue below €1,000,000 (EUR)
+
+                      Both conditions (100+ employees AND €1M+ revenue)
+                      must be exceeded simultaneously to require a
+                      commercial license.
+
+                      Evaluation and testing is permitted for any purpose
+                      for up to 30 days without a commercial license.
+
+                      Commercial use by any organisation that BOTH has
+                      100 or more employees AND generates €1,000,000 or
+                      more in annual revenue requires a commercial license
+                      from LearnHubPlay BV.
                       Contact: info@learnhubplay.nl
 
 Change Date:          January 1, 2030
@@ -57,6 +76,9 @@ Notice
 The Business Source License (this document, or the "License") is not an Open
 Source license. However, the Licensed Work will eventually be made available
 under an Open Source License, as stated in this License.
+
+On January 1, 2030, this Licensed Work converts automatically to the
+Apache License, Version 2.0, and all restrictions above are lifted.
 
 ---
 

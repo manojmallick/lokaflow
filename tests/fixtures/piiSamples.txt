@@ -1,0 +1,33 @@
+# LokaFlow™ — Synthetic PII test samples
+# IMPORTANT: All data below is SYNTHETIC. No real personal information.
+# Used only for PIIScanner unit tests.
+
+# Emails (synthetic)
+test.user@example.com
+alice+work@synthetic-company.nl
+noreply@test.invalid
+
+# Dutch IBANs (synthetic — valid format, not real accounts)
+NL91ABNA0417164300
+NL02ABNA0123456789
+
+# BSNs (synthetic — valid Elfproef, not real BSNs)
+123456782
+
+# Phone numbers (synthetic)
+06-12345678
++31612345678
++1-555-000-1234
+
+# Credit card numbers (synthetic — valid Luhn, not real cards)
+4111 1111 1111 1111
+
+# IP addresses (private range — not real external IPs)
+192.168.1.100
+10.0.0.1
+
+# Clean texts (should NOT trigger PII detection)
+How do I implement a binary search tree?
+const sum = (a: number, b: number): number => a + b;
+SELECT * FROM users WHERE active = true;
+function calculateTotal(items) { return items.reduce((a, b) => a + b.price, 0); }

@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LokaFlow™ — Local-First AI Routing. Free for Everyone.</title>
+    <meta name="description"
+        content="LokaFlow routes AI queries intelligently — local first, cloud only when necessary. Save 60–87% on costs. Keep private data off the cloud. Free for everyone who isn't a corporation." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            background: #020810;
+            color: #e2e8f0;
+            font-family: 'DM Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #020810
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1e3a5f;
+            border-radius: 2px
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit
+        }
+
+        /* Animations */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 8px #00d4ff44
+            }
+
+            50% {
+                box-shadow: 0 0 24px #00d4ff88, 0 0 48px #00d4ff22
+            }
+        }
+
+        @keyframes flow {
+            0% {
+                stroke-dashoffset: 200;
+                opacity: 0
+            }
+
+            20% {
+                opacity: 1
+            }
+
+            80% {
+                opacity: 1
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 0
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0
+            }
+
+            100% {
+                background-position: 200% 0
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-8px)
+            }
+        }
+
+        @keyframes spin-slow {
+            from {
+                transform: rotate(0deg)
+            }
+
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        @keyframes countUp {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        .fade-up {
+            animation: fadeUp 0.7s ease both
+        }
+
+        .fade-up-1 {
+            animation: fadeUp 0.7s 0.1s ease both
+        }
+
+        .fade-up-2 {
+            animation: fadeUp 0.7s 0.2s ease both
+        }
+
+        .fade-up-3 {
+            animation: fadeUp 0.7s 0.3s ease both
+        }
+
+        .fade-up-4 {
+            animation: fadeUp 0.7s 0.4s ease both
+        }
+
+        .fade-up-5 {
+            animation: fadeUp 0.7s 0.5s ease both
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 24px
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px
+        }
+
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")
+        }
+
+        /* Typography */
+        .display-heading {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.02em
+        }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #00d4ff
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        .metric-number {
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, #00d4ff, #00ff9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        /* Buttons */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #00d4ff, #00ff9d);
+            border: none;
+            border-radius: 10px;
+            padding: 13px 28px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #020810;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.3)
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid #1e3a5f;
+            border-radius: 10px;
+            padding: 13px 28px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #94a3b8;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s
+        }
+
+        .btn-secondary:hover {
+            border-color: #00d4ff44;
+            color: #e2e8f0;
+            transform: translateY(-1px)
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500
+        }
+
+        /* Cards */
+        .card {
+            background: #020810;
+            border: 1px solid #0f1e30;
+            border-radius: 14px;
+            transition: all 0.3s ease
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #00d4ff33
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 0 24px;
+            transition: all 0.3s ease
+        }
+
+        nav.scrolled {
+            background: rgba(2, 8, 16, 0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.08)
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .nav-logo-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #00d4ff, #00ff9d);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px
+        }
+
+        .nav-logo-text {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: -0.01em;
+            color: #f8fafc
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 28px
+        }
+
+        .nav-link {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s;
+            letter-spacing: 0.01em
+        }
+
+        .nav-link:hover {
+            color: #e2e8f0
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .nav-github {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s
+        }
+
+        .nav-github:hover {
+            color: #e2e8f0
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 100px 24px 60px;
+            position: relative;
+            overflow: hidden
+        }
+
+        .hero-glow-1 {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.06), transparent 70%);
+            pointer-events: none
+        }
+
+        .hero-glow-2 {
+            position: absolute;
+            bottom: 10%;
+            right: 10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0, 255, 157, 0.04), transparent 70%);
+            pointer-events: none
+        }
+
+        .hero-badge {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap
+        }
+
+        .hero-title {
+            font-size: clamp(42px, 6vw, 84px);
+            color: #f8fafc;
+            margin-bottom: 20px;
+            max-width: 900px
+        }
+
+        .hero-sub {
+            font-size: clamp(16px, 2vw, 20px);
+            color: #94a3b8;
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+            font-weight: 300
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 60px
+        }
+
+        .live-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(0, 212, 255, 0.04);
+            border: 1px solid rgba(0, 212, 255, 0.12);
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin-bottom: 24px
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff9d;
+            animation: pulse-glow 2s infinite
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: rgba(0, 212, 255, 0.06);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 212, 255, 0.08)
+        }
+
+        .stat-item {
+            padding: 24px 20px;
+            background: #020810
+        }
+
+        .stat-item+.stat-item {
+            border-left: 1px solid rgba(0, 212, 255, 0.06)
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 4px
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 2px
+        }
+
+        .stat-sub {
+            font-size: 11px;
+            color: #475569;
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        /* Trust bar */
+        .trust-bar {
+            border-top: 1px solid #0f1e30;
+            border-bottom: 1px solid #0f1e30;
+            padding: 16px 24px;
+            background: #030b18
+        }
+
+        .trust-bar-inner {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        .trust-item {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        /* Section base */
+        section {
+            padding: 100px 24px;
+            position: relative
+        }
+
+        .section-header {
+            margin-bottom: 60px
+        }
+
+        .section-title {
+            font-size: clamp(32px, 4vw, 52px);
+            color: #f8fafc;
+            margin-bottom: 16px
+        }
+
+        /* Problem */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            margin-bottom: 40px
+        }
+
+        .compare-col {
+            padding: 32px
+        }
+
+        .compare-col.bad {
+            background: #0d0a0a;
+            border: 1px solid #2d1414;
+            border-radius: 16px 0 0 16px
+        }
+
+        .compare-col.good {
+            background: #0a0d0a;
+            border: 1px solid #0a2d14;
+            border-radius: 0 16px 16px 0
+        }
+
+        .compare-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04)
+        }
+
+        .compare-total {
+            margin-top: 20px;
+            padding-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        /* Routing */
+        .routing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: start
+        }
+
+        .routing-step {
+            display: flex;
+            gap: 16px;
+            padding: 20px 0;
+            border-bottom: 1px solid #0f1e30;
+            transition: all 0.3s
+        }
+
+        .routing-step:last-child {
+            border-bottom: none
+        }
+
+        .routing-step:hover {
+            padding-left: 4px
+        }
+
+        .routing-step-num {
+            min-width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0
+        }
+
+        .routing-diagram {
+            background: #020810;
+            border: 1px solid #0f1e30;
+            border-radius: 16px;
+            padding: 28px
+        }
+
+        .routing-lanes {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px
+        }
+
+        .routing-lane {
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center
+        }
+
+        /* Products */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px
+        }
+
+        .product-card {
+            padding: 20px;
+            cursor: pointer;
+            border-radius: 14px;
+            border: 1px solid #0f1e30;
+            background: #020810;
+            transition: all 0.3s
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px)
+        }
+
+        .product-icon {
+            font-size: 28px;
+            transition: all 0.3s
+        }
+
+        .product-card:hover .product-icon {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 12px currentColor)
+        }
+
+        /* Architecture */
+        .arch-terminal {
+            background: #030b18;
+            border: 1px solid #0f1e30;
+            border-radius: 16px;
+            padding: 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px
+        }
+
+        .arch-row {
+            display: flex;
+            gap: 12px;
+            padding: 7px 0;
+            border-bottom: 1px solid #0a0f18;
+            align-items: flex-start
+        }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px
+        }
+
+        .pricing-card {
+            background: #020810;
+            border: 1px solid #0f1e30;
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-6px)
+        }
+
+        .pricing-badge {
+            position: absolute;
+            top: -11px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 12px;
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+            color: #020810
+        }
+
+        .pricing-rule {
+            background: rgba(0, 212, 255, 0.04);
+            border: 1px solid rgba(0, 212, 255, 0.12);
+            border-radius: 16px;
+            padding: 20px 40px;
+            display: inline-block;
+            max-width: 700px
+        }
+
+        .pricing-rule-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.8
+        }
+
+        .pricing-feature {
+            display: flex;
+            gap: 7px;
+            margin-bottom: 7px;
+            font-size: 12px;
+            color: #94a3b8;
+            align-items: flex-start
+        }
+
+        /* Vision */
+        .vision-line {
+            margin-bottom: 4px
+        }
+
+        .vision-blocked {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: #030b18;
+            border: 1px solid #0f1e30;
+            border-radius: 12px
+        }
+
+        .vision-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 52px
+        }
+
+        /* Final CTA */
+        .cta-terminal {
+            background: #030b18;
+            border: 1px solid #0f1e30;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 36px;
+            text-align: left
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            align-items: center
+        }
+
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%
+        }
+
+        .terminal-line {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            margin-bottom: 8px
+        }
+
+        /* Footer */
+        footer {
+            background: #020810;
+            border-top: 1px solid #0f1e30;
+            padding: 40px 24px
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #0f1e30;
+            padding-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px
+        }
+
+        .footer-link {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: block
+        }
+
+        .footer-link:hover {
+            color: #94a3b8
+        }
+
+        /* Responsive */
+        @media(max-width:900px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .routing-grid,
+            .compare-grid,
+            .products-grid,
+            .vision-grid {
+                grid-template-columns: 1fr
+            }
+
+            .compare-col.bad {
+                border-radius: 16px 16px 0 0
+            }
+
+            .compare-col.good {
+                border-radius: 0 0 16px 16px
+            }
+
+            .nav-links {
+                display: none
+            }
+        }
+
+        @media(max-width:600px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="noise-overlay"></div>
+
+    <!-- NAV -->
+    <nav id="main-nav">
+        <div class="nav-inner">
+            <a href="#" class="nav-logo">
+                <div class="nav-logo-icon">🌊</div>
+                <span class="nav-logo-text">LokaFlow<span style="color:#00d4ff">™</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="#how-it-works" class="nav-link">How It Works</a>
+                <a href="#products" class="nav-link">Products</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+                <a href="#vision" class="nav-link">Vision</a>
+            </div>
+            <div class="nav-actions">
+                <a href="https://github.com/manojmallick/lokaflow" class="nav-github" target="_blank" rel="noopener">⭐
+                    GitHub</a>
+                <a href="#get-started" class="btn-primary" style="padding:7px 16px;font-size:12px">Get Started Free</a>
+            </div>
+        </div>
+    </nav>
+    <main>
+
+        <!-- HERO -->
+        <section class="hero grid-bg" id="home">
+            <div class="hero-glow-1"></div>
+            <div class="hero-glow-2"></div>
+            <div class="container">
+                <div class="hero-badge fade-up-1">
+                    <span class="tag" style="background:#0c2d44;color:#00d4ff;border:1px solid #00d4ff33">🌊 LOKAFLOW™ —
+                        OPEN BETA</span>
+                    <span class="tag" style="background:#0a2d1e;color:#00ff9d;border:1px solid #00ff9d33">✓ 115 UNIT
+                        TESTS · BUSL-1.1</span>
+                </div>
+                <h1 class="display-heading hero-title fade-up-2">
+                    The AI your provider<br>
+                    <span
+                        style="background:linear-gradient(135deg,#00d4ff,#00ff9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">doesn't
+                        want you to have.</span>
+                </h1>
+                <p class="hero-sub fade-up-3">
+                    LokaFlow routes AI queries intelligently — local first, cloud only when necessary.
+                    Save 60–87% on costs. Keep private data off the cloud.
+                    <strong style="color:#e2e8f0;font-weight:500">Free for everyone who isn't a corporation.</strong>
+                </p>
+                <div class="hero-cta fade-up-4">
+                    <a href="#get-started" class="btn-primary">Get Started Free →</a>
+                    <a href="https://github.com/manojmallick/lokaflow" class="btn-secondary" target="_blank"
+                        rel="noopener">⭐ Star on GitHub</a>
+                    <a href="#how-it-works" class="btn-secondary">📖 How It Works</a>
+                </div>
+                <div class="live-counter fade-up-5">
+                    <div class="live-dot"></div>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#94a3b8">
+                        Tokens routed locally this month: <span id="token-counter"
+                            style="color:#00d4ff;font-size:15px;font-weight:600">0</span>+ · <span
+                            style="color:#00ff9d">€0.00 cost</span>
+                    </span>
+                </div>
+                <div class="stats-grid fade-up" style="margin-top:48px">
+                    <div class="stat-item">
+                        <div class="stat-value metric-number">74%</div>
+                        <div class="stat-label">queries handled locally</div>
+                        <div class="stat-sub">zero cloud cost</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value metric-number">87%</div>
+                        <div class="stat-label">average savings</div>
+                        <div class="stat-sub">vs naive all-cloud</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value metric-number">7.3M</div>
+                        <div class="stat-label">free cloud tokens/day</div>
+                        <div class="stat-sub">per user with free keys</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value metric-number">€0</div>
+                        <div class="stat-label">cost for 97% of users</div>
+                        <div class="stat-sub">individuals &amp; small orgs</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRUST BAR -->
+        <div class="trust-bar">
+            <div class="trust-bar-inner">
+                <div class="trust-item"><span class="mono"
+                        style="font-size:10px;color:#475569;letter-spacing:0.1em">LICENSE</span><span class="mono"
+                        style="font-size:11px;color:#475569">→</span><span class="mono"
+                        style="font-size:11px;color:#94a3b8">BUSL 1.1 → Apache 2.0 (2030)</span></div>
+                <div class="trust-item"><span class="mono"
+                        style="font-size:10px;color:#475569;letter-spacing:0.1em">COMPANY</span><span class="mono"
+                        style="font-size:11px;color:#475569">→</span><span class="mono"
+                        style="font-size:11px;color:#94a3b8">LearnHubPlay BV · KvK 97741825</span></div>
+                <div class="trust-item"><span class="mono"
+                        style="font-size:10px;color:#475569;letter-spacing:0.1em">JURISDICTION</span><span class="mono"
+                        style="font-size:11px;color:#475569">→</span><span class="mono"
+                        style="font-size:11px;color:#94a3b8">Netherlands · EU</span></div>
+                <div class="trust-item"><span class="mono"
+                        style="font-size:10px;color:#475569;letter-spacing:0.1em">DATA</span><span class="mono"
+                        style="font-size:11px;color:#475569">→</span><span class="mono"
+                        style="font-size:11px;color:#94a3b8">Stays on your machine</span></div>
+                <div class="trust-item"><span class="mono"
+                        style="font-size:10px;color:#475569;letter-spacing:0.1em">TESTS</span><span class="mono"
+                        style="font-size:11px;color:#475569">→</span><span class="mono"
+                        style="font-size:11px;color:#94a3b8">115 passing · CI/CD</span></div>
+                <div class="trust-item"><span class="mono"
+                        style="font-size:10px;color:#475569;letter-spacing:0.1em">OPEN SOURCE</span><span class="mono"
+                        style="font-size:11px;color:#475569">→</span><span class="mono"
+                        style="font-size:11px;color:#94a3b8">January 1, 2030</span></div>
+            </div>
+        </div>
+
+        <!-- THE PROBLEM -->
+        <section style="background:#020810;overflow:hidden">
+            <div
+                style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(239,68,68,0.04),transparent 70%);pointer-events:none">
+            </div>
+            <div class="container">
+                <div class="section-header" style="max-width:700px">
+                    <div class="section-label" style="margin-bottom:14px;color:#ef4444">// THE PROBLEM</div>
+                    <h2 class="display-heading section-title">You're paying for AI<br><span style="color:#ef4444">you're
+                            barely using.</span></h2>
+                    <p style="font-size:16px;color:#64748b;line-height:1.7;font-weight:300">Most developers subscribe to
+                        3–5 AI tools. LokaAudit™ shows the average user actually needs about €3/month of API credits to
+                        get everything they're paying €110+/month for.</p>
+                </div>
+                <div class="compare-grid">
+                    <div class="compare-col bad">
+                        <div class="mono" style="font-size:11px;color:#ef4444;letter-spacing:0.15em;margin-bottom:24px">
+                            ✗ WITHOUT LOKAFLOW</div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">Claude Pro</span><span class="mono"
+                                    style="font-size:11px;color:#475569;margin-left:10px">hit rate limits</span></div>
+                            <span class="mono" style="font-size:14px;color:#ef4444;font-weight:600">€20/mo</span>
+                        </div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">ChatGPT Plus</span><span class="mono"
+                                    style="font-size:11px;color:#475569;margin-left:10px">same queries twice</span>
+                            </div><span class="mono" style="font-size:14px;color:#ef4444;font-weight:600">€20/mo</span>
+                        </div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">GitHub Copilot</span><span class="mono"
+                                    style="font-size:11px;color:#475569;margin-left:10px">basic code complete</span>
+                            </div><span class="mono" style="font-size:14px;color:#ef4444;font-weight:600">€10/mo</span>
+                        </div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">Perplexity Pro</span><span class="mono"
+                                    style="font-size:11px;color:#475569;margin-left:10px">mostly free search</span>
+                            </div><span class="mono" style="font-size:14px;color:#ef4444;font-weight:600">€20/mo</span>
+                        </div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">Gemini Advanced</span><span class="mono"
+                                    style="font-size:11px;color:#475569;margin-left:10px">rarely used</span></div><span
+                                class="mono" style="font-size:14px;color:#ef4444;font-weight:600">€20/mo</span>
+                        </div>
+                        <div class="compare-total"><span
+                                style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#e2e8f0">Total</span><span
+                                class="mono" style="font-size:22px;font-weight:800;color:#ef4444">€90/mo</span></div>
+                    </div>
+                    <div class="compare-col good">
+                        <div class="mono" style="font-size:11px;color:#00ff9d;letter-spacing:0.15em;margin-bottom:24px">
+                            ✓ WITH LOKAFLOW</div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">Local Ollama (qwen2.5:7b)</span><span
+                                    class="mono" style="font-size:11px;color:#475569;margin-left:10px">74% of
+                                    queries</span></div><span class="mono"
+                                style="font-size:14px;color:#00ff9d;font-weight:600">€0</span>
+                        </div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">Gemini free tier (own key)</span><span
+                                    class="mono" style="font-size:11px;color:#475569;margin-left:10px">2.7M
+                                    tokens/day</span></div><span class="mono"
+                                style="font-size:14px;color:#00ff9d;font-weight:600">€0</span>
+                        </div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">Groq free tier (own key)</span><span
+                                    class="mono" style="font-size:11px;color:#475569;margin-left:10px">1.5M
+                                    tokens/day</span></div><span class="mono"
+                                style="font-size:14px;color:#00ff9d;font-weight:600">€0</span>
+                        </div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">xAI free credit (own key)</span><span
+                                    class="mono" style="font-size:11px;color:#475569;margin-left:10px">$25/month
+                                    credit</span></div><span class="mono"
+                                style="font-size:14px;color:#00ff9d;font-weight:600">€0</span>
+                        </div>
+                        <div class="compare-row">
+                            <div><span style="font-size:14px;color:#94a3b8">Cloud API (overflow only)</span><span
+                                    class="mono" style="font-size:11px;color:#475569;margin-left:10px">when actually
+                                    needed</span></div><span class="mono"
+                                style="font-size:14px;color:#f59e0b;font-weight:600">€2–8</span>
+                        </div>
+                        <div class="compare-total"><span
+                                style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#e2e8f0">Total</span><span
+                                class="mono" style="font-size:22px;font-weight:800;color:#00ff9d">€0–8/mo</span></div>
+                    </div>
+                </div>
+                <div
+                    style="text-align:center;padding:20px;background:rgba(0,255,157,0.04);border:1px solid rgba(0,255,157,0.1);border-radius:12px">
+                    <span class="mono" style="font-size:14px;color:#94a3b8">Average saving: <span
+                            style="font-size:22px;font-weight:800;color:#00ff9d">87%</span> · <span
+                            style="color:#e2e8f0">~€82/month back in your pocket</span> · <span
+                            style="color:#64748b">€984/year</span></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <section id="how-it-works" style="background:#030b18">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-label" style="margin-bottom:14px">// HOW IT WORKS</div>
+                    <h2 class="display-heading section-title">Every query. Optimal route.<br><span
+                            style="color:#64748b;font-weight:600">Automatically.</span></h2>
+                    <p style="font-size:16px;color:#64748b;max-width:500px;line-height:1.7;font-weight:300">5-step
+                        pipeline. Runs in milliseconds. 74% of queries never leave your machine.</p>
+                </div>
+                <div class="routing-grid">
+                    <div>
+                        <div class="routing-step">
+                            <div class="routing-step-num"
+                                style="background:#ef444414;border:1px solid #ef444433;color:#ef4444">01</div>
+                            <div>
+                                <div style="font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:3px">PII Scan
+                                </div>
+                                <div class="mono" style="font-size:12px;color:#64748b;margin-bottom:4px">IBAN · BSN ·
+                                    email · CC · IP</div>
+                                <div class="mono"
+                                    style="font-size:11px;color:#ef4444;background:#ef444410;border:1px solid #ef444422;border-radius:4px;padding:2px 8px;display:inline-block">
+                                    → LOCAL if detected</div>
+                            </div>
+                        </div>
+                        <div class="routing-step">
+                            <div class="routing-step-num"
+                                style="background:#f59e0b14;border:1px solid #f59e0b33;color:#f59e0b">02</div>
+                            <div>
+                                <div style="font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:3px">Token Count
+                                </div>
+                                <div class="mono" style="font-size:12px;color:#64748b;margin-bottom:4px">&gt; 8,000
+                                    tokens</div>
+                                <div class="mono"
+                                    style="font-size:11px;color:#f59e0b;background:#f59e0b10;border:1px solid #f59e0b22;border-radius:4px;padding:2px 8px;display:inline-block">
+                                    → LOCAL if exceeded</div>
+                            </div>
+                        </div>
+                        <div class="routing-step">
+                            <div class="routing-step-num"
+                                style="background:#8b5cf614;border:1px solid #8b5cf633;color:#8b5cf6">03</div>
+                            <div>
+                                <div style="font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:3px">Complexity
+                                    Score</div>
+                                <div class="mono" style="font-size:12px;color:#64748b;margin-bottom:4px">6-signal
+                                    classifier · 0.0–1.0</div>
+                                <div class="mono"
+                                    style="font-size:11px;color:#8b5cf6;background:#8b5cf610;border:1px solid #8b5cf622;border-radius:4px;padding:2px 8px;display:inline-block">
+                                    → &lt; 0.35 → LOCAL</div>
+                            </div>
+                        </div>
+                        <div class="routing-step">
+                            <div class="routing-step-num"
+                                style="background:#3b82f614;border:1px solid #3b82f633;color:#3b82f6">04</div>
+                            <div>
+                                <div style="font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:3px">Budget Check
+                                </div>
+                                <div class="mono" style="font-size:12px;color:#64748b;margin-bottom:4px">daily + monthly
+                                    EUR caps</div>
+                                <div class="mono"
+                                    style="font-size:11px;color:#3b82f6;background:#3b82f610;border:1px solid #3b82f622;border-radius:4px;padding:2px 8px;display:inline-block">
+                                    → exceeded → LOCAL</div>
+                            </div>
+                        </div>
+                        <div class="routing-step">
+                            <div class="routing-step-num"
+                                style="background:#00d4ff14;border:1px solid #00d4ff33;color:#00d4ff">05</div>
+                            <div>
+                                <div style="font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:3px">Execute +
+                                    Log</div>
+                                <div class="mono" style="font-size:12px;color:#64748b;margin-bottom:4px">metadata only ·
+                                    no content stored</div>
+                                <div class="mono"
+                                    style="font-size:11px;color:#00d4ff;background:#00d4ff10;border:1px solid #00d4ff22;border-radius:4px;padding:2px 8px;display:inline-block">
+                                    → stream response</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="routing-diagram">
+                        <div class="mono" style="font-size:11px;color:#475569;margin-bottom:20px;letter-spacing:0.1em">
+                            ROUTING DECISION FLOW</div>
+                        <div
+                            style="background:#0c2d44;border:1px solid #00d4ff33;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+                            <span style="font-size:16px">💬</span><span class="mono"
+                                style="font-size:13px;color:#00d4ff;font-weight:500">User Query</span></div>
+                        <div
+                            style="background:#2d1414;border:1px solid #ef444433;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+                            <span style="font-size:16px">🔍</span><span class="mono"
+                                style="font-size:13px;color:#ef4444;font-weight:500">PII Detected?</span></div>
+                        <div
+                            style="background:#1e0a2d;border:1px solid #8b5cf633;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+                            <span style="font-size:16px">⚙️</span><span class="mono"
+                                style="font-size:13px;color:#8b5cf6;font-weight:500">Complexity Scorer</span></div>
+                        <div class="routing-lanes">
+                            <div class="routing-lane" style="background:#0a2d1e;border:1px solid #00ff9d22">
+                                <div class="mono"
+                                    style="font-size:10px;font-weight:700;color:#00ff9d;margin-bottom:4px">LOCAL</div>
+                                <div
+                                    style="font-size:18px;font-weight:800;color:#00ff9d;font-family:'JetBrains Mono',monospace;margin-bottom:2px">
+                                    74%</div>
+                                <div style="font-size:10px;color:#475569;margin-bottom:2px">Ollama</div>
+                                <div style="font-size:10px;color:#00ff9d;opacity:0.7">€0/query</div>
+                            </div>
+                            <div class="routing-lane" style="background:#2d1e0a;border:1px solid #f59e0b22">
+                                <div class="mono"
+                                    style="font-size:10px;font-weight:700;color:#f59e0b;margin-bottom:4px">SPECIALIST
+                                </div>
+                                <div
+                                    style="font-size:18px;font-weight:800;color:#f59e0b;font-family:'JetBrains Mono',monospace;margin-bottom:2px">
+                                    17%</div>
+                                <div style="font-size:10px;color:#475569;margin-bottom:2px">Gemini Flash</div>
+                                <div style="font-size:10px;color:#f59e0b;opacity:0.7">€0.001</div>
+                            </div>
+                            <div class="routing-lane" style="background:#0c2d44;border:1px solid #00d4ff22">
+                                <div class="mono"
+                                    style="font-size:10px;font-weight:700;color:#00d4ff;margin-bottom:4px">CLOUD</div>
+                                <div
+                                    style="font-size:18px;font-weight:800;color:#00d4ff;font-family:'JetBrains Mono',monospace;margin-bottom:2px">
+                                    9%</div>
+                                <div style="font-size:10px;color:#475569;margin-bottom:2px">Claude/GPT-4</div>
+                                <div style="font-size:10px;color:#00d4ff;opacity:0.7">€0.01</div>
+                            </div>
+                        </div>
+                        <div
+                            style="margin-top:20px;display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(0,255,157,0.04);border:1px solid rgba(0,255,157,0.1);border-radius:8px">
+                            <div class="live-dot" style="width:6px;height:6px"></div>
+                            <span class="mono" style="font-size:11px;color:#64748b">Average savings: <span
+                                    style="color:#00ff9d;font-weight:600">87%</span> vs all-cloud</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRODUCTS -->
+        <section id="products" style="background:#030b18">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-label" style="margin-bottom:14px">// THE PRODUCT FAMILY</div>
+                    <h2 class="display-heading section-title">One codebase.<br><span style="color:#00d4ff">Six products.
+                            All free to 97%.</span></h2>
+                    <p style="font-size:16px;color:#64748b;max-width:500px;line-height:1.7;font-weight:300">Not six
+                        apps. Not six teams. One install — feature flags unlock capabilities based on who you are.</p>
+                </div>
+                <div class="products-grid">
+                    <div class="product-card" style="border-color:#00d4ff44;background:#00d4ff0a">
+                        <div
+                            style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+                            <span class="product-icon" style="color:#00d4ff">🌊</span><span class="tag"
+                                style="background:#0a2d1e;color:#00ff9d;border:1px solid #00ff9d22;font-size:10px">FREE</span>
+                        </div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#00d4ff;margin-bottom:6px">
+                            LokaFlow™</div>
+                        <div class="mono" style="font-size:10px;color:#475569;letter-spacing:0.1em;margin-bottom:10px">
+                            CORE</div>
+                        <p style="font-size:13px;color:#64748b;line-height:1.6">The routing infrastructure. Classifies
+                            every query by complexity, cost, and privacy. Routes locally when it can. Cloud only when it
+                            must.</p>
+                    </div>
+                    <div class="product-card">
+                        <div
+                            style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+                            <span class="product-icon" style="color:#00ff9d">🤖</span><span class="tag"
+                                style="background:#0a2d1e;color:#00ff9d;border:1px solid #00ff9d22;font-size:10px">FREE</span>
+                        </div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#e2e8f0;margin-bottom:6px">
+                            LokaAgent™</div>
+                        <div class="mono" style="font-size:10px;color:#475569;letter-spacing:0.1em;margin-bottom:10px">
+                            AUTOMATION</div>
+                        <p style="font-size:13px;color:#64748b;line-height:1.6">8-stage DAG orchestration. Decomposes
+                            complex tasks into subtasks. Local models execute in parallel. Frontier quality at local
+                            cost.</p>
+                    </div>
+                    <div class="product-card">
+                        <div
+                            style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+                            <span class="product-icon" style="color:#f59e0b">🛡️</span><span class="tag"
+                                style="background:#0c2d44;color:#64748b;border:1px solid #1e3a5f;font-size:10px">Business+</span>
+                        </div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#e2e8f0;margin-bottom:6px">
+                            LokaGuard™</div>
+                        <div class="mono" style="font-size:10px;color:#475569;letter-spacing:0.1em;margin-bottom:10px">
+                            COMPLIANCE</div>
+                        <p style="font-size:13px;color:#64748b;line-height:1.6">DORA · SOX · GDPR automated compliance.
+                            Append-only audit trail, PDF reports, PII custom rules, EU data residency enforcement.</p>
+                    </div>
+                    <div class="product-card">
+                        <div
+                            style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+                            <span class="product-icon" style="color:#8b5cf6">🏢</span><span class="tag"
+                                style="background:#0c2d44;color:#64748b;border:1px solid #1e3a5f;font-size:10px">Enterprise</span>
+                        </div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#e2e8f0;margin-bottom:6px">
+                            LokaEnterprise</div>
+                        <div class="mono" style="font-size:10px;color:#475569;letter-spacing:0.1em;margin-bottom:10px">
+                            CORPORATE</div>
+                        <p style="font-size:13px;color:#64748b;line-height:1.6">On-premise Docker deployment. Air-gapped
+                            mode. SSO (Entra ID, Google, SAML). Admin panel. Department routing policies. White-label.
+                        </p>
+                    </div>
+                    <div class="product-card">
+                        <div
+                            style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+                            <span class="product-icon" style="color:#22c55e">🎓</span><span class="tag"
+                                style="background:#0a2d1e;color:#00ff9d;border:1px solid #00ff9d22;font-size:10px">FREE</span>
+                        </div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#e2e8f0;margin-bottom:6px">
+                            LokaLearn™</div>
+                        <div class="mono" style="font-size:10px;color:#475569;letter-spacing:0.1em;margin-bottom:10px">
+                            EDUCATION</div>
+                        <p style="font-size:13px;color:#64748b;line-height:1.6">30+ AI tutoring prompt templates. Works
+                            offline after setup. 50+ languages via local Qwen models. For students, schools, NGOs —
+                            always free.</p>
+                    </div>
+                    <div class="product-card">
+                        <div
+                            style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+                            <span class="product-icon" style="color:#ec4899">🌍</span><span class="tag"
+                                style="background:#0a2d1e;color:#00ff9d;border:1px solid #00ff9d22;font-size:10px">FREE
+                                · 2028</span></div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#e2e8f0;margin-bottom:6px">
+                            LokaAccess™</div>
+                        <div class="mono" style="font-size:10px;color:#475569;letter-spacing:0.1em;margin-bottom:10px">
+                            GLOBAL</div>
+                        <p style="font-size:13px;color:#64748b;line-height:1.6">AI for the other 6 billion. Works on
+                            4-year-old Android phones. No credit card. No internet after setup. Telco partnership
+                            programme.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ARCHITECTURE -->
+        <section style="background:#020810;padding:80px 24px">
+            <div class="container">
+                <div class="section-label" style="margin-bottom:14px">// ARCHITECTURE</div>
+                <h2 class="display-heading"
+                    style="font-size:clamp(28px,3.5vw,44px);color:#f8fafc;margin-bottom:40px;max-width:600px">12
+                    packages. 115 tests.<br><span style="color:#64748b">All passing.</span></h2>
+                <div class="arch-terminal">
+                    <div style="color:#475569;margin-bottom:20px">$ tree packages/ --summary</div>
+                    <div class="arch-row"><span>✅</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/core</span><span
+                            style="color:#475569;flex:1">Router · 11 providers · PII scanner · classifier · budget ·
+                            search · memory</span></div>
+                    <div class="arch-row"><span>✅</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/agent</span><span
+                            style="color:#475569;flex:1">8-stage DAG orchestration (65 unit tests)</span></div>
+                    <div class="arch-row"><span>✅</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/orchestrator</span><span
+                            style="color:#475569;flex:1">Task decomposition · complexity measurement · budget
+                            allocation</span></div>
+                    <div class="arch-row"><span>✅</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/mesh</span><span
+                            style="color:#475569;flex:1">mDNS discovery · WoL · battery-aware scheduling · carbon
+                            tracking</span></div>
+                    <div class="arch-row"><span>✅</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/audit</span><span
+                            style="color:#475569;flex:1">ChatGPT / Claude subscription waste analyser</span></div>
+                    <div class="arch-row"><span>✅</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/route</span><span
+                            style="color:#475569;flex:1">OpenAI-compatible proxy · savings tracker</span></div>
+                    <div class="arch-row"><span>✅</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/api</span><span
+                            style="color:#475569;flex:1">REST API on :4141 · OpenAI-compatible endpoint</span></div>
+                    <div class="arch-row"><span>🔧</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/guard</span><span
+                            style="color:#475569;flex:1">DORA / SOX / GDPR compliance module ← IN PROGRESS</span></div>
+                    <div class="arch-row"><span>🔧</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/enterprise</span><span
+                            style="color:#475569;flex:1">Admin panel · SSO · on-premise config ← PLANNED</span></div>
+                    <div class="arch-row"><span>🔧</span><span
+                            style="color:#00d4ff;min-width:210px">@lokaflow/content</span><span
+                            style="color:#475569;flex:1">LokaLearn prompt pack + registry ← PLANNED</span></div>
+                    <div class="arch-row"><span>🔧</span><span
+                            style="color:#00d4ff;min-width:210px">apps/web</span><span
+                            style="color:#475569;flex:1">Dashboard + chat UI ← IN PROGRESS</span></div>
+                    <div class="arch-row" style="border-bottom:none"><span>📱</span><span
+                            style="color:#00d4ff;min-width:210px">apps/mobile</span><span
+                            style="color:#475569;flex:1">React Native + llama.cpp ← 2028</span></div>
+                    <div style="margin-top:16px;padding-top:12px;border-top:1px solid #0f1e30;color:#475569">115 unit
+                        tests passing · 0 network required for unit tests · live integration tests auto-skip if Ollama
+                        absent</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRICING -->
+        <section id="pricing" style="background:#030b18">
+            <div
+                style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.04),transparent 60%);pointer-events:none">
+            </div>
+            <div class="container">
+                <div style="text-align:center;margin-bottom:24px">
+                    <div class="section-label" style="margin-bottom:14px;display:block">// PRICING</div>
+                    <h2 class="display-heading section-title">The simplest rule in SaaS.</h2>
+                </div>
+                <div style="text-align:center;margin-bottom:52px">
+                    <div class="pricing-rule">
+                        <div class="pricing-rule-code">
+                            <span style="color:#00ff9d">if</span> <span style="color:#f59e0b">employees</span> ≤ 100
+                            <span style="color:#00ff9d">OR</span> <span style="color:#f59e0b">revenue</span> ≤ €1M
+                            {<span style="color:#00d4ff"> free</span> }<br>
+                            <span style="color:#00ff9d">if</span> <span style="color:#f59e0b">employees</span> &gt; 100
+                            <span style="color:#ef4444">AND</span> <span style="color:#f59e0b">revenue</span> &gt; €1M
+                            {<span style="color:#ef4444"> pay</span> }
+                        </div>
+                        <div style="margin-top:12px;font-size:13px;color:#475569">Both conditions must be true
+                            simultaneously. Either missing → free.</div>
+                    </div>
+                </div>
+                <div class="pricing-grid">
+                    <div class="pricing-card">
+                        <div style="font-size:28px;margin-bottom:10px">🧑</div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#f8fafc;margin-bottom:4px">
+                            Individual</div>
+                        <div class="mono" style="font-size:10px;color:#475569;margin-bottom:14px">1 person</div>
+                        <div style="margin-bottom:8px"><span class="mono"
+                                style="font-size:26px;font-weight:800;color:#22c55e">€0</span><span class="mono"
+                                style="font-size:11px;color:#475569">forever</span></div>
+                        <div style="font-size:11px;color:#64748b;margin-bottom:16px;line-height:1.5">Every human. Always
+                            free.</div>
+                        <div style="border-top:1px solid #0f1e30;padding-top:14px">
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>Full LokaFlow
+                                platform</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>Unlimited
+                                local AI</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>Own free API
+                                keys</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>LokaAgent
+                                workflows</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>LokaLearn
+                                pack</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>Community
+                                support</div>
+                        </div>
+                    </div>
+                    <div class="pricing-card">
+                        <div style="font-size:28px;margin-bottom:10px">🌍</div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#f8fafc;margin-bottom:4px">
+                            NGO / School</div>
+                        <div class="mono" style="font-size:10px;color:#475569;margin-bottom:14px">any size</div>
+                        <div style="margin-bottom:8px"><span class="mono"
+                                style="font-size:26px;font-weight:800;color:#22c55e">€0</span><span class="mono"
+                                style="font-size:11px;color:#475569">forever</span></div>
+                        <div style="font-size:11px;color:#64748b;margin-bottom:16px;line-height:1.5">Education &amp;
+                            social good — any size.</div>
+                        <div style="border-top:1px solid #0f1e30;padding-top:14px">
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>Everything in
+                                Individual</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>Up to 500
+                                accounts</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>Admin
+                                dashboard</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>Team prompt
+                                library</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>Offline
+                                installer kit</div>
+                            <div class="pricing-feature"><span style="color:#22c55e;flex-shrink:0">✓</span>50+ languages
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pricing-card">
+                        <div style="font-size:28px;margin-bottom:10px">🚀</div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#f8fafc;margin-bottom:4px">
+                            Startup</div>
+                        <div class="mono" style="font-size:10px;color:#475569;margin-bottom:14px">&lt; 100 staff OR &lt;
+                            €1M ARR</div>
+                        <div style="margin-bottom:8px"><span class="mono"
+                                style="font-size:26px;font-weight:800;color:#3b82f6">€0</span><span class="mono"
+                                style="font-size:11px;color:#475569">until you grow</span></div>
+                        <div style="font-size:11px;color:#64748b;margin-bottom:16px;line-height:1.5">Both thresholds
+                            must be crossed to pay.</div>
+                        <div style="border-top:1px solid #0f1e30;padding-top:14px">
+                            <div class="pricing-feature"><span style="color:#3b82f6;flex-shrink:0">✓</span>Everything in
+                                Individual</div>
+                            <div class="pricing-feature"><span style="color:#3b82f6;flex-shrink:0">✓</span>Up to 99 user
+                                accounts</div>
+                            <div class="pricing-feature"><span style="color:#3b82f6;flex-shrink:0">✓</span>Team
+                                workspaces</div>
+                            <div class="pricing-feature"><span style="color:#3b82f6;flex-shrink:0">✓</span>API access
+                            </div>
+                            <div class="pricing-feature"><span style="color:#3b82f6;flex-shrink:0">✓</span>Webhooks +
+                                Zapier</div>
+                        </div>
+                    </div>
+                    <div class="pricing-card" style="background:#8b5cf608;border-color:#8b5cf644">
+                        <div class="pricing-badge" style="background:#8b5cf6">MOST POPULAR</div>
+                        <div style="font-size:28px;margin-bottom:10px">🏢</div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#f8fafc;margin-bottom:4px">
+                            Business</div>
+                        <div class="mono" style="font-size:10px;color:#475569;margin-bottom:14px">500–2,000 staff +
+                            &gt;€1M ARR</div>
+                        <div style="margin-bottom:8px"><span class="mono"
+                                style="font-size:26px;font-weight:800;color:#8b5cf6">€199</span><span class="mono"
+                                style="font-size:11px;color:#475569">/month</span></div>
+                        <div style="font-size:11px;color:#64748b;margin-bottom:16px;line-height:1.5">Flat fee. 2,000
+                            employees still €199.</div>
+                        <div style="border-top:1px solid #0f1e30;padding-top:14px">
+                            <div class="pricing-feature"><span style="color:#8b5cf6;flex-shrink:0">✓</span>Everything in
+                                Startup</div>
+                            <div class="pricing-feature"><span style="color:#8b5cf6;flex-shrink:0">✓</span>LokaGuard
+                                compliance</div>
+                            <div class="pricing-feature"><span style="color:#8b5cf6;flex-shrink:0">✓</span>DORA / SOX
+                                audit trail</div>
+                            <div class="pricing-feature"><span style="color:#8b5cf6;flex-shrink:0">✓</span>EU data
+                                residency</div>
+                            <div class="pricing-feature"><span style="color:#8b5cf6;flex-shrink:0">✓</span>SSO
+                                integration</div>
+                            <div class="pricing-feature"><span style="color:#8b5cf6;flex-shrink:0">✓</span>Priority
+                                support</div>
+                        </div>
+                    </div>
+                    <div class="pricing-card">
+                        <div style="font-size:28px;margin-bottom:10px">🏦</div>
+                        <div
+                            style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#f8fafc;margin-bottom:4px">
+                            Enterprise</div>
+                        <div class="mono" style="font-size:10px;color:#475569;margin-bottom:14px">2,000+ staff + &gt;€1M
+                            ARR</div>
+                        <div style="margin-bottom:8px"><span class="mono"
+                                style="font-size:26px;font-weight:800;color:#ef4444">€999+</span><span class="mono"
+                                style="font-size:11px;color:#475569">/month</span></div>
+                        <div style="font-size:11px;color:#64748b;margin-bottom:16px;line-height:1.5">They can afford it.
+                            This funds everyone else.</div>
+                        <div style="border-top:1px solid #0f1e30;padding-top:14px">
+                            <div class="pricing-feature"><span style="color:#ef4444;flex-shrink:0">✓</span>Everything in
+                                Business</div>
+                            <div class="pricing-feature"><span style="color:#ef4444;flex-shrink:0">✓</span>On-premise
+                                Docker</div>
+                            <div class="pricing-feature"><span style="color:#ef4444;flex-shrink:0">✓</span>Air-gapped
+                                mode</div>
+                            <div class="pricing-feature"><span style="color:#ef4444;flex-shrink:0">✓</span>Custom model
+                                training</div>
+                            <div class="pricing-feature"><span style="color:#ef4444;flex-shrink:0">✓</span>Dedicated CSM
+                            </div>
+                            <div class="pricing-feature"><span style="color:#ef4444;flex-shrink:0">✓</span>SLA 99.99%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    style="margin-top:32px;text-align:center;display:flex;justify-content:center;gap:40px;flex-wrap:wrap">
+                    <div style="text-align:center">
+                        <div class="mono" style="font-size:18px;font-weight:700;color:#00d4ff">~97%</div>
+                        <div style="font-size:12px;color:#475569">of users pay €0</div>
+                    </div>
+                    <div style="text-align:center">
+                        <div class="mono" style="font-size:18px;font-weight:700;color:#00d4ff">Jan 2030</div>
+                        <div style="font-size:12px;color:#475569">converts to Apache 2.0</div>
+                    </div>
+                    <div style="text-align:center">
+                        <div class="mono" style="font-size:18px;font-weight:700;color:#00d4ff">€0</div>
+                        <div style="font-size:12px;color:#475569">for individuals, always</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISION / MANIFESTO -->
+        <section id="vision" style="padding:120px 24px;background:#020810;overflow:hidden">
+            <div
+                style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(0,212,255,0.03),transparent 60%);pointer-events:none">
+            </div>
+            <div style="max-width:800px;margin:0 auto">
+                <div class="section-label" style="margin-bottom:32px">// MANIFESTO</div>
+                <div
+                    style="font-family:'Syne',sans-serif;font-weight:700;font-size:clamp(20px,3.5vw,36px);line-height:1.6;letter-spacing:-0.01em">
+                    <div style="color:#94a3b8;margin-bottom:4px">AI should be a human right.</div>
+                    <div style="color:#94a3b8;margin-bottom:4px">Not a subscription service.</div>
+                    <div style="margin-bottom:20px"></div>
+                    <div style="color:#94a3b8;margin-bottom:4px">A student in Lagos with a 4-year-old laptop</div>
+                    <div style="color:#94a3b8;margin-bottom:4px">deserves the same tools as a developer in Amsterdam.
+                    </div>
+                    <div style="margin-bottom:20px"></div>
+                    <div style="color:#00d4ff;margin-bottom:4px">Local compute is the equaliser.</div>
+                    <div style="color:#00d4ff;margin-bottom:4px">LokaFlow is the delivery mechanism.</div>
+                    <div style="margin-bottom:20px"></div>
+                    <div style="color:#94a3b8;margin-bottom:4px">Enterprise pays.</div>
+                    <div style="color:#94a3b8;margin-bottom:4px">Because they can.</div>
+                    <div style="color:#94a3b8;margin-bottom:4px">Everyone else doesn't.</div>
+                    <div style="color:#94a3b8;margin-bottom:4px">Because they shouldn't have to.</div>
+                </div>
+                <div class="vision-grid">
+                    <div class="vision-blocked"><span
+                            style="color:#ef4444;font-size:16px;flex-shrink:0;margin-top:2px">✗</span>
+                        <div>
+                            <div style="font-size:14px;color:#e2e8f0;font-weight:500;margin-bottom:3px">No query limits
+                                for free users</div>
+                            <div class="mono" style="font-size:12px;color:#475569">"you've used your 100 messages"</div>
+                        </div>
+                    </div>
+                    <div class="vision-blocked"><span
+                            style="color:#ef4444;font-size:16px;flex-shrink:0;margin-top:2px">✗</span>
+                        <div>
+                            <div style="font-size:14px;color:#e2e8f0;font-weight:500;margin-bottom:3px">No core features
+                                locked</div>
+                            <div class="mono" style="font-size:12px;color:#475569">privacy controls are never a paywall
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vision-blocked"><span
+                            style="color:#ef4444;font-size:16px;flex-shrink:0;margin-top:2px">✗</span>
+                        <div>
+                            <div style="font-size:14px;color:#e2e8f0;font-weight:500;margin-bottom:3px">No user data
+                                sold</div>
+                            <div class="mono" style="font-size:12px;color:#475569">we don't have a data business</div>
+                        </div>
+                    </div>
+                    <div class="vision-blocked"><span
+                            style="color:#ef4444;font-size:16px;flex-shrink:0;margin-top:2px">✗</span>
+                        <div>
+                            <div style="font-size:14px;color:#e2e8f0;font-weight:500;margin-bottom:3px">No
+                                advertisements</div>
+                            <div class="mono" style="font-size:12px;color:#475569">ever, in any product</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINAL CTA -->
+        <section id="get-started" style="padding:120px 24px;background:#020810;text-align:center;overflow:hidden">
+            <div
+                style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(0,212,255,0.06),transparent 65%);pointer-events:none">
+            </div>
+            <div style="max-width:700px;margin:0 auto;position:relative">
+                <div class="section-label" style="margin-bottom:20px;display:block">// GET STARTED</div>
+                <h2 class="display-heading" style="font-size:clamp(36px,5vw,64px);color:#f8fafc;margin-bottom:20px">Stop
+                    paying for AI<br><span
+                        style="background:linear-gradient(135deg,#00d4ff,#00ff9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">you
+                        don't need to.</span></h2>
+                <p style="font-size:16px;color:#64748b;line-height:1.7;margin-bottom:40px;font-weight:300">5 minutes to
+                    set up. Free API keys from Gemini, Groq, and xAI give you 7.3 million tokens/day. Local Ollama
+                    handles the rest. Most users pay €0/month.</p>
+                <div class="cta-terminal">
+                    <div class="terminal-dots">
+                        <div class="terminal-dot" style="background:#ef4444"></div>
+                        <div class="terminal-dot" style="background:#f59e0b"></div>
+                        <div class="terminal-dot" style="background:#22c55e"></div>
+                        <span class="mono" style="font-size:11px;color:#475569;margin-left:8px">Terminal</span>
+                    </div>
+                    <div class="terminal-line"><span style="color:#00ff9d">$ </span><span style="color:#e2e8f0">git
+                            clone https://github.com/lokaflow/lokaflow.git</span></div>
+                    <div class="terminal-line"><span style="color:#00ff9d">$ </span><span style="color:#e2e8f0">pnpm
+                            install &amp;&amp; pnpm build</span></div>
+                    <div class="terminal-line"><span style="color:#00ff9d">$ </span><span style="color:#e2e8f0">ollama
+                            pull qwen2.5:7b</span></div>
+                    <div class="terminal-line"><span style="color:#00ff9d">$ </span><span style="color:#e2e8f0">npx
+                            lokaflow chat</span>
+                        <div class="mono" style="color:#64748b;margin-top:2px;font-size:13px"># Routes 74% locally.
+                            Saves 87%. Welcome to LokaFlow™</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+                    <a href="https://github.com/manojmallick/lokaflow" class="btn-primary" target="_blank"
+                        rel="noopener" style="font-size:15px;padding:14px 32px">Download LokaFlow Free →</a>
+                    <a href="#how-it-works" class="btn-secondary" style="font-size:15px;padding:14px 32px">Read
+                        Architecture Docs</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div style="max-width:1200px;margin:0 auto">
+            <div class="footer-grid">
+                <div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                        <div class="nav-logo-icon">🌊</div>
+                        <span
+                            style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#f8fafc">LokaFlow™</span>
+                    </div>
+                    <p style="font-size:13px;color:#475569;line-height:1.7;max-width:280px">Intelligent hybrid LLM
+                        orchestration. Local-first AI routing. Free for everyone who isn't a corporation.</p>
+                    <div class="mono" style="margin-top:16px;font-size:11px;color:#2d4a5a">© 2026 LearnHubPlay BV · KvK
+                        97741825</div>
+                </div>
+                <div>
+                    <div class="mono" style="font-size:11px;color:#475569;letter-spacing:0.1em;margin-bottom:16px">
+                        PRODUCT</div>
+                    <a href="#how-it-works" class="footer-link">How It Works</a>
+                    <a href="#products" class="footer-link">Product Family</a>
+                    <a href="#products" class="footer-link">LokaGuard™</a>
+                    <a href="#products" class="footer-link">Enterprise</a>
+                    <a href="#pricing" class="footer-link">Pricing</a>
+                </div>
+                <div>
+                    <div class="mono" style="font-size:11px;color:#475569;letter-spacing:0.1em;margin-bottom:16px">
+                        DEVELOPERS</div>
+                    <a href="https://github.com/manojmallick/lokaflow" class="footer-link" target="_blank"
+                        rel="noopener">GitHub</a>
+                    <a href="https://github.com/manojmallick/lokaflow?tab=readme-ov-file" class="footer-link"
+                        target="_blank" rel="noopener">Documentation</a>
+                    <a href="https://github.com/manojmallick/lokaflow?tab=readme-ov-file#architecture"
+                        class="footer-link" target="_blank" rel="noopener">Architecture</a>
+                    <a href="https://github.com/manojmallick/lokaflow?tab=readme-ov-file#api-reference"
+                        class="footer-link" target="_blank" rel="noopener">API Reference</a>
+                    <a href="https://github.com/manojmallick/lokaflow/blob/main/CHANGELOG.md" class="footer-link"
+                        target="_blank" rel="noopener">CHANGELOG</a>
+                </div>
+                <div>
+                    <div class="mono" style="font-size:11px;color:#475569;letter-spacing:0.1em;margin-bottom:16px">
+                        COMPANY</div>
+                    <a href="#vision" class="footer-link">Vision</a>
+                    <a href="https://github.com/manojmallick/lokaflow?tab=License-1-ov-file" class="footer-link"
+                        target="_blank" rel="noopener">License (BUSL)</a>
+                    <a href="https://github.com/manojmallick/lokaflow?tab=contributing-ov-file" class="footer-link"
+                        target="_blank" rel="noopener">Contributing</a>
+                    <a href="https://github.com/manojmallick/lokaflow?tab=security-ov-file" class="footer-link"
+                        target="_blank" rel="noopener">Security</a>
+                    <a href="mailto:contact@lokaflow.io" class="footer-link">Contact</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span class="mono" style="font-size:11px;color:#2d4a5a">BUSL 1.1 → Apache 2.0 on 2030-01-01 ·
+                    lokaflow.io</span>
+                <span class="mono" style="font-size:11px;color:#2d4a5a">AI for everyone. Waste for no one.</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Nav scroll effect
+        const nav = document.getElementById('main-nav');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('scrolled', window.scrollY > 40);
+        });
+
+        // Animated token counter
+        (function () {
+            const el = document.getElementById('token-counter');
+            if (!el) return;
+            const target = 1847293;
+            const duration = 3000;
+            const start = performance.now();
+            function step(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.floor(eased * target).toLocaleString();
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        })();
+
+        // Intersection observer for fade-up animations on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.style.opacity = '1';
+                    e.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.section-header, .compare-grid, .routing-grid, .products-grid, .arch-terminal, .pricing-grid, .vision-grid').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(24px)';
+            el.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+
+</html>
