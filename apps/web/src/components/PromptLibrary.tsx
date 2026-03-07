@@ -295,27 +295,32 @@ export function PromptLibrary() {
             <div className="prompts-section-title" style={{ marginBottom: 2 }}>
               Fill variables
             </div>
-            {vars.map((v) => (
-              <div key={v} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <label
-                  style={{ fontSize: 11, color: "var(--text-muted)", width: 80 }}
-                >{`{{${v}}}`}</label>
-                <input
-                  style={{
-                    flex: 1,
-                    background: "var(--bg-dark)",
-                    border: "1px solid var(--border-color)",
-                    borderRadius: 5,
-                    color: "var(--text-main)",
-                    fontSize: 11,
-                    padding: "4px 8px",
-                  }}
-                  placeholder={v}
-                  value={testInput[v] ?? ""}
-                  onChange={(e) => setTestInput((prev) => ({ ...prev, [v]: e.target.value }))}
-                />
-              </div>
-            ))}
+            {vars.map((v) => {
+              const inputId = `${tpl.id}-${v}-input`;
+              return (
+                <div key={v} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <label
+                    htmlFor={inputId}
+                    style={{ fontSize: 11, color: "var(--text-muted)", width: 80 }}
+                  >{`{{${v}}}`}</label>
+                  <input
+                    id={inputId}
+                    style={{
+                      flex: 1,
+                      background: "var(--bg-dark)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: 5,
+                      color: "var(--text-main)",
+                      fontSize: 11,
+                      padding: "4px 8px",
+                    }}
+                    placeholder={v}
+                    value={testInput[v] ?? ""}
+                    onChange={(e) => setTestInput((prev) => ({ ...prev, [v]: e.target.value }))}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -439,8 +444,9 @@ export function PromptLibrary() {
               </button>
             </div>
             <div>
-              <label>Title</label>
+              <label htmlFor="new-prompt-title">Title</label>
               <input
+                id="new-prompt-title"
                 ref={modalTitleInputRef}
                 placeholder="e.g. Summarise legal clause"
                 value={form.title}
@@ -448,13 +454,14 @@ export function PromptLibrary() {
               />
             </div>
             <div>
-              <label>
+              <label htmlFor="new-prompt-body">
                 Body{" "}
                 <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>
                   Use {"{{variable}}"} for placeholders
                 </span>
               </label>
               <textarea
+                id="new-prompt-body"
                 placeholder="Write your prompt here…"
                 value={form.body}
                 rows={5}
@@ -462,8 +469,9 @@ export function PromptLibrary() {
               />
             </div>
             <div>
-              <label>Tags (comma-separated)</label>
+              <label htmlFor="new-prompt-tags">Tags (comma-separated)</label>
               <input
+                id="new-prompt-tags"
                 placeholder="e.g. legal, summarisation"
                 value={form.tags}
                 onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}

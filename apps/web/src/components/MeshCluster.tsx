@@ -33,19 +33,27 @@ function fmtUptime(seconds: number): string {
   return `${mins}m`;
 }
 
-function TierIcon({ tier }: { tier: string }) {
+function TierIcon({ tier }: { tier: Provider["tier"] }) {
   if (tier === "cloud") return <Cloud size={14} />;
   if (tier === "specialist") return <Zap size={14} />;
   return <Cpu size={14} />;
 }
 
-function StatusDot({ status }: { status: string }) {
+function StatusDot({ status }: { status: Provider["status"] }) {
   const cls = status === "ok" ? "dot-green" : status === "error" ? "dot-red" : "dot-amber";
   return <span className={`status-dot ${cls}`} title={status} />;
 }
 
 /** Latency bar — color is tier-aware, not just speed-based */
-function LatencyBar({ ms, tier, status }: { ms: number; tier: string; status: string }) {
+function LatencyBar({
+  ms,
+  tier,
+  status,
+}: {
+  ms: number;
+  tier: Provider["tier"];
+  status: Provider["status"];
+}) {
   const max = tier === "local" ? 300 : 800;
   const pct = Math.min(100, (ms / max) * 100);
 

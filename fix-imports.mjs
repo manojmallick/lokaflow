@@ -37,7 +37,7 @@ allTsFiles.forEach((file) => {
 
     // We are looking for any import or export that contains "/router/"
     // and we will dynamically resolve it
-    const regex = /(?:import|export)\s+.*from\s+(['"])(\..*\/router\/.*)\1/g;
+    const regex = /(?:import|export)\s+[^'"]*from\s+(['"])(\.[^'"]*\/router\/[^'"]*?)\1/g;
     let newContent = content.replace(regex, (match, _quote, capture) => {
       const dir = path.dirname(file);
       const targetPath = path.resolve(dir, capture);

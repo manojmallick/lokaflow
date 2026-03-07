@@ -31,8 +31,9 @@ allTsFiles.forEach((file) => {
     let changed = false;
 
     // Find imports pointing to packages/route/src/router back to src/router
-    const regex = /(import|export)\s+.*from\s+['"](.*\/packages\/route\/src\/router\/.*)['"]/g;
-    let newContent = content.replace(regex, (match, type, capture) => {
+    const regex =
+      /(import|export)\s+[^'"]*from\s+(["'])([^"']*\/packages\/route\/src\/router\/[^"']*?)\2/g;
+    let newContent = content.replace(regex, (match, _type, _quote, capture) => {
       const dir = path.dirname(file);
       const targetPath = path.resolve(dir, capture);
       const normalizedTargetPath = targetPath.split(path.sep).join("/");

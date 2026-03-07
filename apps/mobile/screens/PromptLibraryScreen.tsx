@@ -104,24 +104,65 @@ export default function PromptLibraryScreen() {
   const [editBody, setEditBody] = useState("");
   const [editTags, setEditTags] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+
+  const PINNED_IDS_KEY = "lf_pinned_prompt_ids";
 
   useEffect(() => {
-    AsyncStorage.getItem(LS_KEY).then((raw: string | null) => {
+    async function loadAll() {
+      const [rawTemplates, rawPinned] = await Promise.all([
+        AsyncStorage.getItem(LS_KEY),
+        AsyncStorage.getItem(PINNED_IDS_KEY),
+      ]);
+
       let mine: PromptTemplate[] = [];
-      if (raw) {
+      if (rawTemplates) {
         try {
-          mine = JSON.parse(raw) as PromptTemplate[];
+          mine = JSON.parse(rawTemplates) as PromptTemplate[];
         } catch {
           console.warn("[PromptLibrary] Failed to parse stored templates, resetting to empty.");
         }
       }
-      setTemplates([...mine, ...COMMUNITY_PACKS]);
-    });
+
+      let storedPinnedIds: string[] = [];
+      if (rawPinned) {
+        try {
+          const parsed = JSON.parse(rawPinned);
+          if (Array.isArray(parsed)) storedPinnedIds = parsed.filter((x) => typeof x === "string");
+        } catch {
+          console.warn("[PromptLibrary] Failed to parse stored pinned IDs, resetting to empty.");
+        }
+      }
+
+      setPinnedIds(storedPinnedIds);
+      const applyPin = (t: PromptTemplate): PromptTemplate => ({
+        ...t,
+        pinned:
+          t.source === "mine"
+            ? t.pinned || storedPinnedIds.includes(t.id)
+            : storedPinnedIds.includes(t.id),
+      });
+      setTemplates([...mine.map(applyPin), ...COMMUNITY_PACKS.map(applyPin)]);
+    }
+    loadAll();
   }, []);
+
+  async function persistPinnedIds(nextIds: string[]) {
+    setPinnedIds(nextIds);
+    try {
+      await AsyncStorage.setItem(PINNED_IDS_KEY, JSON.stringify(nextIds));
+    } catch {
+      console.warn("[PromptLibrary] Failed to persist pinned IDs.");
+    }
+  }
 
   async function saveMyTemplates(mine: PromptTemplate[]) {
     await AsyncStorage.setItem(LS_KEY, JSON.stringify(mine));
-    setTemplates([...mine, ...COMMUNITY_PACKS]);
+    const applyPin = (t: PromptTemplate): PromptTemplate => ({
+      ...t,
+      pinned: t.source === "mine" ? t.pinned || pinnedIds.includes(t.id) : pinnedIds.includes(t.id),
+    });
+    setTemplates([...mine.map(applyPin), ...COMMUNITY_PACKS.map(applyPin)]);
   }
 
   function myTemplates() {
@@ -129,8 +170,22 @@ export default function PromptLibraryScreen() {
   }
 
   async function togglePin(id: string) {
-    const mine = myTemplates().map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t));
-    await saveMyTemplates(mine);
+    const target = templates.find((t) => t.id === id);
+    const isMine = target?.source === "mine";
+    if (isMine) {
+      const mine = myTemplates().map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t));
+      await saveMyTemplates(mine);
+      const nowPinned = !!mine.find((t) => t.id === id)?.pinned;
+      const nextIds = nowPinned
+        ? Array.from(new Set([...pinnedIds, id]))
+        : pinnedIds.filter((x) => x !== id);
+      await persistPinnedIds(nextIds);
+    } else {
+      const isPinned = pinnedIds.includes(id);
+      const nextIds = isPinned ? pinnedIds.filter((x) => x !== id) : [...pinnedIds, id];
+      await persistPinnedIds(nextIds);
+      setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, pinned: !isPinned } : t)));
+    }
   }
 
   async function deleteTemplate(id: string) {
