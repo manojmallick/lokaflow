@@ -136,6 +136,17 @@ export function PromptLibrary() {
 
   const closeModal = useCallback(() => setShowModal(false), []);
 
+  // Close the modal on Escape key — attached to window so it fires reliably
+  // regardless of which element has focus inside the dialog.
+  useEffect(() => {
+    if (!showModal) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeModal();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showModal, closeModal]);
+
   useEffect(() => {
     saveTemplates(myTemplates);
   }, [myTemplates]);
@@ -408,13 +419,7 @@ export function PromptLibrary() {
       </div>
 
       {showModal && (
-        <div
-          className="prompt-modal-backdrop"
-          onClick={closeModal}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") closeModal();
-          }}
-        >
+        <div className="prompt-modal-backdrop" onClick={closeModal}>
           <div
             className="prompt-modal"
             role="dialog"

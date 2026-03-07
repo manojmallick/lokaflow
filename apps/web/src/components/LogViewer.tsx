@@ -259,7 +259,14 @@ export function LogViewer(): JSX.Element {
           )}
         </button>
 
-        <button className="lv-btn" onClick={connect} title="Reconnect">
+        <button
+          className="lv-btn"
+          onClick={() => {
+            setLive(true);
+            connect();
+          }}
+          title="Reconnect"
+        >
           <RotateCcw size={12} /> Reconnect
         </button>
 

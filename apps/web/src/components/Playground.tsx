@@ -135,7 +135,7 @@ function mockRun(model: string, prompt: string): Promise<RunResult> {
       () => {
         resolve({
           output: `[Mock output from ${model}]\n\nHere is the analysis of your prompt:\n\n${prompt.slice(0, 80)}...\n\nKey points:\n- This is a simulated response from ${model}\n- Connect to a real LokaFlow server to get live outputs\n- Compare quality by rating both responses below`,
-          latencyMs: Math.round(Math.min(baseLatency, 2000)),
+          latencyMs: Math.round(baseLatency),
           tokens,
           costEur,
           rating: 0,
