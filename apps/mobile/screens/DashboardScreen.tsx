@@ -137,7 +137,11 @@ const MOCK_HISTORY: HistoryEntry[] = [
 
 // ── component ──────────────────────────────────────────────────────────────────
 
-export default function DashboardScreen({ navigation }: any) {
+type DashboardNavigation = {
+  navigate: (screen: string, params?: Record<string, unknown>) => void;
+};
+
+export default function DashboardScreen({ navigation }: { navigation: DashboardNavigation }) {
   const [cost, setCost] = useState<CostStats | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);

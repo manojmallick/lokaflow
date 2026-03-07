@@ -120,8 +120,9 @@ export function MeshCluster() {
       setHealth(data);
       setError(null);
       setLastRefresh(new Date());
-    } catch {
-      setError(`Cannot reach LokaFlow API at ${API_BASE()}/v1/health`);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      setError(`Cannot reach LokaFlow API at ${API_BASE()}/v1/health — ${detail}`);
     } finally {
       setRefreshing(false);
     }
