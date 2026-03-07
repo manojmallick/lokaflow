@@ -143,18 +143,18 @@ export function MeshCluster() {
       : null;
 
   function renderProviderCard(p: Provider, _i: number) {
-    const key = p.name;
-    const isExpanded = expandedNode === key;
+    const providerId = `${p.tier}:${p.name}`;
+    const isExpanded = expandedNode === providerId;
     const modelState = p.latencyMs > 0 && p.status === "ok" ? "warm" : "cold";
 
     return (
-      <div key={key} className={`provider-card ${p.status}`}>
+      <div key={providerId} className={`provider-card ${p.status}`}>
         <button
           type="button"
           className="provider-card-top"
           aria-expanded={isExpanded}
           aria-label={`${p.name} details`}
-          onClick={() => setExpandedNode(isExpanded ? null : key)}
+          onClick={() => setExpandedNode(isExpanded ? null : providerId)}
         >
           <StatusDot status={p.status} />
           <TierIcon tier={p.tier} />

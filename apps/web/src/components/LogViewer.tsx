@@ -78,6 +78,7 @@ export function LogViewer(): JSX.Element {
   const rafRef = useRef<number | null>(null);
   const [filter, setFilter] = useState("");
   const [live, setLive] = useState(true);
+  const [reconnectKey, setReconnectKey] = useState(0);
   const [connected, setConnected] = useState(false);
   const [copied, setCopied] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -117,7 +118,7 @@ export function LogViewer(): JSX.Element {
     };
   }, []);
 
-  // Manage live SSE connection — only re-run when live/connect changes.
+  // Manage live SSE connection — only re-run when live/connect/reconnectKey changes.
   // Keeping lineLimit out of this effect prevents a reconnect (and data loss)
   // when the user changes the line-limit selector while streaming.
   useEffect(() => {
@@ -132,7 +133,7 @@ export function LogViewer(): JSX.Element {
       }
       pendingRef.current = [];
     };
-  }, [live, connect]);
+  }, [live, connect, reconnectKey]);
 
   // Fetch snapshot via REST when not live, or when lineLimit changes while paused.
   useEffect(() => {
@@ -263,7 +264,7 @@ export function LogViewer(): JSX.Element {
           className="lv-btn"
           onClick={() => {
             setLive(true);
-            connect();
+            setReconnectKey((k) => k + 1);
           }}
           title="Reconnect"
         >
