@@ -152,11 +152,16 @@ export default function DashboardScreen({ navigation }: { navigation: DashboardN
     setLoading(true);
     const base = (await AsyncStorage.getItem("lf_api_url")) ?? "http://localhost:4141";
     setApiBase(base);
+    const fetchJson = async (path: string) => {
+      const r = await fetch(`${base}${path}`);
+      if (!r.ok) throw new Error(`Request to ${path} failed with status ${r.status}`);
+      return r.json();
+    };
     try {
       const [costRes, healthRes, histRes] = await Promise.allSettled([
-        fetch(`${base}/v1/cost`).then((r) => r.json()),
-        fetch(`${base}/v1/health`).then((r) => r.json()),
-        fetch(`${base}/v1/routing/history?limit=5`).then((r) => r.json()),
+        fetchJson("/v1/cost"),
+        fetchJson("/v1/health"),
+        fetchJson("/v1/routing/history?limit=5"),
       ]);
       setCost(costRes.status === "fulfilled" ? costRes.value : MOCK_COST);
       setHealth(healthRes.status === "fulfilled" ? healthRes.value : MOCK_HEALTH);

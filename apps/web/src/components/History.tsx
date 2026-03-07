@@ -255,21 +255,13 @@ export function History() {
                 const reply = r.session.messages[msgIdx + 1];
 
                 return (
-                  <div
+                  <button
                     key={`${r.session.id}-${r.message.id}-${i}`}
+                    type="button"
                     className={`history-item ${isSelected ? "selected" : ""}`}
-                    role="button"
-                    tabIndex={0}
                     onClick={() => {
                       setSelectedSession(r.session.id);
                       setSelectedMsg(r.message.id);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setSelectedSession(r.session.id);
-                        setSelectedMsg(r.message.id);
-                      }
                     }}
                   >
                     <div className="history-item-header">
@@ -310,7 +302,7 @@ export function History() {
                         </>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>

@@ -105,7 +105,10 @@ export default function AuditScreen() {
     setLoading(true);
     const base = (await AsyncStorage.getItem("lf_api_url")) ?? "http://localhost:4141";
     try {
-      const data = await fetch(`${base}/v1/cost`).then((r) => r.json());
+      const data = await fetch(`${base}/v1/cost`).then(async (r) => {
+        if (!r.ok) throw new Error(`Request failed with status ${r.status}`);
+        return r.json();
+      });
       setCost(data);
     } catch {
       setCost(MOCK_COST);

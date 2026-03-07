@@ -42,8 +42,8 @@ export default [
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      // No floating promises
-      "@typescript-eslint/no-floating-promises": "off", // enabled via tsconfig strict
+      // No floating promises (disabled here; enable with a type-aware config and parserOptions.project if you want this safety net)
+      "@typescript-eslint/no-floating-promises": "off",
       // Console output in CLI is intentional — warn only
       "no-console": "warn",
       // No direct process.exit — use throw instead (except CLI entry)
