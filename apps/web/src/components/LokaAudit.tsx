@@ -163,12 +163,12 @@ export function LokaAudit() {
   const maxSavings = Math.max(...categories.map((c) => c.savings), 0.001);
   const maxTrendCost = Math.max(...trend.map((t) => t.cost), 0.001);
 
+  const savingsDenominator = cost.month.totalEur + cost.month.savingsVsNaiveEur;
+  const savingsRatio =
+    savingsDenominator === 0 ? 0 : cost.month.savingsVsNaiveEur / savingsDenominator;
   const efficiencyScore = Math.min(
     99,
-    Math.round(
-      cost.month.localPercent * 0.7 +
-        (cost.month.savingsVsNaiveEur / (cost.month.totalEur + cost.month.savingsVsNaiveEur)) * 30,
-    ),
+    Math.round(cost.month.localPercent * 0.7 + savingsRatio * 30),
   );
 
   function exportReport() {
