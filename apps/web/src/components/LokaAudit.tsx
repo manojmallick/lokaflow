@@ -39,8 +39,7 @@ interface CategoryBreakdown {
 }
 
 function fmtEur(val: number): string {
-  if (val >= 1) return `€${val.toFixed(2)}`;
-  return `€${(val * 100).toFixed(1)}¢`;
+  return `€${val.toFixed(2)}`;
 }
 
 function fmtPct(val: number): string {
